@@ -55,7 +55,7 @@ sub load() {
 my %in = ();
 
 # ------------------------------------------------------
-# Allen operators
+# Operators adapted from Allen logic
 
 sub meets() {
   my ($p, $q) = @_;
