@@ -1,0 +1,100 @@
+# Test suite for Allen DSL
+
+let d = during("p","q") in
+~holds(~d,"q") & (d | during(~"p","q"));
+
+let d = during("p","q") in
+d | during(~d,"q");
+
+let d = during("p","q") in
+d & during(~d,"q");
+
+"p" <= 1;
+"p" <= 2;
+~"p" <= 1;
+(during("p","q") | during(~"p","q")) <= 2;
+"p" >=! 1;
+(during("p","q") | during(~"p","q")) >=! 2;
+"q" >=! 4;
+wave[1,0,0,0];
+wave[1,0,0,0];
+~wave[1,0,0,0];
+wave[1,2,0,10] & wave[2,3,0,10];
+delay[1]("p");
+delay[1]("q");
+delay[1](wave[2,3,0,10]);
+during("p", delay[1](wave[2,4,10,25]));
+during(~"q",~"p");
+occ("p","q");
+occ("q","p");
+occ(~"p","q");
+occ(~"q","p");
+occ(~"p","p");
+btwin("p","q");
+btwin("q","p");
+btwin("p","p");
+between("p","q");
+between("q","p");
+between(~"q","p");
+between(~"p","q");
+between(~"p",~"q");
+between(~"q",~"p");
+between("p","p");
+between("q","q");
+over("p","q");
+over("q","p");
+over(holds(~during("p","q"), "q"), "p");
+starts("p","q");
+starts("p","p");
+starts("p", occ("p","q"));
+starts("q", occ("q",~"p"));
+starts("q", occ("q","p"));
+starts("p","p"|"q");
+starts("q","p"|"q");
+
+let d = during("p","q") in
+starts("p", ~holds(~d,"q") & (d|during(~"p","q")));
+
+eq("p","q");
+eq("p","p");
+eq("p",~"p");
+eq("p", during("p","q"));
+eq(during("p","q"),during("p","q"));
+eq(~during("p","q"),during(~"p","q"));
+ends("p","p"|"q");
+ends(~"p",~"p"|~"q");
+
+let d = during("p","q") in
+ends("p", ~holds(~d,"q") & (d|during(~"p","q")));
+
+met("p",~"p");
+met(~"p","p");
+met("p",during(~"p","q"));
+met("p", between("q","p"));
+met("q", between("p","q"));
+met("p", between(~"q","p"));
+met(~"p", between(~"q",~"p"));
+"q"&~holds(~"p","q"); # ex(p,q)
+"q"&~holds("p","q"); # ex(~p,q)
+~"q"&~holds("p",~"q"); # ex(~p,~q)
+occ(starts("p","q"),"q"); # started(q,p)
+occ(starts("p","p"),"p"); # started(p,p)
+occ(starts("p",occ("p","q")),occ("p","q")); # started(occ(p,q),p)
+occ(starts("q",occ("q",~"p")),occ("q",~"p")); # started(occ(q,~p),q)
+occ(starts("p"&"q","p"),"p"); # started(p,p&q)
+occ(starts("p"&"q","q"),"q"); # started(q,p&q)
+"p"&~holds(~during("q","p"),"p"); # contains(p,q)
+"q"&~holds(~during("p","q"),"q"); # contains(q,p)
+occ(over("q","p"),"p"); # overlapped(p,q)
+occ(over("p","q"),"q"); # overlapped(q,p)
+"p"&~holds(~over("p","q"),"p"); # overlaps(p,q)
+"q"&~holds(~over("q","p"),"q"); # overlaps(q,p)
+met("p",between("q","p")); # after(p,q)
+met("q",between("p","q")); # after(q,p)
+meets("p",~"p");
+meets("q",~"q");
+meets("p", between("p","q")); # before(p,q)
+meets("q", between("q","p")); # before(q,p)
+occ(~"p" >=! 1, ~("q" >=! 1)); # btw1st(p,q) = occ(p=>0,~(q=>1)) = occ((~p)>=!1, ~(q>=!1))
+occ("p" >=! 1, ~("q" >=! 1)); # btw1st(~p,q)
+occ("p" >=! 1, ~(~"q" >=! 1)) # btw1st(~p,~q)

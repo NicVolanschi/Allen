@@ -1,0 +1,463 @@
+#!/usr/bin/perl
+# Copyright 2018 Inria. This file is part of Allen.
+#
+# Allen is free software: you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
+#
+# Allen is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with Allen.  If not, see <https://www.gnu.org/licenses/>.
+
+#
+# Compiler for the Allen DSL.
+#
+
+my $usage = "Usage: test.pl fname";
+die "$usage\n" if @ARGV != 1;
+my $fname = $ARGV[0];
+
+open(IN, "<", $fname) or
+  die "cannot open input file $fname";
+
+# Prog -> Lib Rules
+# Lib -> Def*
+# Def -> "def" id ("[" id+(",") "]")? ("(" id+(",") ")")?
+#        "=" Context
+# Rules -> Context ";" Rules | Context
+# Context -> "let" id "=" Expr Context "in" | Expr
+# Expr -> Prod "|" Expr | Prod
+# Prod -> Comp "&" Prod | Comp
+# Comp -> Expr1 (">=!"|"<="|">="|"<"|">") Int | Expr1
+# Expr1 -> "~" Expr1 | "(" Expr ")" | str
+#       | id ("[" Int+(",") "]")? ("(" Expr+(",") ")")?
+# Int -> id | int ("hr" | "min" | "sec")?
+
+# NB: removed str case from Int
+
+my $line = "";
+
+# while (1) {
+#   my ($typ, $tok) = &token(1);
+#   last if $typ eq "eof";
+#   print "$tok: $typ\n";
+# }
+# print "done\n";
+# exit;
+
+my $l = &parse_lib();
+#&print_ast($l);
+#print "\n";
+my $p = &parse_rules();
+#&print_ast($p);
+#print "\n";
+
+print "# User-defined operators\n\n";
+for my $d (@$l) {
+  gen_def($d);
+}
+print "\n# User-defined contexts\n[\n";
+for my $r (@{$p}) {
+  gen_context($r);
+  print ",\n";
+}
+print "]\n";
+exit;
+
+# ----------------- parsing ---------------------
+
+sub parse_lib() {
+  my @defs = ();
+  my ($typ, $tok) = &token(0); # look ahead
+  while ($typ eq "key" && $tok eq "def") {
+    my $d = &parse_def();
+    push @defs, $d;
+    ($typ, $tok) = &token(0); # look ahead
+  }
+  return \@defs;
+}
+
+sub parse_def() {
+  my ($typ, $tok) = &token(1);
+  die "def expected, found $tok at $line"
+    if $typ ne "key" || $tok ne "def";
+  my ($typ2, $tok2) = &token(1);
+  die "id expected in def, found $tok2 at $line"
+    if $typ2 ne "id";
+  my @pars = ();
+  my ($typ3, $tok3) = &token(0); # lookahead
+  if ($typ3 eq "key" && $tok3 eq "[") {
+    &token(1); # consume '['
+    do {
+      my ($typ4, $tok4) = &token(1);
+      die "id expected in def, found $tok4 at $line"
+        if $typ4 ne "id";
+      push @pars, $tok4;
+      ($typ3, $tok3) = &token(1);
+    } while ($typ3 eq "key" && $tok3 eq ",");
+    die "expected closing par, found: $tok3"
+      if $typ3 ne "key" || $tok3 ne "]";
+  }
+  my @args = ();
+  ($typ3, $tok3) = &token(0); # lookahead
+  if ($typ3 eq "key" && $tok3 eq "(") {
+    &token(1); # consume '('
+    do {
+      my ($typ5, $tok5) = &token(1);
+      die "id expected in def, found $tok5 at $line"
+        if $typ5 ne "id";
+      push @args, $tok5;
+      ($typ3, $tok3) = &token(1);
+    } while ($typ3 eq "key" && $tok3 eq ",");
+    die "expected closing par, found: $tok3 at $line"
+      if $typ3 ne "key" || $tok3 ne ")";
+  }
+  my ($typ6, $tok6) = &token(1);
+  die "= expected in def, found $tok6 at $line"
+    if $typ6 ne "key" || $tok6 ne "=";
+  my $e = &parse_context();
+  return ["def", $tok2, \@pars, \@args, $e];
+}
+
+
+sub parse_rules() {
+  my $e1 = &parse_context();
+  my @contexts = ($e1);
+  my ($typ, $tok) = &token(1);
+  while ($typ eq "key" && $tok eq ";") {
+    my $e2 = &parse_context();
+    push @contexts, $e2;
+    ($typ, $tok) = &token(1);
+  }
+  die "garbage at end of program: $tok at $line"
+    if $typ ne "eof";
+  return \@contexts;
+}
+
+sub parse_context() {
+  my ($typ, $tok) = &token(0); # look ahead
+  if ($typ eq "key" && $tok eq "let") {
+    &token(1); # consume "let"
+    my ($typ2, $tok2) = &token(1);
+    die "id expected in let, found $tok2 at $line"
+      if $typ2 ne "id";
+    my ($typ3, $tok3) = &token(1);
+    die "= expected in let, found $tok3 at $line"
+      if $typ3 ne "key" || $tok3 ne "=";
+    my $e1 = &parse_expr();
+    my ($typ4, $tok4) = &token(1);
+    die "'in' expected in let, found $tok4 at $line"
+      if $typ4 ne "key" || $tok4 ne "in";
+    my $e2 = &parse_context();
+    return ["let", $tok2, $e1, $e2];
+  } else {
+    return &parse_expr();
+  }
+}
+
+# left-recursive
+sub parse_expr() {
+  my $e1 = &parse_prod();
+  my ($typ, $tok) = &token(0); # look ahead
+  if ($typ eq "key" && $tok =~ /^[|]$/) {
+    &token(1); # consume binary operator
+    my $e2 = &parse_expr();
+    return ["or", $e1, $e2];
+  } else {
+    return $e1;
+  }
+}
+
+sub parse_prod() {
+  my $e1 = &parse_comp();
+  my ($typ, $tok) = &token(0); # look ahead
+  if ($typ eq "key" && $tok =~ /^[&]$/) {
+    &token(1); # consume binary operator
+    my $e2 = &parse_prod();
+    return ["and", $e1, $e2];
+  } else {
+    return $e1;
+  }
+}
+
+sub parse_comp() {
+  my $e1 = &parse_expr1();
+  my ($typ, $tok) = &token(0); # look ahead
+  if ($typ eq "key" && $tok =~ /^(>=!|<=|>=|<|>)$/) {
+    &token(1); # consume binary operator
+    my $e2 = &parse_int();
+    return [$tok, $e1, $e2];
+  } else {
+    return $e1;
+  }
+}
+
+sub parse_int() {
+  my ($typ, $tok) = &token(1);
+  if($typ eq "int") {
+    my $i = $tok;
+    my ($typ2, $tok2) = &token(0);
+    if ($typ2 eq "key" && $tok2 =~ /^(day|hr|min|sec)$/) {
+      &token(1); # consume binary operator
+      $i *= 1000;
+      if ($tok2 eq "min") { $i *= 60; }
+      elsif ($tok2 eq "hr") { $i *= 60 * 60; }
+      elsif ($tok2 eq "day") { $i *= 24 * 60 * 60; }
+    }
+    return $i;
+  } elsif ($typ eq "id") {
+    return $tok;
+  # } elsif ($typ eq "str") {
+  #   return "\"$tok\"";
+  } else {
+    die "expected int or id constant, found $tok at $line";
+  }
+}
+
+# non left-recursive
+sub parse_expr1() {
+  my ($typ, $tok) = &token(1);
+  die "empty expr" if !defined($typ);
+  if ($typ eq "key") {
+    if ($tok eq "~") {
+      my $e = &parse_expr1();
+      return ["not", $e];
+    } elsif ($tok = "(") {
+      my $e = &parse_expr();
+      my ($typ2, $tok2) = &token(1);
+      die "expected closing par, found: $tok2 at $line"
+        if $typ2 ne "key" || $tok2 ne ")";
+      return $e;
+    } else {
+      die "expr starts with invalid key: $key at $line";
+    }
+  } elsif ($typ eq "id") {
+    my @pars = ();
+    my ($typ2, $tok2) = &token(0); # lookahead
+    if ($typ2 eq "key" && $tok2 eq "[") {
+      &token(1); # consume '['
+      do {
+        my $e = &parse_int();
+        push @pars, $e;
+        ($typ2, $tok2) = &token(1);
+      } while ($typ2 eq "key" && $tok2 eq ",");
+      die "expected closing par, found: $tok2"
+        if $typ2 ne "key" || $tok2 ne "]";
+    }
+    my @args = ();
+    ($typ2, $tok2) = &token(0); # lookahead
+    if ($typ2 eq "key" && $tok2 eq "(") {
+      &token(1); # consume '('
+      do {
+        my $e = &parse_expr();
+        push @args, $e;
+        ($typ2, $tok2) = &token(1);
+      } while ($typ2 eq "key" && $tok2 eq ",");
+      die "expected closing par, found: $tok2"
+        if $typ2 ne "key" || $tok2 ne ")";
+    }
+    if ($#pars >= 0 || $#args >= 0) {
+      return [$tok, \@pars, @args];
+    } else {
+      return $tok;
+    }
+  } elsif ($typ eq "int") {
+    die "unexpected int $tok at $line";
+  } elsif ($typ eq "str") {
+    return $tok;
+  } else {
+    die "strange token $tok:$typ";
+  }
+}
+
+# returns, and optionally consumes the next token
+sub token() {
+  my ($consume) = @_;
+  #print "called token($consume) on $line\n";
+  while (1) {
+    $line =~ s/^\s*//o; # whitespace
+    $line =~ s/^#.*//o; # comments
+    last if $line ne "";
+    $line = <IN>;
+    #print "read: $line";
+    if (!defined($line)) {
+      #print "line undef\n";
+      return ("eof", undef);
+    }
+    chomp $line;
+  }
+  my $typ;
+  my $tok;
+  if ($line =~ /^(\d+)/) {
+    ($typ, $tok) = ("int", $1);
+  } elsif ($line =~ /^([][&|~(),;=]|>=!|<=|>=|<|>|(day|hr|min|sec|let|in|def)\b)/) {
+    ($typ, $tok) = ("key", $1);
+  } elsif ($line =~ /^([a-zA-Z]\w*)/) {
+    ($typ, $tok) = ("id", $1);
+  } elsif ($line =~ /^("[^"]*")/) {
+    ($typ, $tok) = ("str", $1);
+  } else {
+    die "unknown token at: $line\n";
+  }
+  if ($consume) {
+    $line = substr($line, length($tok));
+  }
+  #print "token($consume): return ($typ, $tok); remains: $line\n";
+  return ($typ, $tok);
+}
+
+sub print_ast() {
+  my ($t) = @_;
+  #print "called print_ast($t)\n";
+  if (ref $t eq "ARRAY") {
+    print "[";
+    for(my $i = 0; $i <= $#$t; $i++) {
+      &print_ast($t->[$i]);
+      if ($i < $#$t) {
+        print ", ";
+      }
+    }
+    print "]";
+  } elsif (ref $t eq "") { # scalar
+    if ($t =~ /^\d+$/) {
+      print "$t";
+    } else {
+      print "\"$t\"";
+    }
+  }
+}
+
+# ----------------- generation ---------------------
+
+sub gen_expr() {
+  my ($t) = @_;
+  #print "called print_ast($t)\n";
+  if (ref $t eq "ARRAY") {
+    die "gen_context([])" if $#$t < 0;
+    my $op = $t->[0];
+    my $pars;
+    if ($op !~ /^(>=!|<=|>=|<|>|and|or|not)$/) { # macro
+      $pars = $t->[1];
+    }
+    if ($pars) { # macro
+      # native macros first:
+      if ($op eq "delay") { # unary op
+        print "[&$op(";
+        &gen_expr($pars->[0]);
+        print "),";
+        &gen_expr($t->[2]);
+        print "]";
+      } elsif ($op eq "wave") { # nullary op
+        print "[&$op(";
+        &gen_expr($pars->[0]);
+        print ",";
+        &gen_expr($pars->[1]);
+        print ",";
+        &gen_expr($pars->[2]);
+        print ",";
+        &gen_expr($pars->[3]);
+        print ")]";
+      } else { # user-defined macros:
+        print "&$op(";
+        my @args = (@$t[2..$#$t], @$pars);
+        &gen_expr($args[0]);
+        for my $x (@args[1..$#args]) {
+          print ",";
+          &gen_expr($x);
+        }
+        print ")";
+      }
+    } else { # op
+      print "[&";
+      if ($op =~ /^(>=!|<=|>=|<|>)$/) {
+        print $op eq ">=!"? "geRT":
+          $op eq "<="? "le":
+          $op eq ">="? "ge":
+          $op eq "<"? "lt":
+          $op eq ">"? "gt":
+          die "unknown comparator $op";
+        print "(";
+        &gen_expr($t->[2]);
+        print "), ";
+        &gen_expr($t->[1]);
+      } else {
+        print $op;
+        for (my $i = 1; $i <= $#$t; $i++) {
+          print ", ";
+          &gen_expr($t->[$i]);
+        }
+      }
+      print "]";
+    }
+  } elsif (ref $t eq "") { # scalar
+    if ($t =~ /^\d+$/) {
+      print "$t";
+    } elsif ($t =~ /^"/) {
+      print "$t";
+    } else {
+      print "\$$t";
+    }
+  }
+}
+
+sub gen_context() {
+  my ($t) = @_;
+  my ($var, $val, $body) = &match_let($t);
+  if (defined($var)) {
+    print "sub{";
+    &gen_let($t);
+    print "}->()";
+  } else {
+    &gen_expr($t);
+  }
+}
+
+sub match_let() {
+  my ($t) = @_;
+  if (ref $t eq "ARRAY" && $#$t >=1 && $t->[0] eq "let") {
+    die "invalid let" if $#$t != 3;
+    my (undef, $var, $val, $body) = @$t;
+    return ($var, $val, $body);
+  } else {
+    return undef;
+  }
+}
+
+sub gen_let() {
+  my ($t) = @_;
+  my ($var, $val, $body) = &match_let($t);
+  if (defined($var)) {
+    print "my \$$var=";
+    &gen_expr($val);
+    print "; ";
+    &gen_let($body);
+  } else {
+    &gen_expr($t);
+  }
+}
+
+sub gen_def() {
+  my ($def) = @_;
+  die "invalid def"
+    if ref $def ne "ARRAY" || $#$def != 4;
+  my (undef, $nm, $pars, $args, $body) = @$def;
+  print "sub $nm() {\n";
+  print "  my (";
+  my @vars = (@$args, @$pars);
+  for (my $i = 0; $i <= $#vars; $i++) {
+    print "\$$vars[$i]";
+    print "," if $i < $#vars;
+  }
+  print ") = \@_;\n";
+  # print "  return ";
+  # &gen_context($body);
+  print "  ";
+  &gen_let($body);
+  print ";\n";
+  print "}\n";
+}

@@ -1,0 +1,10 @@
+# Simple examples of Allen programming
+
+def foo[T](x,y) =
+  let o = over(x, y) in
+  o >=! T
+
+# Rules to check:
+
+foo[1]("p", "q");
+foo[1]("q", "p")

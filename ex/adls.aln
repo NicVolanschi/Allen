@@ -1,0 +1,38 @@
+# Recognizers for Activities of Daily Living (ADLs) for HomeAssist
+
+# {Cupboard becomes open and CoffeeMaker becomes on} occurred while BreakfastTime
+def breakfast =
+  let x = slot_dst[7hr, 9hr] in
+  occ(up("ContactS_Cupboard"), x) & occ(up("EMeter_Coffeemaker"), x)
+
+# Lunch reheat
+# { ( Freezer becomes open precedes within 10 minutes Stove becomes on )
+# or
+# ( Freezer becomes open occurred while
+# Stove is on ) } occurred while Lunch Time
+def lunch =
+  occ(recent[30min](up("ContactS_Fridge")) & "EMeter_Coffeemaker",
+      slot_dst[8hr, 13hr])
+
+# {Fridge becomes open and Microwave becomes on} occurred while Dinner Time
+# [&and, &occ(&up("ContactS_Fridge"), $x=&slot_dst(18*60*60*1000, 21*60*60*1000)),
+#         &occ(&up("EMeter_Microwave"), $x)],
+def dinner =
+  let x = slot_dst[8hr, 13hr] in
+  occ(up("ContactS_Fridge"), x) & occ(up("EMeter_Coffeemaker"), x)
+
+# ( Presence(Bathroom) becomes false precedes within 10 minutes Presence(Bedroom) becomes true )
+# occurred while Go-to-bed Time
+#def gotobed[T](m1, m2) =
+#  occ(recent(dn(m1), T) & up(m2), slot_dst[21hr, 24hr])
+def gotobed[T, m1, m2] =
+  occ(recent(dn(m1), T) & up(m2), slot_dst[21hr, 24hr])
+
+# ( Presence(Bedroom) becomes false precedes within 10 minutes Presence(Kitchen) becomes true )
+# occurred while Wake-up Time
+#def wakeup[T](m1, m2) =
+#  occ(recent(dn(m1), T) & up(m2), slot_dst[7hr, 9hr])
+def wakeup[T, m1, m2] =
+  occ(recent(dn(m1), T) & up(m2), slot_dst[7hr, 9hr])
+
+init[1] # dummy rule

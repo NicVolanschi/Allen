@@ -1,0 +1,3066 @@
+#!/usr/bin/perl
+# Copyright 2018 Inria. This file is part of Allen.
+#
+# Allen is free software: you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
+#
+# Allen is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with Allen.  If not, see <https://www.gnu.org/licenses/>.
+
+#
+# The Allen interpreter, implemented as a deeply embedded DSL.
+#
+
+my $usage = "dsl.pl [options] ruleset log
+where ruleset is a Perl module ending with a list of rules";
+
+use Getopt::Std;
+our %opts = ();
+my $forgot; # counter of forgot events
+my $tforgot; # memorize the time up to which we forgot the events
+
+getopts('f:r:spl:td', \%opts) or die "available options:
+  -f N: try forgetting old events every N virtual seconds
+  -r N: execute rule #N
+  -s: execute all rules in sequence
+  -p: execute all rules in parallel (any_up)
+  -l lib: load operator library lib
+  -t: print trace of events & timeouts
+  -d: dump final & intermediate streams";
+
+die "f option must be a number N > 0"
+  if defined($opts{'f'}) && $opts{'f'} !~ /^\d+$/;
+
+use FindBin;
+use lib $FindBin::Bin;
+#use stdlib;
+
+sub load() {
+  my ($name) = @_;
+  print "loading library $name...\n";
+  my $res = do "$name";
+  die "error ($!) in library $name : $@" if !defined($res);
+  print "load result = $res\n";
+  #print "loaded $#$rules rules.\n";
+  return $res;
+}
+
+my %in = ();
+
+# ------------------------------------------------------
+# Allen operators
+
+sub meets() {
+  my ($p, $q) = @_;
+  return [\&meets2, $p, $q];
+}
+
+sub met() {
+  my ($p, $q) = @_;
+  return [\&met2, $p, $q];
+}
+
+sub starts() {
+  my ($p, $q) = @_;
+  return [\&starts2, $p, $q];
+}
+
+sub ends() {
+  my ($p, $q) = @_;
+  return [\&ends2, $p, $q];
+}
+
+sub started() {
+  my ($p, $q) = @_;
+  return &occ(&starts($q, $p), $p);
+}
+
+sub ended() {
+  my ($p, $q) = @_;
+  return &ex(&ends($q, $p), $p);
+}
+
+sub eq() {
+  my ($p, $q) = @_;
+  return [\&eq2, $p, $q];
+}
+
+sub during() {
+  my ($p, $q) = @_;
+  return [\&during2, $p, $q];
+}
+
+sub contains() {
+  my ($p, $q) = @_;
+  return &ex(&during( $q, $p), $p);
+}
+
+sub over() {
+  my ($p, $q) = @_;
+  return [\&over2, $p, $q];
+}
+
+sub overlaps() {
+  my ($p, $q) = @_;
+  return &ex(&over($p, $q), $p);
+}
+
+sub overlapped() {
+  my ($p, $q) = @_;
+  return &occ(&over($q, $p), $p);
+}
+
+sub holds() {
+  my ($p, $q) = @_;
+  return [\&holds2, $p, $q];
+}
+
+# exists(p,q)
+sub ex() {
+  my ($p, $q) = @_;
+  return [&and, $q, [&not, &holds( [&not, $p], $q)]];
+}
+
+sub occ() {
+  my ($p, $q) = @_;
+  return [\&occ2, $p, $q];
+}
+
+sub btw() {
+  my ($p, $q) = @_;
+  return &over([&not, $q], [&not, $p]);
+}
+
+sub between() {
+  my ($p, $q) = @_;
+  return [\&between2, $p, $q];
+}
+
+sub before() {
+  my ($p, $q) = @_;
+  return &meets($p, &between($p, $q));
+}
+
+sub after() {
+  my ($p, $q) = @_;
+  return &met($p, &between($q, $p));
+}
+
+sub btwin() {
+  my ($p, $q) = @_;
+  return [\&btwin2, $p, $q];
+}
+
+# ------------------------------------------------------
+# Other derived operators
+
+# p goes up (p=>1)
+sub up() {
+  my ($p) = @_;
+  return [&geRT(1), $p];
+}
+
+# p goes down (p=>0)
+sub dn() {
+  my ($p) = @_;
+  return [&geRT(1), [&not, $p]];
+}
+
+# p switches value (p=>0/1)
+sub sw() {
+  my ($p) = @_;
+  return [&or, &up($p), &dn($p)];
+}
+
+# return all the intervals of p, cut at T if longer
+sub cut() {
+  my ($p, $T) = @_;
+  return [&or, [&le($T), $p], [&gtRT($T), $p]];
+}
+
+# prolonges each interval of p by T
+sub recent() {
+  my ($p, $T) = @_;
+  return [&or, $p, &cut([&not, $p], $T)];
+}
+
+sub lreduce() { # associate left: (a+b)+c
+  my ($f, @lst) = @_;
+  if($#lst < 0) { die "no args"; }
+  my $res = $lst[0];
+  for(my $i = 1; $i <= $#lst; $i++) {
+    $res = &$f($res, $lst[$i]);
+  }
+  return $res;
+}
+
+sub rreduce() { # associate right: a+(b+c)
+  my ($f, @lst) = @_;
+  if($#lst < 0) { die "no args"; }
+  my $res = $lst[$#lst];
+  for(my $i = $#lst - 1; $i >= 0 ; $i--) {
+    $res = &$f($lst[$i], $res);
+  }
+  return $res;
+}
+
+# intervals of p "far away" (i.e. separated by at least T) from intervals of q
+# nary or
+sub any() {
+  my (@lst) = @_;
+  return &lreduce(sub {my ($p, $q) = @_; return [&or, $p, $q]}, @lst);
+}
+
+# nary and
+sub all() {
+  my (@lst) = @_;
+  return &lreduce(sub {my ($p, $q) = @_; return [&and, $p, $q]}, @lst);
+}
+
+# nary or_up
+sub any_up() {
+  my (@lst) = @_;
+  return &any(map {&up($_)} @lst);
+}
+
+sub any_dn() {
+  my (@lst) = @_;
+  return &any(map {&dn($_)} @lst);
+}
+
+sub any_sw() {
+  my (@lst) = @_;
+  return &any(map {&sw($_)} @lst);
+}
+
+# wave signal which is 1 every day between daytimes from and to
+# NB: DST-safe! (daylight saving time)
+sub slot_dst() {
+  my ($from, $to) = @_;
+  my $ts2 = 1490482800000; # 26/03/2017 (start summer time)
+  my $ts3 = 1509228000000; # 29/10/2017 (end summer time)
+  return &slot(($from, $to, $ts2, $ts3));
+}
+
+# NB: optionnally DST-safe (daylight saving time)
+sub slot() {
+  my ($from, $to, $tsummer, $twinter) = @_;
+  my $ts0 = 1483225200000; # 01/01/2017 00:00:00
+    # 1487631600000; # 21/02/2017 00:00:00
+  my $ts1 = 1514761200000; # 01/01/2018 00:00:00
+    # 1491775200000; # 10/04/2017 00:00:00
+  my $t1 = $from < $to? $to - $from: 24*60*60*1000 + $to - $from;
+  my $t0 = 24*60*60*1000 - $t1;
+  #return [&delay($ts0 + $to), [&wave($t0, $t1, 0, $ts1 - $ts0)]];
+  if(!defined($tsummer)) {
+    return [&wave($t0, $t1, $ts0 + $to, $ts1)];
+  } else {
+    return
+      [&or, [&or, [&wave($t0, $t1, $ts0 + $to, $tsummer)],
+                  [&wave($t0, $t1, $tsummer - (24+1)*60*60*1000 + $to, $twinter)]],
+            [&wave($t0, $t1, $twinter - (24-1)*60*60*1000 + $to, $ts1)]];
+  }
+}
+
+sub far() {
+  my ($p, $q, $T) = @_;
+  return &starts($p, &during( &recent($p, $T), [&not, &recent($q, $T)]));
+}
+
+# true when p and q occur or occured recently (at most $T ago)
+# (approximates `p and q within T')
+sub within() {
+  my ($p, $q, $T) = @_;
+  return [&and, &recent($p, $T), &recent($q, $T)];
+}
+
+sub between_first() {
+  my ($p, $q) = @_;
+  return &occ(&dn($p), [&not, &up($q)]);
+}
+
+sub between_first_e_e() {
+  my ($e1, $e2) = @_;
+  return &occ($e1, [&not, $e2]);
+}
+
+# the first interval of p starting or during q
+sub first() {
+  my ($p, $q) = @_;
+  return &starts($p, &occ($p, $q));
+}
+
+# fill holes between p's wihtin q
+sub fill() {
+  my ($p, $q) = @_;
+  return [&or, [&and, $p, $q], &during( [&not, $p], $q)];
+}
+
+# extends flat rightwards to end of slot q if p reaches the end of slot
+sub flat_right() {
+  my ($p, $q) = @_;
+  return [&and, &occ(&up($p), $q), &fill($p, $q)];
+}
+
+# step function, becoming true at T
+sub step() {
+  my ($T) = @_;
+  return [&wave($T,0,0,0)];
+}
+
+# true only initially, at the beginning of time (t=0)
+sub init() {
+  return [&not, &step(1)];
+}
+
+# collapse all p's during q
+sub flat() {
+  my ($p, $q) = @_;
+  my $d;
+  return [&or, $d=&during( $p, $q), &during( [&not, $d], $q)];
+}
+
+# ---------------------- Main program --------------------------------
+
+die $usage if @ARGV != 2;
+my $rules = shift @ARGV;
+open(IN, "<", $ARGV[0]) or die "cannot open $ARGV";
+if(defined($opts{'l'})) {
+  &load($opts{'l'});
+}
+my $fname = "$rules";
+my $rules = &load($fname);
+my @forms = @$rules;
+if(defined($opts{'r'})) {
+  die "no rule #$opts{'r'}" if $opts{'r'} < 0 || $opts{'r'} > $#forms;
+  &interpret($forms[$opts{'r'}]);
+} elsif(defined($opts{'p'})) {
+  &interpret(&any_up(@forms));
+} elsif(defined($opts{'s'})) {
+  for(my $i=0; $i<=$#forms; $i++) {warn "form $i/$#forms\n"; &interpret($forms[$i]); seek IN, 0, 0;}
+} else {
+  die "undefined form";
+}
+exit;
+
+# ------------------------------------------------------
+
+sub print_form() {
+  my ($form) = @_;
+  if(ref $form eq "ARRAY") {
+    my @trees = @$form[1 .. $#$form];
+    return "[" . (join ",", $$form[0], (map {&print_form($_)} @trees)) . "]";
+  } elsif(ref $form eq "") { # leaf
+    return "$form";
+  } else {
+    die "invalid form $form";
+  }
+}
+
+sub domain() {
+  my ($form) = @_;
+  my %h = (&domain_h($form));
+  return keys %h;
+}
+
+# returns the domain of a form as a set (i.e. a hash : string->1)
+sub domain_h() {
+  my ($form) = @_;
+  if(ref $form eq "ARRAY") {
+    my @trees = @$form[1 .. $#$form];
+    return map {&domain_h($_)} @trees;
+  } elsif(ref $form eq "") { # leaf
+    if($form !~ /^\d+$/) { # sensor
+      return ($form => 1);
+    } else { # shared subtree
+      return ();
+    }
+  } else {
+    die "invalid form";
+  }
+}
+
+sub codomain() {
+  my ($form, $out) = @_;
+  my %h=();
+  my $n=0;
+  return &codomain_rec($form, $out, \%h, \$n);
+}
+
+sub codomain_rec() {
+  my ($form, $out, $h, $n) = @_;
+  if(ref $form eq "ARRAY") {
+    if(defined($h->{$form})) { # shared subtree
+      return ();
+    }
+    my @trees = @$form[1 .. $#$form];
+    my @res = ((map {&codomain_rec($_, $out, $h, $n)} @trees), ($h->{$form} = $$n++));
+    return @res;
+  } elsif(ref $form eq "") { # leaf
+    return ();
+  } else {
+    die "invalid form";
+  }
+}
+
+sub form2expr() {
+  my ($form, $out) = @_;
+  my %h=();
+  my $n=0;
+  return &form2expr_rec($form, $out, \%h, \$n);
+}
+
+sub form2expr_rec() {
+  my ($form, $out, $h, $n) = @_;
+  if(ref $form eq "ARRAY") {
+    if(defined($h->{$form})) { # shared subtree
+      return [$$out[$h->{$form}]];
+    }
+    my @trees = @$form[1 .. $#$form];
+    my $res = [$$form[0], (map {&form2expr_rec($_, $out, $h, $n)} @trees), ($h->{$form} = $$n++)];
+    return $res;
+  } elsif(ref $form eq "") { # leaf
+    return [$in{$form}];
+  } else {
+    die "invalid form";
+  }
+}
+
+sub link() {
+  my ($expr, $out, $outix) = @_;
+  my $h=();
+  %$outix = ();
+  return &link_rec($expr, $out, $h, $outix);
+}
+
+# Return a list of out stream computations: [op [outs-arg...] outs-res],
+# in standard postorder (left to right).
+# Also fill outix with indices of out-streams.
+sub link_rec() {
+  my ($expr, $out, $h, $outix) = @_;
+  if(ref $expr eq "ARRAY") {
+    if($#$expr > 0) {
+      if(defined($h->{$expr})) { # shared subtree
+        return ();
+      }
+      my @trees = @$expr[1 .. $#$expr - 1];
+      my @res = (map {&link_rec($_, $out, $h, $outix)} @trees); # glue lists from args
+      # add the current node's computation
+      my $ix = $$expr[$#$expr];
+      my $comp = [$$expr[0], (map {$#$_>0? $out->[$$_[$#$_]]: $$_[0]} @trees), ($h->{$expr} = $out->[$ix])];
+      $outix->{$out->[$ix]} = $ix;
+      print "comp: [$$expr[0]," . (join ",", (map {$#$_>0? "\$out->[$$_[$#$_]]": defined($outix->{$$_[0]})? "\$out->[$outix->{$$_[0]}]": "in:$$_[0]"} @trees)) . ",\$out->[$ix]]\n";
+      return (@res, $comp);
+    } else { # leaf (in stream)
+      return ();
+    }
+  } else {
+    die "invalid expr: $expr";
+  }
+}
+
+# inverse linking: compute list of parents in expr (in/out-stream => out-stream)
+sub ilink() {
+  my ($expr, $out) = @_;
+  my %h=();
+  my @irel = &ilink_rec($expr, $out, \%h);
+  return &rel2hash(@irel);
+}
+
+# return a hash of node=>[parent...]
+sub ilink_rec() {
+  my ($expr, $out, $h) = @_;
+  if(ref $expr eq "ARRAY") {
+    if($#$expr > 0) {
+      if(defined($h->{$expr})) { # shared subtree
+        return ();
+      }
+      my @trees = @$expr[1 .. $#$expr - 1];
+      my @res = (map {&ilink_rec($_, $out, $h)} @trees); # glue lists from args
+      # add reverse pointers to the current node
+      my $ix = $$expr[$#$expr];
+      #my @pub = (map {($#$_>0? $out->[$$_[$#$_]]: $$_[0] => $out->[$ix])} @trees);
+      my @pub = (map {($#$_>0? $out->[$$_[$#$_]]: $$_[0] => $out->[$ix])} @trees);
+      $h->{$expr} = 1;
+      #print "pub: " . (join ",", (map {($#$_>0? "\$out->[$$_[$#$_]]": "in:$$_[0]" => "\$out->[$ix]")} @trees)) . "\n";
+      return (@res, @pub);
+    } else { # leaf (in stream)
+      return ();
+    }
+  } else {
+    die "invalid expr: $expr";
+  }
+}
+
+sub rel2hash() {
+  my (@rel) = @_;
+  die "invalid relation" if ($#rel + 1) % 2 != 0;
+  my %res = ();
+  for(my $i = 0; $i < $#rel; $i += 2) {
+    my $a = $rel[$i];
+    my $b = $rel[$i + 1];
+    if(!exists($res{$a})) {
+      $res{$a} = [];
+    }
+    push @{$res{$a}}, $b;
+  }
+  return %res;
+}
+
+sub print_expr() {
+  my ($expr) = @_;
+  if(ref $expr eq "ARRAY") {
+    if($#$expr > 0) {
+      my @trees = @$expr[1 .. $#$expr - 1];
+      return "[" . (join ",", $$expr[0], (map {&print_expr($_)} @trees), $$expr[$#$expr]) . "]";
+    } else {
+      return print_array_array_array($expr);
+    }
+  } else {
+    die "invalid expr: $expr";
+  }
+}
+
+sub interpret() {
+  my ($form) = @_;
+  print "form: " . &print_form($form) . "\n";
+  print "domain: ";
+  print join ",", &domain($form);
+  print "\n";
+  print "codomain: ";
+  print join ",", &codomain($form);
+  print "\n";
+  @in = ();
+  for my $s (&domain($form)) {
+    $in{$s} = [[0,0]];
+  }
+  my @out = ();
+  for my $i (&codomain($form)) {
+    $out[$i] = [];
+  }
+  my $expr = &form2expr($form, \@out);
+  print "expr: ";
+  print &print_expr($expr);
+  print "\n";
+  my %outix; # map out streams back to their index in @out
+  my @lexprs = &link($expr, \@out, \%outix);
+  my %iexpr = &ilink($expr, \@out);
+  print "iexpr: ";
+  for my $k (sort {$outix{$a} <=> $outix{$b}} keys %iexpr) {
+    my $knm = &stream_name($k, \%outix);
+    print "$knm=>[" . (join ",", (map {&stream_name($_, \%outix)} @{$iexpr{$k}})) . "] ";
+  };
+  print "\n";
+  my %h = &domain_h($form);
+  &csp(\@lexprs, \%iexpr, \%h, \@out, \%outix);
+  if(defined($opts{'d'})) {
+    print "streams:\n" . &print_streams(\@out) . "\n";
+  }
+  &export_stream($out[$#out]);
+}
+
+sub stream_name {
+  my ($str, $outix) = @_;
+  if(defined($outix->{$str})) {
+    return "\$out->[$outix->{$str}]";
+  } else {
+    return "in:$str";
+  }
+}
+
+my %timer; # map stream to list of increasing timeouts
+my $now;
+my $last; # last value of "now"
+my %timeout_now; # set of streams having timeout now (precomputed for tick())
+my %update; # time of last update to each stream
+
+sub csp() {
+  my ($lexprs, $iexpr, $base, $out, $outix) = @_;
+  my %lastval = (); # last value of each sensor
+  my %lastts = (); # last timestamp of each sensor value
+  my @pack = ();
+
+  %timer = ();
+  $last = undef;
+  $now = 0;
+  $forgot = 0;
+  $tforgot = 0;
+  %timeout_now = ();
+  for my $expr (@$lexprs) { # tick everything
+    &tick($expr);
+  }
+
+  my ($val, $s, $ts) = &next_event($base);
+  if(defined($val)) {
+    push @pack, [$val, $s, $ts];
+    while(1) {
+      my ($val, $s, $ts) = &next_event($base);
+      last if !defined($val);
+      next if defined($lastval{$s}) && $val == $lastval{$s}; # skip repeated values
+      if ($ts != $pack[$#pack]->[2]) { # pack is ready
+        my $tspack = $pack[$#pack]->[2];
+        &process_pack($lexprs, $iexpr, \@pack, $tspack, $out, $outix);
+        @pack = ();
+        &forget($out) if $opts{'f'};
+      } else {
+        print "simultaneous events\n";
+      }
+      push @pack, [$val, $s, $ts];
+      $lastval{$s} = $val;
+      $lastts{$s} = $ts;
+    }
+    my $tspack = $pack[$#pack]->[2];
+    &process_pack($lexprs, $iexpr, \@pack, $tspack, $out, $outix);
+  }
+  # process remaining timers
+  &process_timers($lexprs, $iexpr, undef, $out, $outix);
+  print "forgot $forgot events\n";
+}
+
+sub next_event() {
+  my ($base) = @_;
+  while(<IN>) {
+    my ($ts, $s, $val) = &parse_event($_);
+    next if !exists($base->{$s}); # skip irrelevant values
+    return ($val, $s, $ts);
+  }
+  return undef; # EOF
+}
+
+# process all timers up to $tspack (if defined)
+sub process_timers() {
+  my ($lexprs, $iexpr, $tspack, $out, $outix) = @_;
+  my $tout;
+  while(defined($tout = &next_timeout($now)) &&
+        (!defined($tspack) || $tout < $tspack)) {
+    $last = $now;
+    $now = $tout;
+    print "timeout $now\n" if defined($opts{'t'});
+    %timeout_now = (&timeouts_set($now));
+    my @todo_strs = (keys %timeout_now);
+    my %todo_ixs = (map {($outix->{$_} => 1)} @todo_strs);
+    &tick_set($lexprs, $iexpr, \%todo_ixs, $out, $outix);
+  }
+  return $tout;
+}
+
+sub process_pack() {
+  my ($lexprs, $iexpr, $ref_pack, $tspack, $out, $outix) = @_;
+  my $tout = &process_timers($lexprs, $iexpr, $tspack, $out, $outix);
+
+  # process the pack {
+  $last = $now;
+  $now = $tspack;
+  print "event(s) $now:" if defined($opts{'t'});
+  my @inputs = ();
+  for my $event (@$ref_pack) {
+    my ($val1, $s1, $ts1) = @$event;
+    $in{$s1} = [] if !exists($in{$s1});
+    push @{$in{$s1}}, [$now, $val1];
+    $update{$in{$s1}} = $now;
+    push @inputs, $in{$s1};
+    print " $s1" if defined($opts{'t'});
+  }
+  if(defined($opts{'t'})) {
+    if(defined($tout) && $tout == $now) {
+      print " + timeout(s)";
+    }
+    print "\n";
+  }
+  %timeout_now = (&timeouts_set($now));
+  my @todo_strs = ((map {@{$iexpr->{$_}}} @inputs), (keys %timeout_now));
+  my %todo_ixs = (map {($outix->{$_} => 1)} @todo_strs);
+  &tick_set($lexprs, $iexpr, \%todo_ixs, $out, $outix);
+  # } process the pack
+}
+
+sub parse_event() {
+  my ($line) = @_;
+  my (undef, $val, $s, undef, $ts) =
+    ($line =~ /\{"date":"[^"]*"(,"id":"[^"]*")?,"value":([-?\d.]*(?:[eE]-?\d+)?),"device":\{"location":"[^"]*","id":"([^"]*)"(,"type":"[^"]*")?\},"timestamp":(\d*)\}/o);
+  die "parse error:\n$_" if !defined($ts);
+  if($s =~ /^EMeter_/o) { # normalize value
+    if($val >= 20) { $val = 1; }
+    else { $val = 0; }
+  } elsif($s =~ /\.BatteryLevel$/o) { # normalize value
+    if($val >= 20) { $val = 1; }
+    else { $val = 0; }
+  } elsif($val != 1 && $val != 0) {
+    print "skipping non-bool value ($val, $s, $ts)\n";
+    next;
+  }
+  return ($ts, $s, $val) ;
+}
+
+sub forget() {
+  my ($out) = @_;
+  #my @outs = grep {defined($_)} @$out;
+  # min current time of all out streams
+  my $tforget = &min(map {&lastseen($_)} @$out);
+  return if $tforget - $tforgot < $opts{'f'} * 1000; # no use to redo
+  #print "forgetting up to $tforget\n";
+  # print "t=" . localtime($now / 1000). ": forget up to " . localtime($tforget / 1000) . "\n"
+  #   if $opts{'f'};
+  # forget out streams but last = the result
+  for(my $i = 0; $i < $#$out; $i++) {
+    &forget_stream($$out[$i], $tforget);
+  }
+  # forget in streams
+  for my $k (keys %in) {
+    #print "forget in $k up to $tforget\n";
+    &forget_stream($in{$k}, $tforget);
+  }
+  $tforgot = $tforget;
+}
+
+sub forget_stream() {
+  my ($s, $t) = @_;
+  my $ix = &lastval_ix($s, $t);
+  return if !defined($ix) || $ix == 0;
+  #print "forget stream $s up to $ix\n";
+  for(my $i = 0; $i < $ix; $i++) {
+    shift @$s;
+    $forgot++;
+  }
+}
+
+# computes the minimum between N numbers (not counting undefs)
+sub min() {
+  my @x = @_;
+  my $min;
+  for $i (@x) {
+    $min = $i if defined($i) && (!defined($min) || $i < $min);
+  }
+  return $min;
+}
+
+# set timeout at t for stream s
+sub set_timeout() {
+  my ($t, $s) = @_;
+  if(!exists $timer{$s}) {
+    $timer{$s} = [$t];
+  } else {
+    die "non-monotonic set_timer NYI"
+      if $#{$timer{$s}} >= 0 &&
+        $t < $timer{$s}[$#{$timer{$s}}];
+    push @{$timer{$s}}, $t
+      unless $#{$timer{$s}} >= 0 &&
+        $t == $timer{$s}[$#{$timer{$s}}];
+  }
+}
+
+# Get the streams among the given streams
+# (or in all streams if none specified) having a timeout at t
+sub timeouts() {
+  my ($t, @streams) = @_;
+  @streams = (keys %timer) if @streams == 0;
+  my @res = ();
+  for my $s (@streams) {
+    next if !exists($timer{$s});
+    for(my $i = $#{$timer{$s}}; $i >= 0 && $timer{$s}[$i] >= $t; $i--) {
+      push @res, $s if $timer{$s}[$i] == $t;
+    }
+  }
+  return @res;
+}
+
+# Like timeouts() but returns a set (i.e. a hash)
+sub timeouts_set() {
+  my ($t, @streams) = @_;
+  my @a = &timeouts($t, @streams);
+  my %h = ();
+  for my $s (@a) {
+    $h{$s} = 1;
+  }
+  return %h;
+}
+
+# Cancel timeout at t for the given stream
+sub cancel_timeout() {
+  my ($t, $s) = @_;
+  return if !exists $timer{$s};
+  for(my $i = $#{$timer{$s}}; $i >= 0 && $timer{$s}[$i] >= $t; $i--) {
+    splice @{$timer{$s}}, $i, 1 if $timer{$s}[$i] == $t;
+  }
+}
+
+# Check if one of the given streams
+# (or in all streams if none specified) have a timeout at t
+sub timeout() {
+  my ($t, @streams) = @_;
+  my @res = &timeouts($t, @streams);
+  return (@res > 0);
+}
+
+# Get the first timeout greater than t in the given streams
+# (or in all streams if none specified)
+sub next_timeout() {
+  my ($t, @streams) = @_;
+  @streams = (keys %timer) if @streams == 0;
+  my $t1; # will contain the min of all timeouts > t
+  for my $s (@streams) {
+    next if !exists($timer{$s});
+    for(my $i = $#{$timer{$s}}; $i >= 0 && $timer{$s}[$i] > $t; $i--) {
+      $t1 = $timer{$s}[$i] if !defined($t1) || $timer{$s}->[$i] < $t1;
+    }
+  }
+  return $t1;
+}
+
+# evaluate expr starting from out-indices on the todo list, along backlinks in iexpr
+sub tick_set {
+  my ($ref_exprs, $iexpr, $todo, $out, $outix) = @_;
+  while(keys %$todo > 0) {
+    my $ix = &min(keys %$todo);
+    delete $todo->{$ix};
+    my $str = $out->[$ix];
+    print "tick out[$ix]=$str, node=[$ref_exprs->[$ix][0],$ref_exprs->[$ix][1]]\n" if $opts{'t'};
+    &tick($ref_exprs->[$ix]);
+    if($update{$str} == $now) {
+      #print "propagate to: ";
+      for my $s (@{$iexpr->{$str}}) {
+        #print "$outix->{$s}, ";
+        $todo->{$outix->{$s}} = 1;
+      }
+      #print "\n";
+    }
+  }
+}
+
+sub tick {
+  my ($ref_expr) = @_;
+  my $n = $#$ref_expr; # node arity
+  if($n == 1) {
+    my ($op0, $outs) = @$ref_expr;
+    &loop0($op0, $last, $outs);
+  } elsif($n == 2) {
+    my ($op1, $r, $outs) = @$ref_expr;
+    &loop1($op1, $last, $r, $outs);
+  } elsif ($n == 3) { # op2
+    my ($op2, $r, $s, $outs) = @$ref_expr;
+    &loop2($op2, $last, $r, $s, $outs);
+  } elsif($n == 0) { # leaf
+    die "tick(leaf)";
+  } else {
+    die "tick: invalid expr[$#$ref_expr] = [$$ref_expr[0], ...]"
+  }
+}
+
+sub print_array_f() {
+  my ($ref_x, $f, $beg, $glu, $end) = @_;
+  return $beg . (join "$glu", map {&$f($_)} @{$ref_x}) . $end;
+}
+
+sub print_array() {
+  my ($ref_x) = @_;
+  return &print_array_f($ref_x, sub(){my ($x)=@_; return !defined($x)? "undef": $x;}, "[", ",", "]");
+}
+
+sub print_array_array() {
+  my ($ref_x) = @_;
+  return &print_array_f($ref_x, \&print_array, "[", ",", "]");
+}
+
+sub print_array_array_array() {
+  my ($ref_x) = @_;
+  return &print_array_f($ref_x, \&print_array_array, "[", ",\n", "]");
+}
+
+sub print_stream() {
+  my ($ref_p) = @_;
+  return &print_array_array($ref_p);
+}
+
+sub print_streams() {
+  my ($ref_l) = @_;
+  return &print_array_array_array($ref_l);
+}
+
+sub export_stream() {
+  my ($ref_p) = @_;
+  my $lastval = 0;
+  my $lastts = 0;
+  for my $e (@{$ref_p}) {
+    my ($ts, $val) = @$e;
+    if(defined($val) && $val != $lastval) {
+      use integer;
+      print localtime($ts / 1000) . "; $ts; " . $val . "; ";
+      if($val == 0) {
+        print (($ts - $lastts) / 1000);
+      }
+      print "\n";
+      $lastval = $val;
+      $lastts = $ts;
+    }
+  }
+}
+
+sub eq_array_f() {
+  my ($ref_x, $ref_y, $eq, $pr) = @_;
+  if ($#$ref_x != $#$ref_y) {
+    print "diff len: " . &$pr($ref_x) .
+        "\nvs      : " . &$pr($ref_y) . "\n";
+    return 0;
+  }
+  for (my $i = 0; $i <= $#$ref_x; $i++) {
+    if (not &$eq($$ref_x[$i], $$ref_y[$i])) {
+      print "diff elms: " . &$pr($ref_x) .
+          "\nvs       : " . &$pr($ref_y) . "\n";
+      return 0;
+    }
+  }
+  return 1;
+}
+
+sub eq_array_num() {
+  my ($ref_x, $ref_y) = @_;
+  return &eq_array_f($ref_x, $ref_y, sub(){my ($x,$y)=@_; return &sameval($x, $y);}, \&print_array);
+}
+
+sub eq_array_array_num() {
+  my ($ref_x, $ref_y) = @_;
+  return &eq_array_f($ref_x, $ref_y, \&eq_array_num, \&print_array_array);
+}
+
+sub eq_array_array_array_num() {
+  my ($ref_x, $ref_y) = @_;
+  return &eq_array_f($ref_x, $ref_y, \&eq_array_array_num, \&print_array_array_array);
+}
+
+sub print_timers() {
+  print "timers: ";
+  for my $k (keys %timer) {
+    print "$k=>[" . (join ",", @{$timer{$k}}) . "] ";
+  }
+  print "\n";
+}
+
+sub sameval() {
+  my ($x, $y) = @_;
+  if(defined($x) && !defined($y) || !defined($x) && defined($y)) {
+    return 0;
+  } elsif(!defined($x) && !defined($y)) {
+    return 1;
+  } else {
+    return $x == $y;
+  }
+}
+
+sub lastval() { # last value of p at time < t
+  my ($ref_p, $t) = @_;
+  my $i = &lastval_ix($ref_p, $t);
+  if(defined($i)) {
+    die "assert(lastval($ref_p,$t))" if !defined($$ref_p[$i][1]);
+    return $$ref_p[$i][1];
+  } else {
+    #return undef;
+    die "assert(lastval($ref_p,$t)).2";
+  }
+}
+
+sub val() { # current value of p at time t
+  my ($ref_p, $t) = @_;
+  my $i = &val_ix($ref_p, $t);
+  if(defined($i)) {
+    return $$ref_p[$i][1];
+  } else {
+    return undef;
+  }
+}
+
+sub tsval() { # current value of p at time t, timestamped
+    my ($ref_p, $t) = @_;
+    my $i = &val_ix($ref_p, $t);
+    if(defined($i)) {
+      return $$ref_p[$i];
+    } else {
+      return undef;
+    }
+}
+
+sub val_ix() { # index of current value of p at time t in stream p
+  my ($ref_p, $t) = @_;
+  my $i = $#$ref_p;
+  while($i >= 0) {
+    if($$ref_p[$i][0] <= $t) {
+      return $i;
+    }
+    $i--;
+  }
+  return undef;
+}
+
+sub lastval_ix() { # index of current value of p at time < t in stream p
+  my ($ref_p, $t) = @_;
+  my $i = $#$ref_p;
+  while($i >= 0) {
+    if($$ref_p[$i][0] < $t) {
+      return $i;
+    }
+    $i--;
+  }
+  return undef;
+}
+
+# last time when the value of stream p is known
+sub lastseen() {
+  my ($ref_p) = @_;
+  die "topless stream" if $#$ref_p < 0;
+  my $resval = $$ref_p[$#$ref_p][1];
+  my $t;
+  if(defined($resval)) {
+    #$t = $$ref_p[$#$ref_p][0];
+    return undef; # no last time = now
+  } else {
+    die "botomless stream" if $#$ref_p - 1 < 0;
+    $resval = $$ref_p[$#$ref_p - 1][1];
+    die "two top values of $ref_p are undef" if !defined($resval);
+    $t = $$ref_p[$#$ref_p - 1][0];
+  }
+  return $t;
+}
+
+# given a time t, get the time t'>t of the first subsequent event in the given
+# argument streams or a timeout in the given result stream
+sub next() {
+  my ($t, $res, @streams) = @_;
+  my $t1;
+  for my $s (@streams) {
+    my $i = &val_ix($s, $t);
+    die "invalid time: $t" if !defined($i);
+    # advance index and check if still in the streams
+    $i++;
+    if($i <= $#$s && (!defined($t1) || $$s[$i][0] < $t1)) {
+      $t1 = $$s[$i][0];
+    }
+  }
+  my $tout = &next_timeout($t, $res);
+  if ($tout > $now) { $tout = undef; }
+  return &min($t1, $tout);
+}
+
+# given a time t, get the time t'>t of the first subsequent event p=val
+sub next_val() {
+  my ($t, $ref_p, $val) = @_;
+  my $pi = &val_ix($ref_p, $t);
+  die "invalid time: $t" if !defined($pi);
+  # search for val in the stream from index on
+  while(++$pi <= $#$ref_p) {
+    if(&sameval($$ref_p[$pi][1], $val)) {
+      return $$ref_p[$pi][0];
+    }
+  }
+  return undef;
+}
+
+# TODO: factorize functions loopN()
+
+# For a nullary operator op0, process as many as possible known events
+# (at time now), starting from the last knonwn result: either computed
+# successfully at time last, or computed unsucessfully beyond top of stream.
+sub loop0() {
+  my ($op0, $last, $ref_res) = @_;
+  if($#$ref_res < 0) { # initially
+    my $val0 = &$op0(0, $ref_res, undef);
+    die "loop0: initial value of $op0(p) is ?"
+      if !defined($val0);
+    push @$ref_res, [0, $val0];
+    $update{$ref_res} = 0;
+  } else {
+    my $resval = $$ref_res[$#$ref_res][1];
+    my $t;
+    if(defined($resval)) {
+      $t = &next($last, $ref_res);
+      #print "loop0($op0): compute from [$last, $resval] to $t\n" if defined($t);
+    } else {
+      $resval = $$ref_res[$#$ref_res - 1][1];
+      die "two top values of $op0 are undef" if !defined($resval);
+      $t = $$ref_res[$#$ref_res][0];
+      #print "loop0($op0): recompute from [$$ref_res[$#$ref_res - 1][0], $resval] to $t\n";
+    }
+    while(defined($t)) {
+      my $val = &$op0($t, $ref_res, $resval);
+      print "loop0: &$op0($t)=$val\n" if $opts{'t'};
+      if(!&sameval($$ref_res[$#$ref_res][1], $val)) {
+        push @$ref_res, [$t, $val];
+        $update{$ref_res} = $now;
+      }
+      last if !defined($val);
+      $resval = $val;
+      $t = &next($t, $ref_res);
+    }
+  }
+}
+
+# For a unary operator op1, process as many as possible known events
+# (at time now), starting from the last knonwn result: either computed
+# successfully at time last, or computed unsucessfully beyond top of stream.
+sub loop1() {
+  my ($op1, $last, $ref_p, $ref_res) = @_;
+  if($#$ref_res < 0) { # initially
+    die "loop1: initial value of p is ?"
+      if !defined($$ref_p[0][1]);
+    my $val0 = &$op1(0, $ref_p, $ref_res, undef);
+    die "loop1: initial value of $op1(p) is ?"
+      if !defined($val0);
+    print "loop1: &$op1(0)=$val0\n" if $opts{'t'};
+    push @$ref_res, [0, $val0];
+    $update{$ref_res} = 0;
+  } else {
+    my $resval = $$ref_res[$#$ref_res][1];
+    my $t;
+    if(defined($resval)) {
+      $t = &next($last, $ref_res, $ref_p);
+      #print "loop1($op1): compute from [$last, $resval] to $t\n" if defined($t);
+    } else {
+      $resval = $$ref_res[$#$ref_res - 1][1];
+      die "two top values of $op1 are undef" if !defined($resval);
+      $t = $$ref_res[$#$ref_res][0];
+      #print "loop1($op1): recompute from [$$ref_res[$#$ref_res - 1][0], $resval] to $t\n";
+    }
+    while(defined($t)) {
+      my $val = &$op1($t, $ref_p, $ref_res, $resval);
+      print "loop1: &$op1($t)=$val\n" if $opts{'t'};
+      if(!&sameval($$ref_res[$#$ref_res][1], $val)) {
+        push @$ref_res, [$t, $val];
+        $update{$ref_res} = $now;
+      }
+      last if !defined($val);
+      $resval = $val;
+      $t = &next($t, $ref_res, $ref_p);
+    }
+  }
+}
+
+# For a binary operator op2, process as many as possible known events
+# (at time now), starting from the last knonwn result: either computed
+# successfully at time last, or computed unsucessfully beyond top of stream.
+sub loop2() {
+  my ($op2, $last, $ref_p, $ref_q, $ref_res) = @_;
+  if($#$ref_res < 0) { # initially
+    die "loop2: initial value of p or q is ?"
+      if !defined($$ref_p[0][1]) || !defined($$ref_q[0][1]);
+    my $val0 = &$op2(0, $ref_p, $ref_q, $ref_res, undef);
+    die "loop2: initial value of $op2(p,q) is ?"
+      if !defined($val0);
+    push @$ref_res, [0, $val0];
+    $update{$ref_res} = 0;
+  } else {
+    my $resval = $$ref_res[$#$ref_res][1];
+    my $t;
+    if(defined($resval)) {
+      $t = &next($last, $ref_res, $ref_p, $ref_q);
+      print "loop2($op2): from [$last, $resval] to $t\n" if $opts{'t'} && defined($t);
+    } else {
+      $resval = $$ref_res[$#$ref_res - 1][1];
+      die "two top values of $op2 are undef" if !defined($resval);
+      $t = $$ref_res[$#$ref_res][0];
+      print "loop2($op2): from [$$ref_res[$#$ref_res - 1][0], $resval] to $t\n" if $opts{'t'};
+    }
+    while(defined($t)) {
+      my $val = &$op2($t, $ref_p, $ref_q, $ref_res, $resval);
+      print "loop2: &$op2($t)=$val\n" if $opts{'t'};
+      if(!&sameval($$ref_res[$#$ref_res][1], $val)) {
+        push @$ref_res, [$t, $val];
+        $update{$ref_res} = $now;
+      }
+      last if !defined($val);
+      $resval = $val;
+      $t = &next($t, $ref_res, $ref_p, $ref_q);
+    }
+  }
+}
+
+# generate a wave signal: loop (0 for T0; 1 for T1) from Ts until Te
+# NB: always ends with 0, so may go shortly beyond Te.
+sub wave() {
+  my ($T0, $T1, $Ts, $Te) = @_;
+  return sub(){ return &wave_T0_T1(@_, $T0, $T1, $Ts, $Te); }
+}
+
+sub wave_T0_T1() {
+  my ($t, $ref_res, $resval, $T0, $T1, $Ts, $Te) = @_;
+  if ($t == 0) { #initially
+    &set_timeout($Ts + $T0, $ref_res);
+    return 0;
+  }
+  # timeout
+  my $delay = $resval == 1? $T0: $T1;
+  &cancel_timeout($t, $ref_res);
+  if($t + $delay < $Te || $resval == 0) { # the resval returned will be 1
+    &set_timeout($t + $delay, $ref_res);
+  }
+  return $resval? 0: 1;
+}
+
+# delay a signal by T (initially 0)
+sub delay() {
+  my ($T) = @_;
+  return sub(){ return &delay1_T(@_, $T); }
+}
+
+sub delay1_T() {
+  my ($t, $ref_p, $ref_res, $resval, $T) = @_;
+  if ($t == 0) { #initially
+    &set_timeout($T, $ref_res);
+    # my $valp0 = $$ref_p[0][1];
+    # die "initial value of p undefined" if !defined($valp0);
+    # return $valp0;
+    return 0;
+  }
+  my $p = &tsval($ref_p, $t);
+  my $valp = $p->[1];
+  # when p=>0/1, set timer; whrn p=>?, block
+  if($p->[0] == $t) {
+    if(&sameval($valp, &lastval($ref_p, $t))) {} # nothing
+    else {
+      if(defined($valp)) {# p=>0/1
+        &set_timeout($t + $T, $ref_res);
+      } else {# p=> ?
+        return undef; # no anticipation!
+        # TODO: if adding anticipation (so lookbehind), review forget policy!
+      }
+    }
+  }
+  # on timeout, change value, except the first time
+  if (&timeout($t, $ref_res)) {
+    &cancel_timeout($t, $ref_res);
+    if ($t == $T) {
+      my $valp0 = $$ref_p[0][1];
+      die "initial value of p undefined" if !defined($valp0);
+      return $valp0;
+      #return 0;
+    } else {
+      return $resval? 0: 1; # change value
+    }
+  } else { # no timeout, and p=>0/1 or is unchanged
+    return $resval;
+  }
+}
+
+# select intervals of p=1 shorter than T
+sub le() {
+  my ($T) = @_;
+  return sub(){ return &le1_T(@_, $T); }
+}
+
+sub le1_T() {
+  my ($t, $ref_p, $ref_res, $resval, $T) = @_;
+  if ($t == 0) { # initially
+    return 0;
+  }
+  if (&timeout($t, $ref_res)) {
+   die "le1: escaped timer";
+  }
+  my $p = &tsval($ref_p, $t);
+  my $valp = $p->[1];
+  if($p->[0] == $t) {
+    if(&sameval($valp, &lastval($ref_p, $t))) { return $resval; } # nothing
+    else {
+      if($valp == 1) {# p=>1
+        # p=1 until after t+T
+        if(&later($ref_p, $t, 0, $T)) {
+          &cancel_timeout($t + $T, $ref_res);
+          return 0;
+        } elsif(&soonereq($ref_p, $t, 0, $T)) {
+          # p=>0 before or at t+T
+          &cancel_timeout($t + $T, $ref_res);
+          return 1;
+        } else {
+          &set_timeout($t + $T, $ref_res);
+          return undef;
+        }
+      } elsif(defined($valp) && $valp == 0) {# p=>0
+        return 0;
+      } else {# p=> ?
+        return undef;
+      }
+    }
+  }
+}
+
+# select intervals of p=1 longer than T
+sub gt() {
+  my ($T) = @_;
+  return sub(){ return &gt1_T(@_, $T); }
+}
+
+sub gt1_T() {
+  my ($t, $ref_p, $ref_res, $resval, $T) = @_;
+  if ($t == 0) { # initially
+    return 0;
+  }
+  if (&timeout($t, $ref_res)) {
+   die "gt1: escaped timer";
+  }
+  my $p = &tsval($ref_p, $t);
+  my $valp = $p->[1];
+  if($p->[0] == $t) {
+    if(&sameval($valp, &lastval($ref_p, $t))) { return $resval; } # nothing
+    else {
+      if($valp == 1) {# p=>1
+        # p=1 until after t+T
+        if(&later($ref_p, $t, 0, $T)) {
+          &cancel_timeout($t + $T, $ref_res);
+          return 1;
+        } elsif(&soonereq($ref_p, $t, 0, $T)) {
+          # p=>0 before or at t+T
+          &cancel_timeout($t + $T, $ref_res);
+          return 0;
+        } else {
+          &set_timeout($t + $T, $ref_res);
+          return undef;
+        }
+      } elsif(defined($valp) && $valp == 0) {# p=>0
+        return 0;
+      } else {# p=> ?
+        return undef;
+      }
+    }
+  }
+}
+
+# Real-time version of gt1(): falls back to 0 at T
+sub gtRT() {
+  my ($T) = @_;
+  return sub(){ return &gtRT1_T(@_, $T); }
+}
+
+sub gtRT1_T() {
+  my ($t, $ref_p, $ref_res, $resval, $T) = @_;
+  if ($t == 0) { # initially
+    return 0;
+  }
+  if (&timeout($t, $ref_res)) {
+    # if here, we're in the middle of a p=1 interval longer than T, so end it
+    &cancel_timeout($t, $ref_res);
+    return 0;
+  }
+  my $p = &tsval($ref_p, $t);
+  my $valp = $p->[1];
+  if($p->[0] == $t) {
+    if(&sameval($valp, &lastval($ref_p, $t))) { return $resval; } # nothing
+    else {
+      if($valp == 1) {# p=>1
+        # p=1 until after t+T
+        if(&later($ref_p, $t, 0, $T)) {
+          # timer may be already set (if previously res=undef for unsufficient
+          # lookahead) or not (if previously res=undef for p=>undef)
+          &set_timeout($t + $T, $ref_res);
+          return 1;
+        } elsif(&soonereq($ref_p, $t, 0, $T)) {
+          # p=>0 before or at t+T
+          &cancel_timeout($t + $T, $ref_res);
+          return 0;
+        } else {
+          &set_timeout($t + $T, $ref_res);
+          return undef;
+        }
+      } elsif(defined($valp) && $valp == 0) {# p=>0
+        return 0;
+      } else {# p=> ?
+        return undef;
+      }
+    }
+  }
+}
+
+# Real-time version of geRT(): falls back to 0 at T
+sub geRT() {
+  my ($T) = @_;
+  return sub(){ return &geRT_T(@_, $T); }
+}
+
+sub geRT_T() {
+  my ($t, $ref_p, $ref_res, $resval, $T) = @_;
+  if ($t == 0) { # initially
+    return 0;
+  }
+  if (&timeout($t, $ref_res)) {
+    # if here, we're in the middle of a p=1 interval longer than T, so end it
+    &cancel_timeout($t, $ref_res);
+    return 0;
+  }
+  my $p = &tsval($ref_p, $t);
+  my $valp = $p->[1];
+  if($p->[0] == $t) {
+    if(&sameval($valp, &lastval($ref_p, $t))) { return $resval; } # nothing
+    else {
+      if($valp == 1) {# p=>1
+        # p=1 until at least t+T
+        if(&latereq($ref_p, $t, 0, $T)) {
+          # timer may be already set (if previously res=undef for unsufficient
+          # lookahead) or not (if previously res=undef for p=>undef)
+          &set_timeout($t + $T, $ref_res);
+          return 1;
+        } elsif(&sooner($ref_p, $t, 0, $T)) {
+          # p=>0 before t+T
+          &cancel_timeout($t + $T, $ref_res);
+          return 0;
+        } else {
+          &set_timeout($t + $T, $ref_res);
+          return undef;
+        }
+      } elsif(defined($valp) && $valp == 0) {# p=>0
+        return 0;
+      } else {# p=> ?
+        return undef;
+      }
+    }
+  }
+}
+
+sub not() {
+  return \&not1;
+}
+
+sub not1() {
+  my ($t, $ref_p, $ref_res, $resval) = @_;
+  if($t == 0) { # initially
+    return $$ref_p[0][1] == 1? 0: 1; # NB: !1="", not 0 !!
+  }
+  my $valp = &val($ref_p, $t);
+  return not1_pointwise($valp);
+}
+
+# not of a point value
+sub not1_pointwise() {
+  my ($x) = @_;
+  if(!defined($x)) {
+    return undef;
+  } elsif($x == 1) {
+    return 0; # NB: !1="", not 0 !!
+  } else {
+    return 1;
+  }
+}
+
+sub during2() {
+  my ($t, $ref_p, $ref_q, $ref_res, $resval) = @_;
+  if($t == 0) { return 0; }
+  my $p = &tsval($ref_p, $t);
+  my $q = &tsval($ref_q, $t);
+  my $valp = $p->[1];
+  my $valq = $q->[1];
+  #print "tsval(p,$t)=[$p->[0],$valp], val(q,$t)=[$q->[0],$valq]\n";
+  if($p->[0] == $t && $q->[0] < $t ||
+     $p->[0] == $t && $q->[0] == $t && &sameval($valq, &lastval($ref_q, $t))) {
+    # only p
+    if(&sameval($valp, &lastval($ref_p, $t))) { return $resval; } # nothing
+    else {
+      if($valp == 1) {# p=>1
+        die "assert(during=0) as p was 0" if $resval;
+        if(defined($valq) && $valq == 0) {# p=>1 & q=0
+          return 0; # during stays 0
+        } elsif($valq == 1) {# p=>1 & q=1
+          if(&left($ref_p, $ref_q, $t, 0, 0)) {
+            # q=1 until after p=>0 (may NOT fall at same time)
+            return 1;
+          } elsif(&righteq($ref_p, $ref_q, $t, 0, 0)) {
+              # p=1 until q=>0 (may fall or become ? at same time)
+              return 0;
+          } else {
+            return undef;
+          }
+        } else {# p=>1 & q=?
+          return undef;
+        }
+      } elsif(defined($valp) && $valp == 0) {# p=>0 & q=0/1/?
+        if($resval == 1) {
+          return 0; # end of a during interval
+        } else { return 0; } # during stays 0
+      } else {# p=>?
+        die "assert(during=0) as if 1, you'd know p until it gets 0"
+          if $resval;
+        if(defined($valq) && $valq == 0) {# p=>? & q=0
+          return 0; # during stays 0
+        } elsif($valq == 1) {# p=>? & q=1
+          return undef;
+          # NB: even in cases when you could tell that during stays 0, e.g. when
+          # p was 1, in overlap(p,q), this value may not last until next()
+        }
+        else {# # p=>? & q=?
+          #die "assert(p was 0) as during=0" if &lastval($ref_p, $t);
+          #False: p may be 0 or 1 (cf q=>? & p=1 below)
+          return undef;
+        }
+      }
+    }
+  } elsif($p->[0] < $t && $q->[0] == $t ||
+          $p->[0] == $t && $q->[0] == $t && &sameval($valp, &lastval($ref_p, $t))) {
+    # only q
+    if(&sameval($valq, &lastval($ref_q, $t))) { return $resval; } # nothing
+    else {
+      if($valq == 1) {# q=>1
+        die "assert(during=0) as q was 0" if $resval;
+        if(defined($valp) && $valp == 0) {# q=>1 & p=0
+          return 0; # during stays 0
+        } elsif($valp == 1) {# q=>1 & p=1
+          return 0; # during stays 0
+        } else {# q=>1 & p=?
+          return undef;
+          # in fact during=0 at t, but may not last until next()
+        }
+      } elsif(defined($valq) && $valq == 0) {# q=>0 & p=0/1/?
+        die "assert(during=0) as it would have been reset at p=>0" if $resval;
+        die "assert(p=def) as if p was ? & q was 1, then during=?"
+          if !defined($valp);
+        #if(defined($valp)) {
+        return 0; # during stays 0
+        #}
+      } else {# q=>?
+        if(defined($valp) && $valp == 0) {# q=>? & p=0
+          die "assert(during=0) as p=0" if $resval;
+          return 0; # during stays 0
+        } elsif($valp == 1) {# q=>? & p=1
+          die "assert(during=0) as q=>? would imped it to be 1" if $resval;
+          # either lastval(q)=1 (p overlaps q) or lastval(q)=0:
+          return 0; # during stays 0
+        } else {# q=>? & p=?
+          return undef;
+        }
+      }
+    }
+  } elsif($p->[0] == $t && $q->[0] == $t) { # p & q
+    # cases when p xor q didn't change were handled as singleton events
+    # so check here only the case when none changed:
+    if(&sameval($valp, &lastval($ref_p, $t)) &&
+       &sameval($valq, &lastval($ref_q, $t))) { return $resval; } # nothing
+    else {
+      if(defined($valp) && $valp == 0 && defined($valq) && $valq == 0) {
+        # p=>0 & q=>0
+        die "assert(during=0) as anticipated" if $resval;
+        return 0; # during stays 0
+      } elsif(defined($valp) && $valp == 0 && $valq == 1) {
+        # p=>0 & q=>1
+        die "assert(during=0) as qwas 0" if $resval;
+        return 0; # hold stays 0
+      } elsif($valp == 1 && defined($valq) && $valq == 0) {
+        # p=>1 & q=>0
+        die "assert(during=0) as p was 0" if $resval;
+        return 0; # during stays 0
+      } elsif($valp == 1 && $valq == 1) {
+        # p=>1 & q=>1
+        die "assert(during=0) as p and q were 0" if $resval;
+        return 0; # during stays 0
+      } elsif(defined($valp) && $valp == 0 && !defined($valq)) {
+        # p=>0 & q=>?
+        die "assert(during=0) as otherwise you'd know that q is 1 after p=>0"
+          if $resval;
+        return 0; # during stays 0
+      } elsif($valp == 1 && !defined($valq)) {
+        # p=>1 & q=>?
+        die "assert(during=0) as p was 0"
+          if $resval;
+        return undef;
+        # NB: even in cases when you could tell that during stays 0, e.g. when
+        # q was 1, this value may not last until next()
+      } elsif(!defined($valp) && defined($valq) && $valq == 0) {
+        # p=>? & q=>0
+        die "assert(during=0) as otherwise you'd know that p=>0 before q=>0"
+          if $resval;
+        return 0; # during stays 0
+      } elsif(!defined($valp) && $valq == 1) {
+        # p=>? & q=>1
+        return undef;
+      } else {
+        # p=>? & q=>?
+        return undef;
+      }
+    }
+  }
+  die "during2: void return";
+}
+
+sub or() {
+  return \&or2;
+}
+
+sub or2() {
+  my ($t, $ref_p, $ref_q, $ref_res, $resval) = @_;
+  my $valp = &val($ref_p, $t);
+  my $valq = &val($ref_q, $t);
+  if($t == 0) { return $valp || $valq; }
+  return or2_pointwise($valp, $valq);
+}
+
+# or between two point values
+sub or2_pointwise() {
+  my ($x, $y) = @_;
+  if($x == 1 || $y == 1) {
+  return 1; # 1 beats ?
+  } elsif(defined($x) && defined($y)) { # 0 or 0
+    return 0;
+  } else { # 0 or ?, ? or 0, ? or ?`
+    return undef;
+  }
+}
+
+sub and() {
+  return \&and2;
+}
+
+sub and2() {
+  my ($t, $ref_p, $ref_q, $ref_res, $resval) = @_;
+  my $valp = &val($ref_p, $t);
+  my $valq = &val($ref_q, $t);
+  if($t == 0) { return $valp && $valq; }
+  return and2_pointwise($valp, $valq);
+}
+
+# and between two point values
+sub and2_pointwise() {
+  my ($x, $y) = @_;
+  if($x == 1 && $y == 1) {
+  return 1;
+} elsif(defined($x) && $x == 0 || defined($y) && $y == 0) { # 0 beats ?
+    return 0;
+  } else { # 1 and ?, ? and 1, ? and ?`
+    return undef;
+  }
+}
+
+sub holds2() {
+  my ($t, $ref_p, $ref_q, $ref_res, $resval) = @_;
+  if($t == 0) { return 0; }
+  my $p = &tsval($ref_p, $t);
+  my $q = &tsval($ref_q, $t);
+  my $valp = $p->[1];
+  my $valq = $q->[1];
+  #print "tsval(p,$t)=[$p->[0],$valp], val(q,$t)=[$q->[0],$valq]\n";
+  if($p->[0] == $t && $q->[0] < $t ||
+     $p->[0] == $t && $q->[0] == $t && &sameval($valq, &lastval($ref_q, $t))) {
+    # only p
+    if(&sameval($valp, &lastval($ref_p, $t))) { return $resval; } # nothing
+    else {
+      if($valp == 1) {# p=>1
+        die "assert(holds=0) as p was 0" if $resval;
+        if(defined($valq)) {# p=>1 & q=0/1
+          return 0; # holds stays 0
+        } else {# p=>1 & q=?
+          return undef;
+          # in fact holds=0 at t, but may not last until next()
+        }
+      } elsif(defined($valp) && $valp == 0) {# p=>0 & q=0/1/?
+        die "assert(holds=0) as it would have been reset at q=>0" if $resval;
+        die "assert(q=def) as if p was 1 & q was ?, then holds=?"
+          if !defined($valp);
+        #if(defined($valq)) {
+        return 0; # holds stays 0
+        #}
+      } else {# p=>?
+        die "assert(holds=0) as if 1, you'd know p until it gets 0"
+          if $resval;
+        if(defined($valq) && $valq == 0) {# p=>? & q=0
+          return 0; # holds stays 0
+        } elsif($valq == 1) {# p=>? & q=1
+          return 0; # holds stays 0; you're in a void q=1 interval
+        } else {# p=>? & q=?
+          die "assert(p was 0) as holds=0" if &lastval($ref_p, $t);
+          return undef;
+        }
+      }
+    }
+  } elsif($p->[0] < $t && $q->[0] == $t ||
+          $p->[0] == $t && $q->[0] == $t && &sameval($valp, &lastval($ref_p, $t))) {
+    # only q
+    if(&sameval($valq, &lastval($ref_q, $t))) { return $resval; } # nothing
+    else {
+      if($valq == 1) {# q=>1
+        die "assert(holds=0) as q was 0" if $resval;
+        if(defined($valp) && $valp == 0) {# q=>1 & p=0
+          return 0; # holds stays 0
+        } elsif($valp == 1) {# q=>1 & p=1
+          if(&righteq($ref_p, $ref_q, $t, 0, 0)) {
+            # p=1 until q=>0 (may fall or become ? at same time)
+            return 1;
+          } elsif(&left($ref_p, $ref_q, $t, 0, 0)) {
+            # q=1 until after p=>0 (may NOT fall at same time)
+            return 0;
+          } else {
+            return undef;
+          }
+        } else {# q=>1 & p=?
+          return undef;
+        }
+      } elsif(defined($valq) && $valq == 0) {# q=>0 & p=0/1/?
+        if($resval == 1) {
+          return 0; # end of a filled q interval
+        } else { return 0; } # holds stays 0
+      } else {# q=>?
+        if(defined($valp) && $valp == 0) {# q=>? & p=0
+          die "assert(holds=0) as p=0" if $resval;
+          return 0; # holds stays 0
+        } elsif($valp == 1) {# q=>? & p=1
+          return undef;
+        } else {# q=>? & p=?
+          return undef;
+        }
+      }
+    }
+  } elsif($p->[0] == $t && $q->[0] == $t) { # p & q
+    # cases when p xor q didn't change were handled as singleton events
+    # so check here only the case when none changed:
+    if(&sameval($valp, &lastval($ref_p, $t)) &&
+       &sameval($valq, &lastval($ref_q, $t))) { return $resval; } # nothing
+    else {
+      if(defined($valp) && $valp == 0 && defined($valq) && $valq == 0) {
+        # p=>0 & q=>0
+        if($resval == 1) {
+          return 0;
+        } else { return 0; } # holds stays 0
+      } elsif(defined($valp) && $valp == 0 && $valq == 1) {
+        # p=>0 & q=>1
+        die "assert(holds=0) as q was 0" if $resval;
+        return 0; # hold stays 0
+      } elsif($valp == 1 && defined($valq) && $valq == 0) {
+        # p=>1 & q=>0
+        die "assert(holds=0) as p was 0" if $resval;
+        return 0; # holds stays 0
+      } elsif($valp == 1 && $valq == 1) {
+        # p=>1 & q=>1
+        # idem p=1 & q=>1:
+        if(&righteq($ref_p, $ref_q, $t, 0, 0)) {
+          # p=1 until q=>0 (may fall or become ? at same time)
+          return 1;
+        } elsif(&left($ref_p, $ref_q, $t, 0, 0)) {
+          # q=1 until after p=>0 (may NOT fall at same time)
+          return 0;
+        } else {
+          return undef;
+        }
+      } elsif(defined($valp) && $valp == 0 && !defined($valq)) {
+        # p=>0 & q=>?
+        die "assert(holds=0) as otherwise you'd know that q=>0 before/when p=>0"
+          if $resval;
+        return 0; # holds stays 0
+      } elsif($valp == 1 && !defined($valq)) {
+        # p=>1 & q=>?
+        die "assert(holds=0) as p was 0" if $resval;
+        return undef;
+        # NB: even in cases when you could tell that holds is 0, e.g. when
+        # q was 1, this value may not last until next()
+      } elsif(!defined($valp) && defined($valq) && $valq == 0) {
+        # p=>? & q=>0
+        if($resval) {
+          return 0;
+        } else { return 0; } # holds stays 0
+      } elsif(!defined($valp) && $valq == 1) {
+        # p=>? & q=>1
+        return undef;
+      } else {
+        # p=>? & q=>?
+        return undef;
+      }
+    }
+  }
+  die "holds2: void return";
+}
+
+sub occ2_init() {
+  my ($ref_p, $ref_q) = @_;
+  die "initial value of p undefined" if $#$ref_p < 0;
+  die "initial value of q undefined" if $#$ref_q < 0;
+  return $$ref_p[0][1] && $$ref_q[0][1];
+}
+
+sub occ2() {
+  my ($t, $ref_p, $ref_q, $ref_res, $resval) = @_;
+  if($t == 0) { return &occ2_init($ref_p, $ref_q); }
+  my $p = &tsval($ref_p, $t);
+  my $q = &tsval($ref_q, $t);
+  my $valp = $p->[1];
+  my $valq = $q->[1];
+  #print "tsval(p,$t)=[$p->[0],$valp], val(q,$t)=[$q->[0],$valq]\n";
+  if($p->[0] == $t && $q->[0] < $t ||
+     $p->[0] == $t && $q->[0] == $t && &sameval($valq, &lastval($ref_q, $t))) {
+    # only p
+    if(&sameval($valp, &lastval($ref_p, $t))) { return $resval; } # nothing
+    else {
+      if($valp == 1) {# p=>1
+        if(defined($valq) && $valq == 0) {# p=>1 & q=0
+          die "assert(occ=0) as q was 0" if $resval;
+          return 0; # stay 0
+        } elsif($valq == 1) {# p=>1 & q=1
+            return 1; # become or stay 1
+        } else {# p=>1 & q=?
+          return undef;
+        }
+      } elsif(defined($valp) && $valp == 0) {# p=>0 & q=0/1/?
+        if(defined($valq) && $valq == 0) {# p=>0 & q=0
+          die "assert(occ=0) as q was 0" if $resval;
+          return 0;
+        } elsif($valq == 1) {# p=>0 & q=1
+          die "assert(occ=1) as p was 1" if defined($resval) && $resval == 0;
+          return 1; # stay 1
+        } else {# p=>0 & q=?
+          die "assert(occ=?) as p was 1" if defined($resval);
+          return undef; # stay undef
+        }
+      } else {# p=>?
+        if(defined($valq) && $valq == 0) {# p=>? & q=0
+          die "assert(occ=0) as q was 0" if $resval;
+          return 0; # stay 0
+        } elsif($valq == 1) {# p=>? & q=1
+          if($resval == 1) {
+            return 1; # stay 1, p doesn't matter anymore
+          } else {
+            return undef;
+          }
+        } else {# p=>? & q=?
+          die "can this happen??" if $resval;
+          return undef;
+        }
+      }
+    }
+  } elsif($p->[0] < $t && $q->[0] == $t ||
+          $p->[0] == $t && $q->[0] == $t && &sameval($valp, &lastval($ref_p, $t))) {
+    # only q
+    if(&sameval($valq, &lastval($ref_q, $t))) { return $resval; } # nothing
+    else {
+      if($valq == 1) {# q=>1
+        die "assert(occ=0) as q was 0" if $resval;
+        if(defined($valp) && $valp == 0) {# q=>1 & p=0
+          return 0; # stay 0
+        } elsif($valp == 1) {# q=>1 & p=1
+          return 1;
+        } else {# q=>1 & p=?
+          return undef;
+        }
+      } elsif(defined($valq) && $valq == 0) {# q=>0 & p=0/1/?
+        return 0; # stay or become 0
+      } else {# q=>?
+        if(defined($valp)) {# q=>? & p=0/1
+          return undef;
+        } else {# q=>? & p=?
+          # q could have been 1/0, and occ too
+          return undef;
+        }
+      }
+    }
+  } elsif($p->[0] == $t && $q->[0] == $t) { # p & q
+    # cases when p xor q didn't change were handled as singleton events
+    # so check here only the case when none changed:
+    if(&sameval($valp, &lastval($ref_p, $t)) &&
+       &sameval($valq, &lastval($ref_q, $t))) { return $resval; } # nothing
+    else {
+      if(defined($valp) && $valp == 0 && defined($valq) && $valq == 0) {
+        # p=>0 & q=>0
+        die "assert(occ=1) as p and q were 1"
+          if defined($resval) && $resval == 0;
+        return 0; # become 0
+      } elsif(defined($valp) && $valp == 0 && $valq == 1) {
+        # p=>0 & q=>1
+        die "assert(occ=0) as q was 0" if $resval;
+        return 0; # stay 0
+      } elsif($valp == 1 && defined($valq) && $valq == 0) {
+        # p=>1 & q=>0
+        return 0; # stay or become 0
+      } elsif($valp == 1 && $valq == 1) {
+        # p=>1 & q=>1
+        die "assert(occ=0) as q was 0" if $resval;
+        return 1; # become 1
+      } elsif(defined($valp) && $valp == 0 && !defined($valq)) {
+        # p=>0 & q=>?
+        return undef;
+        # NB: even in cases when you could tell that occ is 0, e.g. when
+        # q was 0, this value may not last until next()
+      } elsif($valp == 1 && !defined($valq)) {
+        # p=>1 & q=>?
+        return undef;
+      } elsif(!defined($valp) && defined($valq) && $valq == 0) {
+        # p=>? & q=>0
+        return 0; # stay or become 0
+      } elsif(!defined($valp) && $valq == 1) {
+        # p=>? & q=>1
+        die "assert(occ=0) as q was 0" if $resval;
+        return undef;
+      } else {
+        # p=>? & q=>?
+        return undef;
+      }
+    }
+  }
+  die "occ2: void return";
+}
+
+# True if p=>valp before or at t+T
+sub soonereq() {
+  my ($ref_p, $t, $valp, $T) = @_;
+  my $tpv = &next_val($t, $ref_p, $valp);
+  return defined($tpv) && $tpv <= $t + $T;
+}
+
+# True if p=>valp before t+T
+sub sooner() {
+  my ($ref_p, $t, $valp, $T) = @_;
+  my $tpv = &next_val($t, $ref_p, $valp);
+  return defined($tpv) && $tpv < $t + $T;
+}
+
+
+# True if p=>valp later than t+T
+sub later() {
+  my ($ref_p, $t, $valp, $T) = @_;
+  my $tpv = &next_val($t, $ref_p, $valp);
+  return defined($tpv) && $tpv > $t + $T ||
+    (!defined($tpv) && $now >= $t + $T && &val($ref_p, $t + $T) == 1);
+    # p constant until after t+T
+}
+
+# True if p=>valp later than or at t+T
+sub latereq() {
+  my ($ref_p, $t, $valp, $T) = @_;
+  my $tpv = &next_val($t, $ref_p, $valp);
+  return defined($tpv) && $tpv >= $t + $T ||
+    (!defined($tpv) && $now >= $t + $T && &val($ref_p, $t + $T) == 1);
+    # p constant until at least t+T
+}
+
+# True if p=>valp comes before q=>valq
+sub left() {
+  my ($ref_p, $ref_q, $t, $valp, $valq) = @_;
+  my $tpv = &next_val($t, $ref_p, $valp);
+  my $tqv = &next_val($t, $ref_q, $valq);
+  return defined($tpv) &&
+          defined(&val($ref_q, $tpv)) &&
+          (!defined($tqv) || $tpv < $tqv);
+          # q constant until after p changes
+}
+
+# True if p=>valp comes before or when q=>valq
+sub lefteq() {
+  my ($ref_p, $ref_q, $t, $valp, $valq) = @_;
+  my $tpv = &next_val($t, $ref_p, $valp);
+  my $tqv = &next_val($t, $ref_q, $valq);
+  return defined($tpv) &&
+          (defined(&val($ref_q, $tpv)) || &tsval($ref_q, $tpv)->[0] == $tpv) &&
+          (!defined($tqv) || $tpv <= $tqv);
+          # q constant until p changes (q may change or become ? at same time)
+}
+
+# True if p=>valp comes after q=>valq
+sub right() {
+  my ($ref_p, $ref_q, $t, $valp, $valq) = @_;
+  return &left($ref_q, $ref_p, $t, $valq, $valp);
+}
+
+# True if p=>valp comes after or when q=>valq
+sub righteq() {
+  my ($ref_p, $ref_q, $t, $valp, $valq) = @_;
+  return &lefteq($ref_q, $ref_p, $t, $valq, $valp);
+}
+
+# True if p=>valp comes exactly when q=>valq
+sub sync() {
+  my ($ref_p, $ref_q, $t, $valp, $valq) = @_;
+  my $tpv = &next_val($t, $ref_p, $valp);
+  my $tqv = &next_val($t, $ref_q, $valq);
+  return defined($tpv) && defined($tqv) && $tpv == $tqv;
+}
+
+# true between p=>0 (at t1) and q=>1 (at t2),
+# if (t1,t2) nonempty and nothing happens to p and q in it
+sub btwin2() {
+  my ($t, $ref_p, $ref_q, $ref_res, $resval) = @_;
+  if($t == 0) { return 0; }
+  my $p = &tsval($ref_p, $t);
+  my $q = &tsval($ref_q, $t);
+  my $valp = $p->[1];
+  my $valq = $q->[1];
+  #print "tsval(p,$t)=[$p->[0],$valp], val(q,$t)=[$q->[0],$valq]\n";
+  if($p->[0] == $t && $q->[0] < $t ||
+     $p->[0] == $t && $q->[0] == $t && &sameval($valq, &lastval($ref_q, $t))) {
+    # only p
+    if(&sameval($valp, &lastval($ref_p, $t))) { return $resval; } # nothing
+    else {
+      if($valp == 1) {# p=>1
+        die "assert(between=0) as p=>1 was already anticipated" if $resval;
+        if(defined($valq)) {# p=>1 & q=0/1
+          return 0; # stay 0
+        } else {# p=>1 & q=?
+          # NB: lastval(q) may be 1, of course, but also 0, in the scenario
+          # q=>0; p=>0; q=>?
+          return 0; # stay 0
+        }
+      } elsif(defined($valp) && $valp == 0) {# p=>0 & q=0/1/?
+        die "assert(between=0) as p was 1" if $resval;
+        if(defined($valq) && $valq == 0) {# p=>0 & q=0
+          if(&righteq($ref_p, $ref_q, $t, 1, 1)) {
+            return 1;
+          } elsif(&left($ref_p, $ref_q, $t, 1, 1)) {
+            return 0;
+          } else {
+            return undef;
+          }
+        } elsif($valq == 1) {# p=>0 & q=1
+          return 0; # stay 0
+        } else {# p=>0 & q=?
+          return undef; # become undef
+        }
+      } else {# p=>?
+        if(defined($valq) && $valq == 0) {# p=>? & q=0
+          die "assert(between=0) as p=>? would imped it to be 1" if $resval;
+          return undef; # become ?
+          # NB: even in cases when you could tell that between is 0, e.g. when
+          # p was 0, this value may not last until next()
+        } elsif($valq == 1) {# p=>? & q=1
+          die "assert(between=0) as q was 1" if $resval;
+          return 0; # stay 0
+        } else {# p=>? & q=?
+          # NB: lastval(p) may be 1, of course, but also 0, in the scenario
+          # q=>0; p=>0; q=>?; p=>?
+          return undef;
+        }
+      }
+    }
+  } elsif($p->[0] < $t && $q->[0] == $t ||
+          $p->[0] == $t && $q->[0] == $t && &sameval($valp, &lastval($ref_p, $t))) {
+    # only q
+    if(&sameval($valq, &lastval($ref_q, $t))) { return $resval; } # nothing
+    else {
+      if($valq == 1) {# q=>1
+        if(defined($valp) && $valp == 0) {# q=>1 & p=0
+          return 0; # stay or become 0
+        } elsif($valp == 1) {# q=>1 & p=1
+          die "assert(between=0) as p was 1" if $resval;
+          return 0; # stay 0
+        } else {# q=>1 & p=?
+          die "q=0 & p=? cannot happen, because this would mean between=?";
+        }
+      } elsif(defined($valq) && $valq == 0) {# q=>0 & p=0/1/?
+        die "assert(between=0) as q was 1" if $resval;
+        if(defined($valp)) {# q=>0 & p=0/1
+          return 0; # stay 0
+        } else {# q=>0 & p=?
+          return undef;
+          # NB: even though you know that between is 0 right now,
+          # this value may not last until next()
+        }
+      } else {# q=>?
+        die "assert(between=0) as q=>? would imped it to be 1" if $resval;
+        if($valp == 1) {# q=>? & p=1
+          return 0; # stay 0
+        } elsif(defined($valp)) {# q=>? & p=0
+          # NB: lastval(q) may be 1, of course, but also 0, in the scenario
+          # q=>0; p=>0; q=>?
+          return 0; # stay 0
+        } else {# q=>? & p=?
+          die "assert(q was 1) as q=0 & p=? implies between=?"
+            if defined(&lastval($ref_q, $t)) && &lastval($ref_q, $t) == 0;
+          return undef;
+        }
+      }
+    }
+  } elsif($p->[0] == $t && $q->[0] == $t) { # p & q
+    # cases when p xor q didn't change were handled as singleton events
+    # so check here only the case when none changed:
+    if(&sameval($valp, &lastval($ref_p, $t)) &&
+       &sameval($valq, &lastval($ref_q, $t))) { return $resval; } # nothing
+    else {
+      if(defined($valp) && $valp == 0 && defined($valq) && $valq == 0) {
+        # p=>0 & q=>0
+        die "assert(between=0) as p and q were 1" if $resval;
+        if(&righteq($ref_p, $ref_q, $t, 1, 1)) {
+          return 1;
+        } elsif(&left($ref_p, $ref_q, $t, 1, 1)) {
+          return 0;
+        } else {
+          return undef;
+        }
+      } elsif(defined($valp) && $valp == 0 && $valq == 1) {
+        # p=>0 & q=>1
+        die "assert(between=0) as p was 1" if $resval;
+        return 0; # stay 0
+        # NB: this case is caught by meets(p,q)
+      } elsif($valp == 1 && defined($valq) && $valq == 0) {
+        # p=>1 & q=>0
+        die "assert(between=0) as q was 1" if $resval;
+        return 0; # stay 0
+      } elsif($valp == 1 && $valq == 1) {
+        # p=>1 & q=>1
+        return 0; # stay or become o
+      } elsif(defined($valp) && $valp == 0 && !defined($valq)) {
+        # p=>0 & q=>?
+        return undef;
+        # NB: even though you know that between is 0 right now,
+        # this value may not last until next()
+      } elsif($valp == 1 && !defined($valq)) {
+        # p=>1 & q=>?
+        die "assert(between=0) as p=>1 was anticipated if q was 0" if $resval;
+        return 0; # stay 0
+      } elsif(!defined($valp) && defined($valq) && $valq == 0) {
+        # p=>? & q=>0
+        die "assert(between=0) as q was 1" if $resval;
+        # NB: even though you know that between is 0 right now,
+        # this value may not last until next()
+        return undef; # become ?
+      } elsif(!defined($valp) && $valq == 1) {
+        # p=>? & q=>1
+        die "assert(between=0) as p=>? would imped it to be 1" if $resval;
+        return 0; # stay 0
+      } else {
+        # p=>? & q=>?
+        return undef;
+      }
+    }
+  }
+  die "between2: void return";
+}
+
+# true between p=>0 (at t1) and q=>1 (at t2),
+# if (t1,t2) nonempty and (t,q) contains no p=>0 or q=>1
+# and there is no q=>1 at t1 and no p=>0 at t2
+sub between2() {
+  my ($t, $ref_p, $ref_q, $ref_res, $resval) = @_;
+  if($t == 0) { return 0; }
+  my $p = &tsval($ref_p, $t);
+  my $q = &tsval($ref_q, $t);
+  my $valp = $p->[1];
+  my $valq = $q->[1];
+  #print "tsval(p,$t)=[$p->[0],$valp], val(q,$t)=[$q->[0],$valq]\n";
+  if($p->[0] == $t && $q->[0] < $t ||
+     $p->[0] == $t && $q->[0] == $t && &sameval($valq, &lastval($ref_q, $t))) {
+    # only p
+    if(&sameval($valp, &lastval($ref_p, $t))) { return $resval; } # nothing
+    else {
+      if($valp == 1) {# p=>1
+        if(defined($valq)) {# p=>1 & q=0/1
+          return $resval; # no change
+        } else {# p=>1 & q=?
+          die "assert(between=0) as q=>? would imped it to be 1" if $resval;
+          # NB: lastval(q) may be 1, of course, but also 0, in the scenario
+          # p=>0; q=>1; q=>0; q=>?
+          return 0; # stay 0
+        }
+      } elsif(defined($valp) && $valp == 0) {# p=>0 & q=0/1/?
+        die "assert(between=0) as p=>0 would be anticipated" if $resval;
+        if(defined($valq)) {# p=>0 & q=0/1
+          if(&right($ref_p, $ref_q, $t, 0, 1)) {
+            return 1;
+          } elsif(&lefteq($ref_p, $ref_q, $t, 0, 1)) {
+            return 0;
+          } else {
+            return undef;
+          }
+        } else {# p=>0 & q=?
+          return undef; # become undef
+        }
+      } else {# p=>?
+        if(defined($valq)) {# p=>? & q=0/1
+          die "assert(between=0) as p=>? would imped it to be 1" if $resval;
+          return undef; # become ?
+        } else {# p=>? & q=?
+          return undef;
+        }
+      }
+    }
+  } elsif($p->[0] < $t && $q->[0] == $t ||
+          $p->[0] == $t && $q->[0] == $t && &sameval($valp, &lastval($ref_p, $t))) {
+    # only q
+    if(&sameval($valq, &lastval($ref_q, $t))) { return $resval; } # nothing
+    else {
+      if($valq == 1) {# q=>1
+        if(defined($valp)) {# q=>1 & p=0/1
+          return 0; # stay or become 0
+        } else {# q=>1 & p=?
+          die "p=? cannot happen, because this would mean between=?";
+        }
+      } elsif(defined($valq) && $valq == 0) {# q=>0 & p=0/1/?
+        if(defined($valp)) {# q=>0 & p=0/1
+          # NB: between may be 0 or 1
+          return $resval; # no change
+        } else {# q=>0 & p=?
+          die "p=? cannot happen, because this would mean between=?";
+        }
+      } else {# q=>?
+        die "assert(between=0) as q=>? would imped it to be 1" if $resval;
+        if(defined($valp)) {# q=>? & p=0/1
+          # NB: this may happen if p didn't fall since q=>1
+          return 0; # stay 0
+        } else {# q=>? & p=?
+          die "p=? cannot happen, because this would mean between=?";
+        }
+      }
+    }
+  } elsif($p->[0] == $t && $q->[0] == $t) { # p & q
+    # cases when p xor q didn't change were handled as singleton events
+    # so check here only the case when none changed:
+    if(&sameval($valp, &lastval($ref_p, $t)) &&
+       &sameval($valq, &lastval($ref_q, $t))) { return $resval; } # nothing
+    else {
+      if(defined($valp) && $valp == 0 && defined($valq) && $valq == 0) {
+        # p=>0 & q=>0
+        die "assert(between=0) as p=>0 would be anticipated" if $resval;
+        if(&right($ref_p, $ref_q, $t, 0, 1)) {
+          return 1;
+        } elsif(&lefteq($ref_p, $ref_q, $t, 0, 1)) {
+          return 0;
+        } else {
+          return undef;
+        }
+      } elsif(defined($valp) && $valp == 0 && $valq == 1) {
+        # p=>0 & q=>1
+        die "assert(between=0) as p=>0 would be anticipated" if $resval;
+        return 0; # stay 0
+        # NB: this case is caught by meets(p,q)
+      } elsif($valp == 1 && defined($valq) && $valq == 0) {
+        # p=>1 & q=>0
+        return $resval; # no change
+      } elsif($valp == 1 && $valq == 1) {
+        # p=>1 & q=>1
+        return 0; # stay or become o
+      } elsif(defined($valp) && $valp == 0 && !defined($valq)) {
+        # p=>0 & q=>?
+        die "assert(between=0) as q=>? would imped it to be 1" if $resval;
+        return undef;
+      } elsif($valp == 1 && !defined($valq)) {
+        # p=>1 & q=>?
+        die "assert(between=0) as q=>? would imped it to be 1" if $resval;
+        return 0; # stay 0
+      } elsif(!defined($valp) && defined($valq) && $valq == 0) {
+        # p=>? & q=>0
+        die "assert(between=0) as p=>? would imped it to be 1" if $resval;
+        return undef;
+      } elsif(!defined($valp) && $valq == 1) {
+        # p=>? & q=>1
+        die "assert(between=0) as p=>? would imped it to be 1" if $resval;
+        return undef;
+      } else {
+        # p=>? & q=>?
+        return undef;
+      }
+    }
+  }
+  die "between2: void return";
+}
+
+# true during the overlapping of p with q (when both are true)
+sub over2() {
+  my ($t, $ref_p, $ref_q, $ref_res, $resval) = @_;
+  if($t == 0) { return 0; }
+  my $p = &tsval($ref_p, $t);
+  my $q = &tsval($ref_q, $t);
+  my $valp = $p->[1];
+  my $valq = $q->[1];
+  #print "tsval(p,$t)=[$p->[0],$valp], val(q,$t)=[$q->[0],$valq]\n";
+  if($p->[0] == $t && $q->[0] < $t ||
+     $p->[0] == $t && $q->[0] == $t && &sameval($valq, &lastval($ref_q, $t))) {
+    # only p
+    if(&sameval($valp, &lastval($ref_p, $t))) { return $resval; } # nothing
+    else {
+      if($valp == 1) {# p=>1
+        die "assert(over=0) as p was 0" if $resval;
+        if(defined($valq)) {# p=>1 & q=0/1
+          return 0; # stay 0
+        } else {# p=>1 & q=?
+          return undef;
+          # NB: even though you know that between is 0 right now,
+          # this value may not last until next()
+        }
+      } elsif(defined($valp) && $valp == 0) {# p=>0 & q=0/1/?
+        if(defined($valq)) {# p=>0 & q=0/1
+          return 0; # stay or become 0
+        } else {# p=>0 & q=?
+          die "assert(over=0) as q=>? would imped it to be 1" if $resval;
+          return 0; # stay 0
+        }
+      } else {# p=>?
+        die "assert(over=0) as p=>? would imped it to be 1" if $resval;
+        if($valq == 1) {# p=>? & q=1
+          return 0; # stay 0
+        } elsif(defined($valq)) {# p=>? & q=0
+          return 0; # stay 0
+        } else {# p=>? & q=?
+          return undef;
+        }
+      }
+    }
+  } elsif($p->[0] < $t && $q->[0] == $t ||
+          $p->[0] == $t && $q->[0] == $t && &sameval($valp, &lastval($ref_p, $t))) {
+    # only q
+    if(&sameval($valq, &lastval($ref_q, $t))) { return $resval; } # nothing
+    else {
+      if($valq == 1) {# q=>1
+        die "assert(over=0) as q was 0" if $resval;
+        if($valp == 1) {# q=>1 & p=1
+          if(&left($ref_p, $ref_q, $t, 0, 0)) {
+            return 1;
+          } elsif(&righteq($ref_p, $ref_q, $t, 0, 0)) {
+            return 0;
+          } else {
+            return undef;
+          }
+        } elsif(defined($valp)) {# q=>1 & p=0
+          return 0; # stay 0
+        } else {# q=>1 & p=?
+          return undef;
+        }
+      } elsif(defined($valq) && $valq == 0) {# q=>0 & p=0/1/?
+        if($valp == 1) {# q=>0 & p=1
+          die "assert(between=0) as p=>0 would be anticipated" if $resval;
+          return 0; # stay 0
+        } elsif(defined($valp)) {# q=>0 & p=0
+          die "assert(over=0) as p was 0" if $resval;
+          return 0; # stay 0
+        } else {# q=>0 & p=?
+          die "assert(over=0) as q=>? would imped it to be 1" if $resval;
+          return 0; # stay 0
+        }
+      } else {# q=>?
+        die "assert(over=0) as q=>? would imped it to be 1" if $resval;
+        if($valp == 1) {# q=>? & p=1
+          return undef;
+        } elsif(defined($valp)) {# q=>? & p=0
+          return 0; # stay 0
+        } else {# q=>? & p=?
+          return undef;
+        }
+      }
+    }
+  } elsif($p->[0] == $t && $q->[0] == $t) { # p & q
+    # cases when p xor q didn't change were handled as singleton events
+    # so check here only the case when none changed:
+    if(&sameval($valp, &lastval($ref_p, $t)) &&
+       &sameval($valq, &lastval($ref_q, $t))) { return $resval; } # nothing
+    else {
+      if(defined($valp) && $valp == 0 && defined($valq) && $valq == 0) {
+        # p=>0 & q=>0
+        die "assert(over=0) as p=>0 would be anticipated" if $resval;
+          return 0;
+      } elsif(defined($valp) && $valp == 0 && $valq == 1) {
+        # p=>0 & q=>1
+        die "assert(over=0) as q was 0" if $resval;
+        return 0; # stay 0
+      } elsif($valp == 1 && defined($valq) && $valq == 0) {
+        # p=>1 & q=>0
+        die "assert(over=0) as p was 0" if $resval;
+        return 0; # stay 0
+      } elsif($valp == 1 && $valq == 1) {
+        # p=>1 & q=>1
+        die "assert(over=0) as p was 0" if $resval;
+        return 0; # stay 0
+      } elsif(defined($valp) && $valp == 0 && !defined($valq)) {
+        # p=>0 & q=>?
+        die "assert(over=0) as q=>? would imped it to be 1" if $resval;
+        return 0;
+      } elsif($valp == 1 && !defined($valq)) {
+        # p=>1 & q=>?
+        die "assert(over=0) as p was 0" if $resval;
+        return undef;
+        # NB: even though you know that between is 0 right now,
+        # this value may not last until next()
+      } elsif(!defined($valp) && defined($valq) && $valq == 0) {
+        # p=>? & q=>0
+        die "assert(over=0) as p=>? would imped it to be 1" if $resval;
+        return 0;
+      } elsif(!defined($valp) && $valq == 1) {
+        # p=>? & q=>1
+        die "assert(over=0) as q was 0" if $resval;
+        if(&lastval($ref_p, $t) == 1) {
+          return undef;
+        } else { # p was 0
+          return 0;
+        }
+      } else {
+        # p=>? & q=>?
+        return undef;
+      }
+    }
+  }
+  die "over2: void return";
+}
+
+# true during the intervals of p which start an interval of q
+sub starts2() {
+  my ($t, $ref_p, $ref_q, $ref_res, $resval) = @_;
+  if($t == 0) { return 0; }
+  my $p = &tsval($ref_p, $t);
+  my $q = &tsval($ref_q, $t);
+  my $valp = $p->[1];
+  my $valq = $q->[1];
+  #print "tsval(p,$t)=[$p->[0],$valp], val(q,$t)=[$q->[0],$valq]\n";
+  if($p->[0] == $t && $q->[0] < $t ||
+     $p->[0] == $t && $q->[0] == $t && &sameval($valq, &lastval($ref_q, $t))) {
+    # only p
+    if(&sameval($valp, &lastval($ref_p, $t))) { return $resval; } # nothing
+    else {
+      if($valp == 1) {# p=>1
+        die "assert(starts=0) as p was 0" if $resval;
+        if(defined($valq)) {# p=>1 & q=0/1
+          return 0; # stay 0
+        } else {# p=>1 & q=?
+          return undef;
+        }
+      } elsif(defined($valp) && $valp == 0) {# p=>0 & q=0/1/?
+        if(defined($valq)) {# p=>0 & q=0/1
+          return 0; # stay or become 0
+        } else {# p=>0 & q=?
+          die "assert(starts=0) as q=>? would imped it to be 1" if $resval;
+          return 0; # stay 0
+        }
+      } else {# p=>?
+        die "assert(starts=0) as p=>? would imped it to be 1" if $resval;
+        if($valq == 1) {# p=>? & q=1
+          return 0; # stay 0
+        } elsif(defined($valq)) {# p=>? & q=0
+          return 0; # stay 0
+        } else {# p=>? & q=?
+          return undef;
+        }
+      }
+    }
+  } elsif($p->[0] < $t && $q->[0] == $t ||
+          $p->[0] == $t && $q->[0] == $t && &sameval($valp, &lastval($ref_p, $t))) {
+    # only q
+    if(&sameval($valq, &lastval($ref_q, $t))) { return $resval; } # nothing
+    else {
+      if($valq == 1) {# q=>1
+        die "assert(starts=0) as q was 0" if $resval;
+        if(defined($valp)) {# q=>1 & p=0/1
+          return 0; # stay 0
+        } else {# q=>1 & p=?
+          return undef;
+        }
+      } elsif(defined($valq) && $valq == 0) {# q=>0 & p=0/1/?
+        die "assert(starts=0) as it cannot be 1 until q=>0" if $resval;
+        if(defined($valp)) {# q=>0 & p=0/1
+          return 0; # stay 0
+        } else {# q=>0 & p=?
+          return 0; # stay 0
+        }
+      } else {# q=>?
+        die "assert(starts=0) as q=>? would imped it to be 1" if $resval;
+        if($valp == 1) {# q=>? & p=1
+          return 0; # stay 0
+        } elsif(defined($valp)) {# q=>? & p=0
+          return 0; # stay 0
+        } else {# q=>? & p=?
+          return undef;
+        }
+      }
+    }
+  } elsif($p->[0] == $t && $q->[0] == $t) { # p & q
+    # cases when p xor q didn't change were handled as singleton events
+    # so check here only the case when none changed:
+    if(&sameval($valp, &lastval($ref_p, $t)) &&
+       &sameval($valq, &lastval($ref_q, $t))) { return $resval; } # nothing
+    else {
+      if(defined($valp) && $valp == 0 && defined($valq) && $valq == 0) {
+        # p=>0 & q=>0
+        die "assert(starts=0) as p=>0 would be anticipated" if $resval;
+          return 0;
+      } elsif(defined($valp) && $valp == 0 && $valq == 1) {
+        # p=>0 & q=>1
+        die "assert(starts=0) as q was 0" if $resval;
+        return 0; # stay 0
+      } elsif($valp == 1 && defined($valq) && $valq == 0) {
+        # p=>1 & q=>0
+        die "assert(starts=0) as p was 0" if $resval;
+        return 0; # stay 0
+      } elsif($valp == 1 && $valq == 1) {
+        # p=>1 & q=>1
+        die "assert(starts=0) as p was 0" if $resval;
+        if(&left($ref_p, $ref_q, $t, 0, 0)) {
+          return 1;
+        } elsif(&righteq($ref_p, $ref_q, $t, 0, 0)) {
+          return 0;
+        } else {
+          return undef;
+        }
+      } elsif(defined($valp) && $valp == 0 && !defined($valq)) {
+        # p=>0 & q=>?
+        die "assert(starts=0) as q=>? would imped it to be 1" if $resval;
+        return 0;
+      } elsif($valp == 1 && !defined($valq)) {
+        # p=>1 & q=>?
+        die "assert(starts=0) as p was 0" if $resval;
+        if(&lastval($ref_q, $t) == 1) {
+          return 0;
+        } else {
+          return undef;
+        }
+      } elsif(!defined($valp) && defined($valq) && $valq == 0) {
+        # p=>? & q=>0
+        die "assert(starts=0) as it cannot be 1 until q=>0" if $resval;
+        return 0;
+      } elsif(!defined($valp) && $valq == 1) {
+        # p=>? & q=>1
+        die "assert(starts=0) as q was 0" if $resval;
+        if(&lastval($ref_p, $t) == 1) {
+          return 0;
+        } else { # p was 0
+          return undef;
+        }
+      } else {
+        # p=>? & q=>?
+        return undef;
+      }
+    }
+  }
+  die "starts2: void return";
+}
+
+# true during the intervals of p which equal an interval of q
+sub eq2() {
+  my ($t, $ref_p, $ref_q, $ref_res, $resval) = @_;
+  if($t == 0) { return 0; }
+  my $p = &tsval($ref_p, $t);
+  my $q = &tsval($ref_q, $t);
+  my $valp = $p->[1];
+  my $valq = $q->[1];
+  #print "tsval(p,$t)=[$p->[0],$valp], val(q,$t)=[$q->[0],$valq]\n";
+  if($p->[0] == $t && $q->[0] < $t ||
+     $p->[0] == $t && $q->[0] == $t && &sameval($valq, &lastval($ref_q, $t))) {
+    # only p
+    if(&sameval($valp, &lastval($ref_p, $t))) { return $resval; } # nothing
+    else {
+      if($valp == 1) {# p=>1
+        die "assert(eq=0) as p was 0" if $resval;
+        if(defined($valq)) {# p=>1 & q=0/1
+          return 0; # stay 0
+        } else {# p=>1 & q=?
+          return undef;
+        }
+      } elsif(defined($valp) && $valp == 0) {# p=>0 & q=0/1/?
+        die "assert(eq=0) as p=>0 would imped it to be 1" if $resval;
+        if(defined($valq)) {# p=>0 & q=0/1
+          return 0; # stay 0
+        } else {# p=>0 & q=?
+          die "assert(eq=0) as q=>? would imped it to be 1" if $resval;
+          return 0; # stay 0
+        }
+      } else {# p=>?
+        die "assert(eq=0) as p=>? would imped it to be 1" if $resval;
+        if($valq == 1) {# p=>? & q=1
+          return 0; # stay 0
+        } elsif(defined($valq)) {# p=>? & q=0
+          return 0; # stay 0
+        } else {# p=>? & q=?
+          return undef;
+        }
+      }
+    }
+  } elsif($p->[0] < $t && $q->[0] == $t ||
+          $p->[0] == $t && $q->[0] == $t && &sameval($valp, &lastval($ref_p, $t))) {
+    # only q
+    if(&sameval($valq, &lastval($ref_q, $t))) { return $resval; } # nothing
+    else {
+      if($valq == 1) {# q=>1
+        die "assert(eq=0) as q was 0" if $resval;
+        if(defined($valp)) {# q=>1 & p=0/1
+          return 0; # stay 0
+        } else {# q=>1 & p=?
+          return undef;
+        }
+      } elsif(defined($valq) && $valq == 0) {# q=>0 & p=0/1/?
+        die "assert(eq=0) as it cannot be 1 until q=>0" if $resval;
+        if(defined($valp)) {# q=>0 & p=0/1
+          return 0; # stay 0
+        } else {# q=>0 & p=?
+          return 0; # stay 0
+        }
+      } else {# q=>?
+        die "assert(eq=0) as q=>? would imped it to be 1" if $resval;
+        if($valp == 1) {# q=>? & p=1
+          return 0; # stay 0
+        } elsif(defined($valp)) {# q=>? & p=0
+          return 0; # stay 0
+        } else {# q=>? & p=?
+          return undef;
+        }
+      }
+    }
+  } elsif($p->[0] == $t && $q->[0] == $t) { # p & q
+    # cases when p xor q didn't change were handled as singleton events
+    # so check here only the case when none changed:
+    if(&sameval($valp, &lastval($ref_p, $t)) &&
+       &sameval($valq, &lastval($ref_q, $t))) { return $resval; } # nothing
+    else {
+      if(defined($valp) && $valp == 0 && defined($valq) && $valq == 0) {
+        # p=>0 & q=>0
+        return 0; # stay or become 0
+      } elsif(defined($valp) && $valp == 0 && $valq == 1) {
+        # p=>0 & q=>1
+        die "assert(eq=0) as q was 0" if $resval;
+        return 0; # stay 0
+      } elsif($valp == 1 && defined($valq) && $valq == 0) {
+        # p=>1 & q=>0
+        die "assert(eq=0) as p was 0" if $resval;
+        return 0; # stay 0
+      } elsif($valp == 1 && $valq == 1) {
+        # p=>1 & q=>1
+        die "assert(eq=0) as p was 0" if $resval;
+        if(&left($ref_p, $ref_q, $t, 0, 0)) {
+          return 0;
+        } elsif(&right($ref_p, $ref_q, $t, 0, 0)) {
+          return 0;
+        } elsif(&sync($ref_p, $ref_q, $t, 0, 0)) {
+          return 1;
+        } else {
+          return undef;
+        }
+      } elsif(defined($valp) && $valp == 0 && !defined($valq)) {
+        # p=>0 & q=>?
+        die "assert(eq=0) as q=>? would imped it to be 1" if $resval;
+        return 0;
+      } elsif($valp == 1 && !defined($valq)) {
+        # p=>1 & q=>?
+        die "assert(eq=0) as p was 0" if $resval;
+        if(&lastval($ref_q, $t) == 1) {
+          return 0;
+        } else {
+          return undef;
+        }
+      } elsif(!defined($valp) && defined($valq) && $valq == 0) {
+        # p=>? & q=>0
+        die "assert(eq=0) as it cannot be 1 until q=>0" if $resval;
+        return 0;
+      } elsif(!defined($valp) && $valq == 1) {
+        # p=>? & q=>1
+        die "assert(eq=0) as q was 0" if $resval;
+        if(&lastval($ref_p, $t) == 1) {
+          return 0;
+        } else { # p was 0
+          return undef;
+        }
+      } else {
+        # p=>? & q=>?
+        return undef;
+      }
+    }
+  }
+  die "eq2: void return";
+}
+
+# true during the intervals of p which end an interval of q
+sub ends2() {
+  my ($t, $ref_p, $ref_q, $ref_res, $resval) = @_;
+  if($t == 0) { return 0; }
+  my $p = &tsval($ref_p, $t);
+  my $q = &tsval($ref_q, $t);
+  my $valp = $p->[1];
+  my $valq = $q->[1];
+  #print "tsval(p,$t)=[$p->[0],$valp], val(q,$t)=[$q->[0],$valq]\n";
+  if($p->[0] == $t && $q->[0] < $t ||
+     $p->[0] == $t && $q->[0] == $t && &sameval($valq, &lastval($ref_q, $t))) {
+    # only p
+    if(&sameval($valp, &lastval($ref_p, $t))) { return $resval; } # nothing
+    else {
+      if($valp == 1) {# p=>1
+        die "assert(ends=0) as p was 0" if $resval;
+        if($valq == 1) {# p=>1 & q=1
+          if(&left($ref_p, $ref_q, $t, 0, 0)) {
+            return 0;
+          } elsif(&right($ref_p, $ref_q, $t, 0, 0)) {
+            return 0;
+          } elsif(&sync($ref_p, $ref_q, $t, 0, 0)) {
+            return 1;
+          } else {
+            return undef;
+          }
+        } elsif(defined($valq)) {# p=>1 & q=0
+          return 0; # stay 0
+        } else {# p=>1 & q=?
+          return undef;
+        }
+      } elsif(defined($valp) && $valp == 0) {# p=>0 & q=0/1/?
+        if($valq == 1) {# p=>0 & q=1
+          die "assert(ends=0) as p=>0 would imped it to be 1" if $resval;
+          return 0; # stay 0
+        } elsif(defined($valq)) {# p=>0 & q=0
+          die "assert(ends=0) as q was 0" if $resval;
+          return 0; # stay 0
+        } else {# p=>0 & q=?
+          die "assert(ends=0) as q=>? would imped it to be 1" if $resval;
+          return 0; # stay 0
+        }
+      } else {# p=>?
+        die "assert(ends=0) as p=>? would imped it to be 1" if $resval;
+        if($valq == 1) {# p=>? & q=1
+          return undef;
+        } elsif(defined($valq)) {# p=>? & q=0
+          return 0; # stay 0
+        } else {# p=>? & q=?
+          return undef;
+        }
+      }
+    }
+  } elsif($p->[0] < $t && $q->[0] == $t ||
+          $p->[0] == $t && $q->[0] == $t && &sameval($valp, &lastval($ref_p, $t))) {
+    # only q
+    if(&sameval($valq, &lastval($ref_q, $t))) { return $resval; } # nothing
+    else {
+      if($valq == 1) {# q=>1
+        die "assert(ends=0) as q was 0" if $resval;
+        if(defined($valp)) {# q=>1 & p=0/1
+          return 0; # stay 0
+        } else {# q=>1 & p=?
+          return undef;
+          # NB: even though you know that between is 0 right now,
+          # this value may not last until next()
+        }
+      } elsif(defined($valq) && $valq == 0) {# q=>0 & p=0/1/?
+        if(defined($valp)) {# q=>0 & p=0/1
+          die "assert(ends=0) as q=>0 would imped it to be 1" if $resval;
+          return 0; # stay 0
+        } else {# q=>0 & p=?
+          die "p could not be ? when q was 1";
+        }
+      } else {# q=>?
+        die "assert(ends=0) as q=>? would imped it to be 1" if $resval;
+        if($valp == 1) {# q=>? & p=1
+          return 0; # stay 0
+          # NB: *whether q was 0 or 1 before) this p interval is compromised,
+          # so a new one must start for ends to become 1
+        } elsif(defined($valp)) {# q=>? & p=0
+          return 0; # stay 0
+        } else {# q=>? & p=?
+          return undef;
+        }
+      }
+    }
+  } elsif($p->[0] == $t && $q->[0] == $t) { # p & q
+    # cases when p xor q didn't change were handled as singleton events
+    # so check here only the case when none changed:
+    if(&sameval($valp, &lastval($ref_p, $t)) &&
+       &sameval($valq, &lastval($ref_q, $t))) { return $resval; } # nothing
+    else {
+      if(defined($valp) && $valp == 0 && defined($valq) && $valq == 0) {
+        # p=>0 & q=>0
+        return 0; # stay or become 0
+      } elsif(defined($valp) && $valp == 0 && $valq == 1) {
+        # p=>0 & q=>1
+        die "assert(ends=0) as q was 0" if $resval;
+        return 0; # stay 0
+      } elsif($valp == 1 && defined($valq) && $valq == 0) {
+        # p=>1 & q=>0
+        die "assert(ends=0) as p was 0" if $resval;
+        return 0; # stay 0
+      } elsif($valp == 1 && $valq == 1) {
+        # p=>1 & q=>1
+        die "assert(ends=0) as p was 0" if $resval;
+        return 0;
+      } elsif(defined($valp) && $valp == 0 && !defined($valq)) {
+        # p=>0 & q=>?
+        die "assert(ends=0) as q=>? would imped it to be 1" if $resval;
+        return 0; # stay 0
+      } elsif($valp == 1 && !defined($valq)) {
+        # p=>1 & q=>?
+        die "assert(ends=0) as p was 0" if $resval;
+        if(&lastval($ref_q, $t) == 1) {
+          return undef;
+        } else {
+          return 0; # stay 0
+        }
+      } elsif(!defined($valp) && defined($valq) && $valq == 0) {
+        # p=>? & q=>0
+        die "assert(ends=0) as p=>? would imped it to be 1" if $resval;
+        return 0;
+      } elsif(!defined($valp) && $valq == 1) {
+        # p=>? & q=>1
+        die "assert(ends=0) as q was 0" if $resval;
+        return undef;
+        # NB: even though you know that between is 0 right now,
+        # this value may not last until next()
+      } else {
+        # p=>? & q=>?
+        return undef;
+      }
+    }
+  }
+  die "ends2: void return";
+}
+
+# true during the intervals of p which are met by an interval of q
+sub met2() {
+  my ($t, $ref_p, $ref_q, $ref_res, $resval) = @_;
+  if($t == 0) { return 0; }
+  my $p = &tsval($ref_p, $t);
+  my $q = &tsval($ref_q, $t);
+  my $valp = $p->[1];
+  my $valq = $q->[1];
+  #print "tsval(p,$t)=[$p->[0],$valp], val(q,$t)=[$q->[0],$valq]\n";
+  if($p->[0] == $t && $q->[0] < $t ||
+     $p->[0] == $t && $q->[0] == $t && &sameval($valq, &lastval($ref_q, $t))) {
+    # only p
+    if(&sameval($valp, &lastval($ref_p, $t))) { return $resval; } # nothing
+    else {
+      if($valp == 1) {# p=>1
+        die "assert(met=0) as p was 0" if $resval;
+        if(defined($valq)) {# p=>1 & q=0/1
+          return 0; # stay 0
+        } else {# p=>1 & q=?
+          return undef;
+        }
+      } elsif(defined($valp) && $valp == 0) {# p=>0 & q=0/1/?
+        if(defined($valq)) {# p=>0 & q=0/1
+          return 0; # stay or become 0
+        } else {# p=>0 & q=?
+          return 0; # stay or become 0
+        }
+      } else {# p=>?
+        if(defined($valq)) {# p=>? & q=0/1
+          if($resval) {
+            return undef;
+          } else {
+            return 0; # stay 0
+          }
+        } else {# p=>? & q=?
+          return undef;
+        }
+      }
+    }
+  } elsif($p->[0] < $t && $q->[0] == $t ||
+          $p->[0] == $t && $q->[0] == $t && &sameval($valp, &lastval($ref_p, $t))) {
+    # only q
+    if(&sameval($valq, &lastval($ref_q, $t))) { return $resval; } # nothing
+    else {
+      if($valq == 1) {# q=>1
+        if(defined($valp)) {# q=>1 & p=0/1
+          return $resval; # no change
+        } else {# q=>1 & p=?
+          die "assert(met=0) as it cannot be 1 when p=?" if $resval;
+          return 0; # stay 0
+        }
+      } elsif(defined($valq) && $valq == 0) {# q=>0 & p=0/1/?
+        if(defined($valp)) {# q=>0 & p=0/1
+          return $resval; # no change
+        } else {# q=>0 & p=?
+          die "assert(met=0) as it cannot be 1 when p=?" if $resval;
+          return 0; # stay 0
+        }
+      } else {# q=>?
+        if(defined($valp)) {# q=>? & p=0/1
+          return $resval; # no change
+        } else {# q=>? & p=?
+          return undef;
+        }
+      }
+    }
+  } elsif($p->[0] == $t && $q->[0] == $t) { # p & q
+    # cases when p xor q didn't change were handled as singleton events
+    # so check here only the case when none changed:
+    if(&sameval($valp, &lastval($ref_p, $t)) &&
+       &sameval($valq, &lastval($ref_q, $t))) { return $resval; } # nothing
+    else {
+      if(defined($valp) && $valp == 0 && defined($valq) && $valq == 0) {
+        # p=>0 & q=>0
+        return 0; # stay or become 0
+      } elsif(defined($valp) && $valp == 0 && $valq == 1) {
+        # p=>0 & q=>1
+        return 0; # stay or become 0
+      } elsif($valp == 1 && defined($valq) && $valq == 0) {
+        # p=>1 & q=>0
+        die "assert(met=0) as p was 0" if $resval;
+        return 1;
+      } elsif($valp == 1 && $valq == 1) {
+        # p=>1 & q=>1
+        die "assert(met=0) as p was 0" if $resval;
+        return 0; # stay 0
+      } elsif(defined($valp) && $valp == 0 && !defined($valq)) {
+        # p=>0 & q=>?
+        return 0; # stay or become 0
+      } elsif($valp == 1 && !defined($valq)) {
+        # p=>1 & q=>?
+        die "assert(met=0) as p was 0" if $resval;
+        if(&lastval($ref_q, $t) == 1) {
+          return undef;
+        } else {
+          return 0;
+        }
+      } elsif(!defined($valp) && defined($valq) && $valq == 0) {
+        # p=>? & q=>0
+        if($resval == 1) {
+          return undef;
+        }
+        if(&lastval($ref_p, $t) == 1) {
+          return 0; # stay 0
+        } else {
+          return undef;
+        }
+      } elsif(!defined($valp) && $valq == 1) {
+        # p=>? & q=>1
+        if($resval == 1) {
+          return undef;
+        }
+        return 0; # stay 0
+      } else {
+        # p=>? & q=>?
+        return undef;
+      }
+    }
+  }
+  die "met2: void return";
+}
+
+# true during the intervals of p which meet an interval of q
+sub meets2() {
+  my ($t, $ref_p, $ref_q, $ref_res, $resval) = @_;
+  if($t == 0) { return 0; }
+  my $p = &tsval($ref_p, $t);
+  my $q = &tsval($ref_q, $t);
+  my $valp = $p->[1];
+  my $valq = $q->[1];
+  #print "tsval(p,$t)=[$p->[0],$valp], val(q,$t)=[$q->[0],$valq]\n";
+  if($p->[0] == $t && $q->[0] < $t ||
+     $p->[0] == $t && $q->[0] == $t && &sameval($valq, &lastval($ref_q, $t))) {
+    # only p
+    if(&sameval($valp, &lastval($ref_p, $t))) { return $resval; } # nothing
+    else {
+      if($valp == 1) {# p=>1
+        die "assert(meets=0) as p was 0" if $resval;
+        if(defined($valq)) {# p=>1 & q=0/1
+          my $tp0 = &next_val($t, $ref_p, 0);
+          if(!defined($tp0)) {
+            return undef;
+          }
+          my $tsq = &tsval($ref_q, $tp0);
+          my $oldq = &lastval($ref_q, $tp0);
+          # check q at tp0:
+          if($tsq->[0] == $tp0 && $tsq->[1] == 1 && $oldq == 0) {
+            # q=>1
+            return 1;
+          }
+          if($tsq->[0] == $tp0 && !defined($tsq->[1]) && $oldq == 1) {
+            # q=>? and was 1
+            return 0;
+          }
+          if(defined($tsq->[1])){
+            # q=0/1 or q=>0
+            return 0;
+          }
+          # q=? or q=>? and was 0
+          return undef;
+        } else {# p=>1 & q=?
+          return undef;
+        }
+      } elsif(defined($valp) && $valp == 0) {# p=>0 & q=0/1/?
+        if(defined($valq)) {# p=>0 & q=0/1
+          die "assert(meets=0) as q=0/1 would imped it to be 1" if $resval;
+          return 0; # stay 0
+        } else {# p=>0 & q=?
+          die "assert(meets=0) as q=? would imped it to be 1" if $resval;
+          return 0; # stay 0
+        }
+      } else {# p=>?
+        die "assert(meets=0) as p=>? would imped it to be 1" if $resval;
+        if(defined($valq)) {# p=>? & q=0/1
+          die "assert(p was 0) as p was 1 then ? would imped meets to be 0"
+            if &lastval($ref_p, $t) == 1;
+          return undef;
+        } else {# p=>? & q=?
+          return undef;
+        }
+      }
+    }
+  } elsif($p->[0] < $t && $q->[0] == $t ||
+          $p->[0] == $t && $q->[0] == $t && &sameval($valp, &lastval($ref_p, $t))) {
+    # only q
+    if(&sameval($valq, &lastval($ref_q, $t))) { return $resval; } # nothing
+    else {
+      if($valq == 1) {# q=>1
+        if($valp == 1) {# q=>1 & p=1
+        return $resval; # no change
+        } elsif(defined($valp)) {# q=>1 & p=0
+          die "assert(meets=0) as p is 0" if $resval;
+          return 0; # stay 0
+        } else {# q=>1 & p=?
+          die "p=? cannot happen as it would imply meets=?"
+        }
+      } elsif(defined($valq) && $valq == 0) {# q=>0 & p=0/1/?
+        if($valp == 1) {# q=>0 & p=1
+          return $resval; # no change
+        } elsif(defined($valp)) {# q=>0 & p=0
+          return 0; # stay 0
+        } else {# q=>0 & p=?
+          die "p=? cannot happen as it would imply meets=?"
+        }
+      } else {# q=>?
+        die "assert(meets=0) as q=>? would imped it to be 1" if $resval;
+        if($valp == 1) {# q=>? & p=1
+          die "assert(p=0) as q=>? while p is 1 would imped meets to be 0";
+        } elsif(defined($valp)) {# q=>? & p=0
+          return 0; # stay 0
+        } else {# q=>? & p=?
+          die "p=? cannot happen as it would imply meets=?"
+        }
+      }
+    }
+  } elsif($p->[0] == $t && $q->[0] == $t) { # p & q
+    # cases when p xor q didn't change were handled as singleton events
+    # so check here only the case when none changed:
+    if(&sameval($valp, &lastval($ref_p, $t)) &&
+       &sameval($valq, &lastval($ref_q, $t))) { return $resval; } # nothing
+    else {
+      if(defined($valp) && $valp == 0 && defined($valq) && $valq == 0) {
+        # p=>0 & q=>0
+        die "assert(meets=0) as p=>0 & q=>0 would be anticipated" if $resval;
+        return 0;
+      } elsif(defined($valp) && $valp == 0 && $valq == 1) {
+        # p=>0 & q=>1
+        die "assert(meets=1)" if $resval == 0 &&
+          !($#$ref_p == 1 && $$ref_p[0][1] == 1);
+        # NB: if p started 1 and becomes 0 for the 1st time, meets=0
+        return 0; # become 0
+      } elsif($valp == 1 && defined($valq) && $valq == 0 ||
+              $valp == 1 && $valq == 1) {
+        # p=>1 & q=>0 | p=>1 & q=>1
+        die "assert(meets=0) as p was 0" if $resval;
+        my $tp0 = &next_val($t, $ref_p, 0);
+        if(!defined($tp0)) {
+          return undef;
+        }
+        my $tsq = &tsval($ref_q, $tp0);
+        my $oldq = &lastval($ref_q, $tp0);
+        # check q at tp0:
+        if($tsq->[0] == $tp0 && $tsq->[1] == 1 && $oldq == 0) {
+          # q=>1
+          return 1;
+        }
+        if($tsq->[0] == $tp0 && !defined($tsq->[1]) && $oldq == 1) {
+          # q=>? and was 1
+          return 0;
+        }
+        if(defined($tsq->[1])){
+          # q=0/1 or q=>0
+          return 0;
+        }
+        # q=? or q=>? and was 0
+        return undef;
+      } elsif(defined($valp) && $valp == 0 && !defined($valq)) {
+        # p=>0 & q=>?
+        die "assert(meets=0)" if $resval;
+        die "assert(q was 1)" if &lastval($ref_q, $t) == 0 &&
+          !($#$ref_p == 1 && $$ref_p[0][1] == 1);
+        # NB: if p started 1 and becomes 0 for the 1st time, meets=0 indep. of q
+        return 0;
+      } elsif($valp == 1 && !defined($valq)) {
+        # p=>1 & q=>?
+        die "assert(meets=0) as p was 0" if $resval;
+        return undef;
+      } elsif(!defined($valp) && defined($valq) && $valq == 0) {
+        # p=>? & q=>0
+        die "assert(meets=0) as it cannot be 1 until p=>?" if $resval;
+        die "assert(p was 0) as it cannot be 1 until p=>?" if &lastval($ref_p, $t) == 1;
+        return undef;
+      } elsif(!defined($valp) && $valq == 1) {
+        # p=>? & q=>1
+        die "assert(meets=0) as it cannot be 1 until p=>?" if $resval;
+        die "assert(p was 0) as it cannot be 1 until p=>?" if &lastval($ref_p, $t) == 1;
+        return undef;
+      } else {
+        # p=>? & q=>?
+        return undef;
+      }
+    }
+  }
+  die "meets2: void return";
+}
