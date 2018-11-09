@@ -12,6 +12,9 @@ Main concepts and features:
 * Language constructs for defining new operators. For instance, "def up(s) = gt\[1\](s)" allows defining operator "up" above, based on the more primitive operator "gt". This feature enables the construction of user-defined abstractions, and thus creating layers of reusable pieces of context logic.
 * Online context detection: the computation in real time of contexts based on incoming streams of events produces by sensors.
 
+## WARNING
+*Allen is a highly experimental research prototype.* It is mainly intended to exemplify the implementation techniques described in the paper [1]. Its maintenance and roadmap are uncertain, subject to research objectives that are continuously being redefined. Therefore, use it at your own risks. However, feel free to contact us if you are open to collaboration.
+
 ## Getting started
 
 Allen consists of two executables, implemented as Perl scripts, available under directory src/:
