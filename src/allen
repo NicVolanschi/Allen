@@ -15,25 +15,32 @@
 # along with Allen.  If not, see <https://www.gnu.org/licenses/>.
 
 #
-# The Allen interpreter, implemented as a deeply embedded DSL.
+# The Allen virtual machine, implemented as a deeply embedded DSL interpreter.
 #
 
-my $usage = "dsl.pl [options] ruleset log
-where ruleset is a Perl module ending with a list of rules";
-
-use Getopt::Std;
-our %opts = ();
-my $forgot; # counter of forgot events
-my $tforgot; # memorize the time up to which we forgot the events
-
-getopts('f:r:spl:td', \%opts) or die "available options:
+my $usage = 'usage: allen [options] ruleset log
+where:
+* ruleset is a Perl module ending with a list of rules. This file is usually
+  produced by the Allen compiler starting from an ".aln" file.
+* log is a file with one event per line containing at least (any order):
+  "timestamp":int
+  "id":"string"
+  "value":0/1
+* options may be the following ones:
   -f N: try forgetting old events every N virtual seconds
   -r N: execute rule #N
   -s: execute all rules in sequence
   -p: execute all rules in parallel (any_up)
   -l lib: load operator library lib
   -t: print trace of events & timeouts
-  -d: dump final & intermediate streams";
+  -d: dump final & intermediate streams';
+
+use Getopt::Std;
+our %opts = ();
+my $forgot; # counter of forgot events
+my $tforgot; # memorize the time up to which we forgot the events
+
+getopts('f:r:spl:td', \%opts) or die $usage;
 
 die "f option must be a number N > 0"
   if defined($opts{'f'}) && $opts{'f'} !~ /^\d+$/;
@@ -46,7 +53,7 @@ sub load() {
   my ($name) = @_;
   print "loading library $name...\n";
   my $res = do "$name";
-  die "error ($!) in library $name : $@" if !defined($res);
+  die "error: $!\nwhen tryiny to load library \"$name\"\n$@" if !defined($res);
   print "load result = $res\n";
   #print "loaded $#$rules rules.\n";
   return $res;
@@ -331,7 +338,7 @@ sub flat() {
 
 die $usage if @ARGV != 2;
 my $rules = shift @ARGV;
-open(IN, "<", $ARGV[0]) or die "cannot open $ARGV";
+open(IN, "<", $ARGV[0]) or die "error: cannot open log file \"$ARGV[0]\"\n";
 if(defined($opts{'l'})) {
   &load($opts{'l'});
 }
@@ -683,9 +690,13 @@ sub process_pack() {
 
 sub parse_event() {
   my ($line) = @_;
-  my (undef, $val, $s, undef, $ts) =
-    ($line =~ /\{"date":"[^"]*"(,"id":"[^"]*")?,"value":([-?\d.]*(?:[eE]-?\d+)?),"device":\{"location":"[^"]*","id":"([^"]*)"(,"type":"[^"]*")?\},"timestamp":(\d*)\}/o);
-  die "parse error:\n$_" if !defined($ts);
+  #my (undef, $val, $s, undef, $ts) =
+  #  ($line =~ /\{"date":"[^"]*"(,"id":"[^"]*")?,"value":([-?\d.]*(?:[eE]-?\d+)?),"device":\{"location":"[^"]*","id":"([^"]*)"(,"type":"[^"]*")?\},"timestamp":(\d*)\}/o);
+  #die "parse error:\n$_" if !defined($ts);
+  my ($ts) = ($line =~ /"timestamp":(\d*)/);
+  my ($s) = ($line =~ /"id":"([^"]*)"/);
+  my ($val) = ($line =~ /"value":([-?\d.]*(?:[eE]-?\d+)?)/);
+  die "parse error:\n$_" if !defined($ts) ||!defined($s) || !defined($val);
   if($s =~ /^EMeter_/o) { # normalize value
     if($val >= 20) { $val = 1; }
     else { $val = 0; }

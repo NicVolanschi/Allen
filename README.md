@@ -1,5 +1,5 @@
 # Allen
-A domain-specific programming language for context detection over binary sensors.
+A domain-specific language for context detection over binary sensors.
 
 Allen [1] is a domain-specific language (DSL) for programming context-aware applications. More precisely, for programming very concisely the detection logic of contexts (or situations) for such applications, over a set of binary sensors. (A binary sensor always produces two possible values, e.g. 0 and 1.)
 Allen aims at simplifying the development of context recognition logic and making it more reliable.
@@ -12,8 +12,14 @@ Main concepts and features:
 * Language constructs for defining new operators. For instance, "def up(s) = gt\[1\](s)" allows defining operator "up" above, based on the more primitive operator "gt". This feature enables the construction of user-defined abstractions, and thus creating layers of reusable pieces of context logic.
 * Online context detection: the computation in real time of contexts based on incoming streams of events produces by sensors.
 
+## Getting started
+
+Allen consists of two executables, implemented as Perl scripts, available under directory src/:
+* allenc: the Allen compiler. It compiles a source Allen file (extension ".aln") into a Perl module (extension ".pm"). For help on the compiler command, invoke it with no options and arguments.
+* allen: the Allen virtual machine. It executes a ruleset compiled from an Allen program on a log of events. For help on the VM command, and also on the format of the log file, invoke it with no options and arguments.
+
 ## References
 
 [1] Nic Volanschi, Bernard Serpette, and Charles Consel.
-"Implementing a Semi-causal Domain-Speci c Language for Context Detection over Binary Sensors".
+"Implementing a Semi-causal Domain-Specific Language for Context Detection over Binary Sensors".
 In GPCE 2018 - 17th ACM SIGPLAN International Conference on Generative Programming: Concepts & Experiences.

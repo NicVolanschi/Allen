@@ -2,7 +2,7 @@ SRC=../src
 TST=../test
 
 %.pm: %.aln
-	$(SRC)/allenc $< >$@
+	$(SRC)/allenc $<
 
 # Sample target:
 ex: ex.pm
