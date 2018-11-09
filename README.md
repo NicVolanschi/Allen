@@ -13,7 +13,7 @@ Main concepts and features:
 * Online context detection: the computation in real time of contexts based on incoming streams of events produces by sensors.
 
 ## WARNING
-*Allen is a highly experimental research prototype.* It is mainly intended to exemplify the implementation techniques described in the paper [1]. Its maintenance and roadmap are uncertain, subject to research objectives that are continuously being redefined. Therefore, use it at your own risks. However, feel free to contact us if you are open to collaboration.
+**Allen is a highly experimental research prototype.** It is mainly intended to exemplify the implementation techniques described in the paper [1]. Its maintenance and roadmap are uncertain, subject to research objectives that are continuously being redefined. Therefore, use it at your own risks. However, feel free to contact us if you are open to collaboration.
 
 ## Getting started
 
