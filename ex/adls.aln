@@ -29,4 +29,31 @@ def gotobed[T](m1, m2) =
 def wakeup[T](m1, m2) =
   occ(recent[T](dn(m1)) & up(m2), slot_dst[7hr, 9hr])
 
+#bath.pl:
+def any_emeter_up =
+  any_up("EMeter_Coffeemaker", "EMeter_L")
+def any_contact_sw =
+  any_sw("ContactS_Cupboard", "ContactS_E", "ContactS_Fridge")
+def any_motion_but_shower_up =
+  any_up("MotionD_B", "MotionD_Ba", "MotionD_E", "MotionD_K", "MotionD_L", "MotionD_T")
+def any_but_shower2 =
+  any_motion_but_shower_up() | any_contact_sw() | any_emeter_up()
+def bath[T] =
+  flat_right("MotionD_S", ~any_but_shower2()) > T
+
+# departurealert.pl:
+def departurealert[T,Hs,He] =
+  during("ContactS_E" > T, slot_dst[Hs, He])
+
+# dooralert.pl (NB: resets alarm until new open & new leave):
+def dooralert[T] =
+  ("ContactS_E" & ~"MotionD_E") > T
+
+# indoor-post:
+def any_motion_up =
+  any_up("MotionD_B", "MotionD_Ba", "MotionD_E", "MotionD_K", "MotionD_L", "MotionD_S", "MotionD_T")
+def indoor_post =
+  holds(~(any_motion_up() | any_emeter_up() | any_contact_sw()),
+        between(dn("ContactS_E"), up("ContactS_E")) > 10min)
+
 step[1] # dummy rule
