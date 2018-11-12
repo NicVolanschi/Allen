@@ -24,15 +24,15 @@ def dinner =
 # ( Presence(Bathroom) becomes false precedes within 10 minutes Presence(Bedroom) becomes true )
 # occurred while Go-to-bed Time
 #def gotobed[T](m1, m2) =
-#  occ(recent(dn(m1), T) & up(m2), slot_dst[21hr, 24hr])
+#  occ(recent[T](dn(m1)) & up(m2), slot_dst[21hr, 24hr])
 def gotobed[T, m1, m2] =
-  occ(recent(dn(m1), T) & up(m2), slot_dst[21hr, 24hr])
+  occ(recent[T](dn(m1)) & up(m2), slot_dst[21hr, 24hr])
 
 # ( Presence(Bedroom) becomes false precedes within 10 minutes Presence(Kitchen) becomes true )
 # occurred while Wake-up Time
 #def wakeup[T](m1, m2) =
-#  occ(recent(dn(m1), T) & up(m2), slot_dst[7hr, 9hr])
+#  occ(recent[T](dn(m1)) & up(m2), slot_dst[7hr, 9hr])
 def wakeup[T, m1, m2] =
-  occ(recent(dn(m1), T) & up(m2), slot_dst[7hr, 9hr])
+  occ(recent[T](dn(m1)) & up(m2), slot_dst[7hr, 9hr])
 
-init[1] # dummy rule
+step[1] # dummy rule

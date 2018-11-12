@@ -68,4 +68,4 @@ def btwin(p,q) =
   let nq = ~q in
   over(nq, np) | starts(nq, np) | ends(nq, np) | eq(nq, np)
 
-init[1]
+step[1]

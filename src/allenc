@@ -33,7 +33,7 @@ my $syntax =
   Def -> "def" id ("[" id+(",") "]")? ("(" id+(",") ")")?
          "=" Context
   Rules -> Context ";" Rules | Context
-  Context -> "let" id "=" Expr Context "in" | Expr
+  Context -> "let" id "=" Expr "in" Context | Expr
   Expr -> Prod "|" Expr | Prod
   Prod -> Comp "&" Prod | Comp
   Comp -> Expr1 (">=!"|"<="|">="|"<"|">") Int | Expr1
@@ -79,6 +79,22 @@ my $line = "";
 # print "done\n";
 # exit;
 
+my %predef = ("during" => [0,2], "contains" => [0,2],
+  "over" => [0,2], "overlaps" => [0,2], "overlapped" => [0,2],
+  "starts" => [0,2], "started" => [0,2], "ends" => [0,2], "ended" => [0,2],
+  "eq" => [0,2], "met" => [0,2], "meets" => [0,2],
+  "before" => [0,2], "after" => [0,2], "between" => [0,2], "btwin" => [0,2], "btw" => [0,2],
+  "holds" => [0,2], "occ" => [0,2], "ex" => [0,2],
+  "delay" => [1,1], "cut" => [1,1], "recent" => [1,1],
+  "step" => [1,0], "init" => [0,0], "wave" => [4,0], "slot" => [4,0], "slot_dst" => [2,0],
+  "up" => [0,1], "dn" => [0,1], "sw" => [0,1],
+  "all" => [0], "any" => [0], "any_up" => [0], "any_dn" => [0], "any_sw" => [0],
+  "first" => [0,2], "fill" => [0,2], "flat" => [0,2], "flat_right" => [0,2],
+  );
+
+my %def = (); # symbol table for def's (global scope)
+my %var = (); # symbol table for variables (lexical scope)
+
 my $l = &parse_lib();
 #&print_ast($l);
 #print "\n";
@@ -106,12 +122,18 @@ sub parse_lib() {
   while ($typ eq "key" && $tok eq "def") {
     my $d = &parse_def();
     push @defs, $d;
+    my $nm = $d->[1];
+    die "duplicated def: $nm" if defined($def{$nm});
+    my $npar = @{$d->[2]};
+    my $narg = @{$d->[3]};
+    $def{$nm} = [$npar, $narg]; # put name in def symbol table
     ($typ, $tok) = &token(0); # look ahead
   }
   return \@defs;
 }
 
 sub parse_def() {
+  %var = (); # reset let symbol table
   my ($typ, $tok) = &token(1);
   die "def expected, found $tok at $line"
     if $typ ne "key" || $tok ne "def";
@@ -127,6 +149,8 @@ sub parse_def() {
       die "id expected in def, found $tok4 at $line"
         if $typ4 ne "id";
       push @pars, $tok4;
+      die "duplicated variable $tok4" if defined($var{$tok4});
+      $var{$tok4} = "par"; # register parameter
       ($typ3, $tok3) = &token(1);
     } while ($typ3 eq "key" && $tok3 eq ",");
     die "expected closing par, found: $tok3"
@@ -141,6 +165,8 @@ sub parse_def() {
       die "id expected in def, found $tok5 at $line"
         if $typ5 ne "id";
       push @args, $tok5;
+      die "duplicated variable $tok5" if defined($var{$tok5});
+      $var{$tok5} = "arg"; # register argument
       ($typ3, $tok3) = &token(1);
     } while ($typ3 eq "key" && $tok3 eq ",");
     die "expected closing par, found: $tok3 at $line"
@@ -155,10 +181,12 @@ sub parse_def() {
 
 
 sub parse_rules() {
+  %var = (); # reset let symbol table
   my $e1 = &parse_context();
   my @contexts = ($e1);
   my ($typ, $tok) = &token(1);
   while ($typ eq "key" && $tok eq ";") {
+    %var = (); # reset let symbol table
     my $e2 = &parse_context();
     push @contexts, $e2;
     ($typ, $tok) = &token(1);
@@ -175,6 +203,8 @@ sub parse_context() {
     my ($typ2, $tok2) = &token(1);
     die "id expected in let, found $tok2 at $line"
       if $typ2 ne "id";
+    die "duplicated variable $tok2" if defined($var{$tok2});
+    $var{$tok2} = "let"; # register let variable
     my ($typ3, $tok3) = &token(1);
     die "= expected in let, found $tok3 at $line"
       if $typ3 ne "key" || $tok3 ne "=";
@@ -251,7 +281,7 @@ sub parse_int() {
 # non left-recursive
 sub parse_expr1() {
   my ($typ, $tok) = &token(1);
-  die "empty expr" if !defined($typ);
+  die "empty expr" if !defined($typ) || $typ eq "eof";
   if ($typ eq "key") {
     if ($tok eq "~") {
       my $e = &parse_expr1();
@@ -291,8 +321,25 @@ sub parse_expr1() {
         if $typ2 ne "key" || $tok2 ne ")";
     }
     if ($#pars >= 0 || $#args >= 0) {
+      # TODO: allow forward references (delay check to code generation phase)
+      my $op = $tok;
+      if (!exists($predef{$op}) && !exists($def{$op})) {
+        die "undefined macro $op";
+      } else { # check nb of pars & args
+        my $type = exists($predef{$op})? $predef{$op}: $def{$op};
+        my $npars0 = $type->[0]; # expected
+        my $nargs0 = $type->[1]; # expected
+        my $npars = @pars; # provided
+        my $nargs = @args; # provided
+        if ($npars != $npars0 || defined($nargs0) && $nargs != $nargs0) {
+          die "pars/args mismatch for $op\[$npars0\]($nargs0):\n" .
+              "called: $op\[$npars\]($nargs)";
+        }
+      }
       return [$tok, \@pars, @args];
     } else {
+      # variables cannot use forward reference
+      die "unbound variable $tok" if !defined($var{$tok});
       return $tok;
     }
   } elsif ($typ eq "int") {
@@ -369,39 +416,7 @@ sub gen_expr() {
   if (ref $t eq "ARRAY") {
     die "gen_context([])" if $#$t < 0;
     my $op = $t->[0];
-    my $pars;
-    if ($op !~ /^(>=!|<=|>=|<|>|and|or|not)$/) { # macro
-      $pars = $t->[1];
-    }
-    if ($pars) { # macro
-      # native macros first:
-      if ($op eq "delay") { # unary op
-        print OUT "[&$op(";
-        &gen_expr($pars->[0]);
-        print OUT "),";
-        &gen_expr($t->[2]);
-        print OUT "]";
-      } elsif ($op eq "wave") { # nullary op
-        print OUT "[&$op(";
-        &gen_expr($pars->[0]);
-        print OUT ",";
-        &gen_expr($pars->[1]);
-        print OUT ",";
-        &gen_expr($pars->[2]);
-        print OUT ",";
-        &gen_expr($pars->[3]);
-        print OUT ")]";
-      } else { # user-defined macros:
-        print OUT "&$op(";
-        my @args = (@$t[2..$#$t], @$pars);
-        &gen_expr($args[0]);
-        for my $x (@args[1..$#args]) {
-          print OUT ",";
-          &gen_expr($x);
-        }
-        print OUT ")";
-      }
-    } else { # op
+    if ($op =~ /^(>=!|<=|>=|<|>|and|or|not)$/) {
       print OUT "[&";
       if ($op =~ /^(>=!|<=|>=|<|>)$/) {
         print OUT $op eq ">=!"? "geRT":
@@ -422,6 +437,36 @@ sub gen_expr() {
         }
       }
       print OUT "]";
+    } else { # macro
+      my $pars = $t->[1];
+      my @args = (@$t[2..$#$t]);
+      # native macros first:
+      if ($op eq "delay") { # unary op
+        print OUT "[&$op(";
+        &gen_expr($pars->[0]);
+        print OUT "),";
+        &gen_expr($args[0]);
+        print OUT "]";
+      } elsif ($op eq "wave") { # nullary op
+        print OUT "[&$op(";
+        &gen_expr($pars->[0]);
+        print OUT ",";
+        &gen_expr($pars->[1]);
+        print OUT ",";
+        &gen_expr($pars->[2]);
+        print OUT ",";
+        &gen_expr($pars->[3]);
+        print OUT ")]";
+      } else { # user-defined macros:
+        print OUT "&$op(";
+        my @lst = (@args, @$pars);
+        &gen_expr($lst[0]);
+        for my $x (@lst[1..$#lst]) {
+          print OUT ",";
+          &gen_expr($x);
+        }
+        print OUT ")";
+      }
     }
   } elsif (ref $t eq "") { # scalar
     if ($t =~ /^\d+$/) {
