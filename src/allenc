@@ -30,7 +30,7 @@ my $syntax =
 '* the syntax of an Allen program is:
   Prog -> Lib Rules
   Lib -> Def*
-  Def -> "def" id ("[" id+(",") "]")? ("(" id+(",") ")")?
+  Def -> "def" id ("[" id+(",") "]")? ("(" id*(",") ")")?
          "=" Context
   Rules -> Context ";" Rules | Context
   Context -> "let" id "=" Expr "in" Context | Expr
@@ -38,7 +38,7 @@ my $syntax =
   Prod -> Comp "&" Prod | Comp
   Comp -> Expr1 (">=!"|"<="|">="|"<"|">") Int | Expr1
   Expr1 -> "~" Expr1 | "(" Expr ")" | str
-        | id ("[" Int+(",") "]")? ("(" Expr+(",") ")")?
+        | id ("[" Int+(",") "]")? ("(" Expr*(",") ")")?
   Int -> id | int ("hr" | "min" | "sec")?
 * comments in the program start with a # and span to the end of line';
 
@@ -160,17 +160,23 @@ sub parse_def() {
   ($typ3, $tok3) = &token(0); # lookahead
   if ($typ3 eq "key" && $tok3 eq "(") {
     &token(1); # consume '('
-    do {
-      my ($typ5, $tok5) = &token(1);
-      die "id expected in def, found $tok5 at $line"
-        if $typ5 ne "id";
-      push @args, $tok5;
-      die "duplicated variable $tok5" if defined($var{$tok5});
-      $var{$tok5} = "arg"; # register argument
-      ($typ3, $tok3) = &token(1);
-    } while ($typ3 eq "key" && $tok3 eq ",");
-    die "expected closing par, found: $tok3 at $line"
-      if $typ3 ne "key" || $tok3 ne ")";
+    ($typ3, $tok3) = &token(0); # lookahead
+    if ($typ3 eq "key" && $tok3 eq ")") {
+      # empty args
+      &token(1); # consume ')'
+    } else { # parse pars
+      do {
+        my ($typ5, $tok5) = &token(1);
+        die "id expected in def, found $tok5 at $line"
+          if $typ5 ne "id";
+        push @args, $tok5;
+        die "duplicated variable $tok5" if defined($var{$tok5});
+        $var{$tok5} = "arg"; # register argument
+        ($typ3, $tok3) = &token(1);
+      } while ($typ3 eq "key" && $tok3 eq ",");
+      die "expected closing par, found: $tok3 at $line"
+        if $typ3 ne "key" || $tok3 ne ")";
+    }
   }
   my ($typ6, $tok6) = &token(1);
   die "= expected in def, found $tok6 at $line"
@@ -308,19 +314,27 @@ sub parse_expr1() {
       die "expected closing par, found: $tok2"
         if $typ2 ne "key" || $tok2 ne "]";
     }
+    my $arglst = 0; # bool var: has arg list?
     my @args = ();
     ($typ2, $tok2) = &token(0); # lookahead
     if ($typ2 eq "key" && $tok2 eq "(") {
       &token(1); # consume '('
-      do {
-        my $e = &parse_expr();
-        push @args, $e;
-        ($typ2, $tok2) = &token(1);
-      } while ($typ2 eq "key" && $tok2 eq ",");
-      die "expected closing par, found: $tok2"
-        if $typ2 ne "key" || $tok2 ne ")";
+      $arglst = 1;
+      ($typ2, $tok2) = &token(0); # lookahead
+      if ($typ2 eq "key" && $tok2 eq ")") {
+        # empty args
+        &token(1); # consume ')'
+      } else { # parse pars
+        do {
+          my $e = &parse_expr();
+          push @args, $e;
+          ($typ2, $tok2) = &token(1);
+        } while ($typ2 eq "key" && $tok2 eq ",");
+        die "expected closing par, found: $tok2"
+          if $typ2 ne "key" || $tok2 ne ")";
+      }
     }
-    if ($#pars >= 0 || $#args >= 0) {
+    if ($#pars >= 0 || $arglst == 1) { # it's a call
       # TODO: allow forward references (delay check to code generation phase)
       my $op = $tok;
       if (!exists($predef{$op}) && !exists($def{$op})) {
@@ -337,7 +351,7 @@ sub parse_expr1() {
         }
       }
       return [$tok, \@pars, @args];
-    } else {
+    } else { # it's a var ref
       # variables cannot use forward reference
       die "unbound variable $tok" if !defined($var{$tok});
       return $tok;
@@ -437,7 +451,7 @@ sub gen_expr() {
         }
       }
       print OUT "]";
-    } else { # macro
+    } else { # named op call
       my $pars = $t->[1];
       my @args = (@$t[2..$#$t]);
       # native macros first:
@@ -460,9 +474,10 @@ sub gen_expr() {
       } else { # user-defined macros:
         print OUT "&$op(";
         my @lst = (@args, @$pars);
-        &gen_expr($lst[0]);
-        for my $x (@lst[1..$#lst]) {
-          print OUT ",";
+        my $first = 1;
+        for my $x (@args, @$pars) {
+          print OUT "," unless $first;
+          $first = 0;
           &gen_expr($x);
         }
         print OUT ")";
