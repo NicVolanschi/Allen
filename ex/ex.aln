@@ -6,5 +6,5 @@ def foo[T](x,y) =
 
 # Rules to check:
 
-foo[1]("p", "q");
-foo[1]("q", "p")
+c1: foo[1]("p", "q");
+c2: foo[1]("q", "p")

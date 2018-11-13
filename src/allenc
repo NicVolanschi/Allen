@@ -32,7 +32,7 @@ my $syntax =
   Lib -> Def*
   Def -> "def" id ("[" id+(",") "]")? ("(" id*(",") ")")?
          "=" Context
-  Rules -> Context ";" Rules | Context
+  Rules -> id ":" Context (";" Rules)?
   Context -> "let" id "=" Expr "in" Context | Expr
   Expr -> Prod "|" Expr | Prod
   Prod -> Comp "&" Prod | Comp
@@ -107,7 +107,8 @@ for my $d (@$l) {
   gen_def($d);
 }
 print OUT "\n# User-defined contexts\n[\n";
-for my $r (@{$p}) {
+for (my $i = 1; $i <= $#$p; $i += 2) { # iterate over key/val pairs, take only val
+  my $r = $p->[$i];
   gen_context($r);
   print OUT ",\n";
 }
@@ -187,14 +188,30 @@ sub parse_def() {
 
 
 sub parse_rules() {
+  my ($typ1, $tok1) = &token(1);
+  die "context name expected"
+    if $typ1 ne "id";
+  my ($typ, $tok) = &token(1);
+  die "':' expected"
+    if $typ ne "key" || $tok ne ":";
   %var = (); # reset let symbol table
   my $e1 = &parse_context();
-  my @contexts = ($e1);
-  my ($typ, $tok) = &token(1);
+  my @contexts = ($tok1, $e1); # ordered hash (list of key/val pairs)
+  my %contexts = ($tok1 => $e1); # hash for local use only
+  ($typ, $tok) = &token(1);
   while ($typ eq "key" && $tok eq ";") {
+    ($typ1, $tok1) = &token(1);
+    die "context name expected"
+      if $typ1 ne "id";
+    ($typ, $tok) = &token(1);
+    die "':' expected"
+      if $typ ne "key" || $tok ne ":";
+    die "duplicated context name: $tok1"
+      if exists($contexts{$tok1}); # uses the local hash
     %var = (); # reset let symbol table
-    my $e2 = &parse_context();
-    push @contexts, $e2;
+    $e1 = &parse_context();
+    push @contexts, $tok1, $e1;
+    $contexts{$tok1} = $e1;
     ($typ, $tok) = &token(1);
   }
   die "garbage at end of program: $tok at $line"
@@ -385,7 +402,7 @@ sub token() {
   my $tok;
   if ($line =~ /^(\d+)/) {
     ($typ, $tok) = ("int", $1);
-  } elsif ($line =~ /^([][&|~(),;=]|>=!|<=|>=|<|>|(day|hr|min|sec|let|in|def)\b)/) {
+  } elsif ($line =~ /^([][&|~(),;:=]|>=!|<=|>=|<|>|(day|hr|min|sec|let|in|def)\b)/) {
     ($typ, $tok) = ("key", $1);
   } elsif ($line =~ /^([a-zA-Z]\w*)/) {
     ($typ, $tok) = ("id", $1);

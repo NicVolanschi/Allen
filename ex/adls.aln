@@ -56,4 +56,4 @@ def indoor_post =
   holds(~(any_motion_up() | any_emeter_up() | any_contact_sw()),
         between(dn("ContactS_E"), up("ContactS_E")) > 10min)
 
-step[1] # dummy rule
+ctx1: step[1] # dummy rule
