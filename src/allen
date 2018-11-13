@@ -18,19 +18,18 @@
 # The Allen virtual machine, implemented as a deeply embedded DSL interpreter.
 #
 
-my $usage = 'usage: allen [options] ruleset log
+my $usage = 'usage: allen [options] ruleset
 where:
 * ruleset is a Perl module ending with a list of rules. This file is usually
   produced by the Allen compiler starting from an ".aln" file.
-* log is a file with one event per line containing at least (any order):
+* standard input has one event per line containing at least (any order):
   "timestamp":int
   "id":"string"
   "value":0/1
 * options may be the following ones:
-  -f N: try forgetting old events every N virtual seconds
+  -f N: try forgetting old events every N virtual seconds (0=never, default=10K)
   -r N: execute rule #N
-  -s: execute all rules in sequence
-  -p: execute all rules in parallel (any_up)
+  -s log: execute all rules in sequence on file log rather than on stdin
   -l lib: load operator library lib
   -t: print trace of events & timeouts
   -d: dump final & intermediate streams';
@@ -40,10 +39,11 @@ our %opts = ();
 my $forgot; # counter of forgot events
 my $tforgot; # memorize the time up to which we forgot the events
 
-getopts('f:r:spl:td', \%opts) or die $usage;
+getopts('f:r:s:l:td', \%opts) or die $usage;
 
 die "f option must be a number N > 0"
   if defined($opts{'f'}) && $opts{'f'} !~ /^\d+$/;
+$opts{'f'} = 10000 if (!defined($opts{'f'}));
 
 use FindBin;
 use lib $FindBin::Bin;
@@ -336,24 +336,27 @@ sub flat() {
 
 # ---------------------- Main program --------------------------------
 
-die $usage if @ARGV != 2;
+die $usage if @ARGV != 1;
 my $rules = shift @ARGV;
-open(IN, "<", $ARGV[0]) or die "error: cannot open log file \"$ARGV[0]\"\n";
+if (defined($opts{'s'})) {
+  my $log = $opts{'s'};
+  open(IN, "<$log") or die "error: cannot open log file \"$log\"\n";
+} else {
+  open(IN, "<-");
+}
 if(defined($opts{'l'})) {
   &load($opts{'l'});
 }
 my $fname = "$rules";
 my $rules = &load($fname);
 my @forms = @$rules;
-if(defined($opts{'r'})) {
+if(defined($opts{'s'})) { # compute rules in sequence
+  for(my $i=0; $i<=$#forms; $i++) {warn "form $i/$#forms\n"; &interpret($forms[$i]); seek IN, 0, 0;}
+} elsif(defined($opts{'r'})) { # compute only one rule
   die "no rule #$opts{'r'}" if $opts{'r'} < 0 || $opts{'r'} > $#forms;
   &interpret($forms[$opts{'r'}]);
-} elsif(defined($opts{'p'})) {
+} else { # compute rules in parallel
   &interpret(&any_up(@forms));
-} elsif(defined($opts{'s'})) {
-  for(my $i=0; $i<=$#forms; $i++) {warn "form $i/$#forms\n"; &interpret($forms[$i]); seek IN, 0, 0;}
-} else {
-  die "undefined form";
 }
 exit;
 
@@ -615,7 +618,7 @@ sub csp() {
         my $tspack = $pack[$#pack]->[2];
         &process_pack($lexprs, $iexpr, \@pack, $tspack, $out, $outix);
         @pack = ();
-        &forget($out) if $opts{'f'};
+        &forget($out) if $opts{'f'} != 0;
       } else {
         print "simultaneous events\n";
       }
