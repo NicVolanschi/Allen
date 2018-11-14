@@ -27,10 +27,11 @@ where:
   "id":"string"
   "value":0/1
 * options may be the following ones:
-  -f N: try forgetting old events every N virtual seconds (0=never, default=10K)
-  -r N: execute rule #N
+  -q \'/regex/>=val,...\': threshold-quantify matching numeric sensors as boolean
   -s log: execute all rules in sequence on file log rather than on stdin
+  -r N: execute only rule #N
   -l lib: load operator library lib
+  -f N: try forgetting old events every N virtual seconds (0=never, default=10K)
   -t: print trace of events & timeouts
   -d: dump final & intermediate streams';
 
@@ -39,11 +40,23 @@ our %opts = ();
 my $forgot; # counter of forgot events
 my $tforgot; # memorize the time up to which we forgot the events
 
-getopts('f:r:s:l:td', \%opts) or die $usage;
+getopts('q:s:r:l:f:td', \%opts) or die $usage;
 
 die "f option must be a number N > 0"
   if defined($opts{'f'}) && $opts{'f'} !~ /^\d+$/;
 $opts{'f'} = 10000 if (!defined($opts{'f'}));
+
+my %threshold = ();
+if (defined($opts{'q'})) {
+  for my $cond (split /\s*,\s*/, $opts{'q'}) {
+    #print "parsing condition: $cond\n";
+    my ($regex, $val) = ($cond =~ q|/([^/]*)/\s*>=\s*([-?\d.]*(?:[eE]-?\d+)?)|);
+    die "found not /regex/>=val in -q option: $cond"
+      if !defined($regex) || !defined($val);
+    $threshold{$regex} = $val;
+    print "quant: /$regex/ >= '$val'\n";
+  }
+}
 
 use FindBin;
 use lib $FindBin::Bin;
@@ -700,13 +713,14 @@ sub parse_event() {
   my ($s) = ($line =~ /"id":"([^"]*)"/);
   my ($val) = ($line =~ /"value":([-?\d.]*(?:[eE]-?\d+)?)/);
   die "parse error:\n$_" if !defined($ts) ||!defined($s) || !defined($val);
-  if($s =~ /^EMeter_/o) { # normalize value
-    if($val >= 20) { $val = 1; }
-    else { $val = 0; }
-  } elsif($s =~ /\.BatteryLevel$/o) { # normalize value
-    if($val >= 20) { $val = 1; }
-    else { $val = 0; }
-  } elsif($val != 1 && $val != 0) {
+  # quantify values of numeric sensors:
+  while (my ($regex, $thr) = each %threshold) {
+    if ($s =~ /$regex/) {
+      if ($val >= $thr) { $val = 1; }
+      else { $val = 0; }
+    }
+  }
+  if($val != 1 && $val != 0) {
     print "skipping non-bool value ($val, $s, $ts)\n";
     next;
   }
