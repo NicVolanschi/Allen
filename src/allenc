@@ -107,8 +107,10 @@ for my $d (@$l) {
   gen_def($d);
 }
 print OUT "\n# User-defined contexts\n[\n";
-for (my $i = 1; $i <= $#$p; $i += 2) { # iterate over key/val pairs, take only val
-  my $r = $p->[$i];
+for (my $i = 0; $i < $#$p; $i += 2) { # iterate over key/val pairs
+  my $k = $p->[$i];
+  print OUT "\"$k\",\n";
+  my $r = $p->[$i + 1];
   gen_context($r);
   print OUT ",\n";
 }

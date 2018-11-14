@@ -360,15 +360,34 @@ if(defined($opts{'l'})) {
   &load($opts{'l'});
 }
 my $fname = "$rules";
-my $rules = &load($fname);
-my @forms = @$rules;
+my $rules = &load($fname); # get list of name/form pairs
+my %rules = (@$rules); # put the list of pairs in a hash
+my @rules = (); # rule names in order
+my @forms = (); # forms in order
+for(my $i=0; $i<$#$rules; $i+=2) {
+  my $n = $rules->[$i];
+  my $f = $rules->[$i + 1];
+  die "rule name expected, found $n" if ref $n ne "";
+  die "rule form expected, found $f" if ref $f ne "ARRAY";
+  push @rules, $n;
+  push @forms, $f;
+  print STDERR "rule\[$i\]:$n=$f\n";
+}
 if(defined($opts{'s'})) { # compute rules in sequence
-  for(my $i=0; $i<=$#forms; $i++) {warn "form $i/$#forms\n"; print "# form $i/$#forms\n"; &interpret($forms[$i]); seek IN, 0, 0;}
+  for (my $i=0; $i<=$#rules; $i++) {
+    my $n = $rules[$i];
+    my $f = $forms[$i];
+    warn "form $n ($i/$#rules)\n";
+    print "# form $n ($i/$#rules)\n";
+    &interpret($f, $n);
+    seek IN, 0, 0;
+  }
 } elsif(defined($opts{'r'})) { # compute only one rule
-  die "no rule #$opts{'r'}" if $opts{'r'} < 0 || $opts{'r'} > $#forms;
-  &interpret($forms[$opts{'r'}]);
+  my $n = $opts{'r'};
+  die "no rule $n" if !exists($rules{$n});
+  &interpret($rules{$n}, $n);
 } else { # compute rules in parallel
-  &interpret(&any_up(@forms));
+  &interpret(&any_up(@forms), "out");
 }
 exit;
 
@@ -552,7 +571,7 @@ sub print_expr() {
 }
 
 sub interpret() {
-  my ($form) = @_;
+  my ($form, $name) = @_;
   if (defined($opts{'g'})) {
     print STDERR "form: " . &print_form($form) . "\n";
     print STDERR "domain: ";
@@ -591,7 +610,7 @@ sub interpret() {
   if(defined($opts{'d'})) {
     print "streams:\n" . &print_streams(\@out) . "\n";
   }
-  &export_stream($out[$#out]);
+  &export_stream($out[$#out], $name);
 }
 
 sub stream_name {
@@ -918,14 +937,14 @@ sub print_streams() {
 }
 
 sub export_stream() {
-  my ($ref_p) = @_;
+  my ($ref_p, $name) = @_;
   my $lastval = 0;
   my $lastts = 0;
   for my $e (@{$ref_p}) {
     my ($ts, $val) = @$e;
     if(defined($val) && $val != $lastval) {
       use integer;
-      print "$ts;out;" . $val . ";" . localtime($ts / 1000) . ";" ;
+      print "$ts;$name;" . $val . ";" . localtime($ts / 1000) . ";" ;
       if($val == 0) {
         print (($ts - $lastts) / 1000);
       }
