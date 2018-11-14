@@ -23,7 +23,7 @@ where:
 * ruleset is a Perl module ending with a list of rules. This file is usually
   produced by the Allen compiler starting from an ".aln" file.
 * standard input must be in CSV format with at least three columns:
-  timestamp;sensor;value[;comments]
+  timestamp;sensor;value[;...]
 * options may be the following ones:
   -q \'/regex/>=val,...\': threshold-quantify matching numeric sensors as boolean
   -s log: execute all rules in sequence on file log rather than on stdin
@@ -31,7 +31,8 @@ where:
   -l lib: load operator library lib
   -f N: try forgetting old events every N virtual seconds (0=never, default=10K)
   -t: print trace of events & timeouts
-  -d: dump final & intermediate streams';
+  -d: dump final & intermediate streams
+  -g: pring debug info';
 
 use Getopt::Std;
 our %opts = ();
@@ -47,12 +48,12 @@ $opts{'f'} = 10000 if (!defined($opts{'f'}));
 my %threshold = ();
 if (defined($opts{'q'})) {
   for my $cond (split /\s*,\s*/, $opts{'q'}) {
-    #print "parsing condition: $cond\n";
+    #print STDERR "parsing condition: $cond\n";
     my ($regex, $val) = ($cond =~ q|/([^/]*)/\s*>=\s*([-?\d.]*(?:[eE]-?\d+)?)|);
     die "found not /regex/>=val in -q option: $cond"
       if !defined($regex) || !defined($val);
     $threshold{$regex} = $val;
-    print "quant: /$regex/ >= '$val'\n";
+    print STDERR "quant: /$regex/ >= '$val'\n";
   }
 }
 
@@ -62,11 +63,11 @@ use lib $FindBin::Bin;
 
 sub load() {
   my ($name) = @_;
-  print "loading library $name...\n";
+  print STDERR "loading library $name...\n";
   my $res = do "$name";
   die "error: $!\nwhen tryiny to load library \"$name\"\n$@" if !defined($res);
-  print "load result = $res\n";
-  #print "loaded $#$rules rules.\n";
+  print STDERR "load result = $res\n" if defined($opts{'g'});
+  #print STDERR "loaded $#$rules rules.\n";
   return $res;
 }
 
@@ -362,7 +363,7 @@ my $fname = "$rules";
 my $rules = &load($fname);
 my @forms = @$rules;
 if(defined($opts{'s'})) { # compute rules in sequence
-  for(my $i=0; $i<=$#forms; $i++) {warn "form $i/$#forms\n"; &interpret($forms[$i]); seek IN, 0, 0;}
+  for(my $i=0; $i<=$#forms; $i++) {warn "form $i/$#forms\n"; print "# form $i/$#forms\n"; &interpret($forms[$i]); seek IN, 0, 0;}
 } elsif(defined($opts{'r'})) { # compute only one rule
   die "no rule #$opts{'r'}" if $opts{'r'} < 0 || $opts{'r'} > $#forms;
   &interpret($forms[$opts{'r'}]);
@@ -477,7 +478,8 @@ sub link_rec() {
       my $ix = $$expr[$#$expr];
       my $comp = [$$expr[0], (map {$#$_>0? $out->[$$_[$#$_]]: $$_[0]} @trees), ($h->{$expr} = $out->[$ix])];
       $outix->{$out->[$ix]} = $ix;
-      print "comp: [$$expr[0]," . (join ",", (map {$#$_>0? "\$out->[$$_[$#$_]]": defined($outix->{$$_[0]})? "\$out->[$outix->{$$_[0]}]": "in:$$_[0]"} @trees)) . ",\$out->[$ix]]\n";
+      print STDERR "comp: [$$expr[0]," . (join ",", (map {$#$_>0? "\$out->[$$_[$#$_]]": defined($outix->{$$_[0]})? "\$out->[$outix->{$$_[0]}]": "in:$$_[0]"} @trees)) . ",\$out->[$ix]]\n"
+        if defined($opts{'g'});
       return (@res, $comp);
     } else { # leaf (in stream)
       return ();
@@ -510,7 +512,7 @@ sub ilink_rec() {
       #my @pub = (map {($#$_>0? $out->[$$_[$#$_]]: $$_[0] => $out->[$ix])} @trees);
       my @pub = (map {($#$_>0? $out->[$$_[$#$_]]: $$_[0] => $out->[$ix])} @trees);
       $h->{$expr} = 1;
-      #print "pub: " . (join ",", (map {($#$_>0? "\$out->[$$_[$#$_]]": "in:$$_[0]" => "\$out->[$ix]")} @trees)) . "\n";
+      #print STDERR "pub: " . (join ",", (map {($#$_>0? "\$out->[$$_[$#$_]]": "in:$$_[0]" => "\$out->[$ix]")} @trees)) . "\n";
       return (@res, @pub);
     } else { # leaf (in stream)
       return ();
@@ -551,13 +553,15 @@ sub print_expr() {
 
 sub interpret() {
   my ($form) = @_;
-  print "form: " . &print_form($form) . "\n";
-  print "domain: ";
-  print join ",", &domain($form);
-  print "\n";
-  print "codomain: ";
-  print join ",", &codomain($form);
-  print "\n";
+  if (defined($opts{'g'})) {
+    print STDERR "form: " . &print_form($form) . "\n";
+    print STDERR "domain: ";
+    print STDERR join ",", &domain($form);
+    print STDERR "\n";
+    print STDERR "codomain: ";
+    print STDERR join ",", &codomain($form);
+    print STDERR "\n";
+  }
   @in = ();
   for my $s (&domain($form)) {
     $in{$s} = [[0,0]];
@@ -567,18 +571,21 @@ sub interpret() {
     $out[$i] = [];
   }
   my $expr = &form2expr($form, \@out);
-  print "expr: ";
-  print &print_expr($expr);
-  print "\n";
+  if (defined($opts{'g'})) {
+    print STDERR "expr: ";
+    print STDERR &print_expr($expr);
+    print STDERR "\n";
+  }
   my %outix; # map out streams back to their index in @out
   my @lexprs = &link($expr, \@out, \%outix);
   my %iexpr = &ilink($expr, \@out);
-  print "iexpr: ";
+  print STDERR "iexpr: " if (defined($opts{'g'}));
   for my $k (sort {$outix{$a} <=> $outix{$b}} keys %iexpr) {
     my $knm = &stream_name($k, \%outix);
-    print "$knm=>[" . (join ",", (map {&stream_name($_, \%outix)} @{$iexpr{$k}})) . "] ";
+    print STDERR "$knm=>[" . (join ",", (map {&stream_name($_, \%outix)} @{$iexpr{$k}})) . "] "
+      if (defined($opts{'g'}));
   };
-  print "\n";
+  print STDERR "\n" if (defined($opts{'g'}));
   my %h = &domain_h($form);
   &csp(\@lexprs, \%iexpr, \%h, \@out, \%outix);
   if(defined($opts{'d'})) {
@@ -631,7 +638,7 @@ sub csp() {
         @pack = ();
         &forget($out) if $opts{'f'} != 0;
       } else {
-        print "simultaneous events\n";
+        print STDERR "simultaneous events\n" if (defined($opts{'g'}));
       }
       push @pack, [$val, $s, $ts];
       $lastval{$s} = $val;
@@ -642,13 +649,19 @@ sub csp() {
   }
   # process remaining timers
   &process_timers($lexprs, $iexpr, undef, $out, $outix);
-  print "forgot $forgot events\n";
+  print STDERR "forgot $forgot events\n" if (defined($opts{'g'}));
 }
 
 sub next_event() {
   my ($base) = @_;
   while(<IN>) {
+    next if /^\s*#/; # skip comment lines
     my ($ts, $s, $val) = &parse_event($_);
+    if($val != 1 && $val != 0) {
+      print STDERR "skipping non-bool value ($val, $s, $ts)\n"
+        if (defined($opts{'g'}));
+      next;
+    }
     next if !exists($base->{$s}); # skip irrelevant values
     return ($val, $s, $ts);
   }
@@ -663,7 +676,7 @@ sub process_timers() {
         (!defined($tspack) || $tout < $tspack)) {
     $last = $now;
     $now = $tout;
-    print "timeout $now\n" if defined($opts{'t'});
+    print STDERR "timeout $now\n" if defined($opts{'t'});
     %timeout_now = (&timeouts_set($now));
     my @todo_strs = (keys %timeout_now);
     my %todo_ixs = (map {($outix->{$_} => 1)} @todo_strs);
@@ -679,7 +692,7 @@ sub process_pack() {
   # process the pack {
   $last = $now;
   $now = $tspack;
-  print "event(s) $now:" if defined($opts{'t'});
+  print STDERR "event(s) $now:" if defined($opts{'t'});
   my @inputs = ();
   for my $event (@$ref_pack) {
     my ($val1, $s1, $ts1) = @$event;
@@ -687,13 +700,14 @@ sub process_pack() {
     push @{$in{$s1}}, [$now, $val1];
     $update{$in{$s1}} = $now;
     push @inputs, $in{$s1};
-    print " $s1" if defined($opts{'t'});
+    print STDERR " $s1" if defined($opts{'t'});
   }
   if(defined($opts{'t'})) {
     if(defined($tout) && $tout == $now) {
-      print " + timeout(s)";
+      print STDERR " + timeout(s)";
     }
-    print "\n";
+    print STDERR "\n";
+    #&print_timers();
   }
   %timeout_now = (&timeouts_set($now));
   my @todo_strs = ((map {@{$iexpr->{$_}}} @inputs), (keys %timeout_now));
@@ -716,10 +730,6 @@ sub parse_event() {
       else { $val = 0; }
     }
   }
-  if($val != 1 && $val != 0) {
-    print "skipping non-bool value ($val, $s, $ts)\n";
-    next;
-  }
   return ($ts, $s, $val) ;
 }
 
@@ -729,8 +739,8 @@ sub forget() {
   # min current time of all out streams
   my $tforget = &min(map {&lastseen($_)} @$out);
   return if $tforget - $tforgot < $opts{'f'} * 1000; # no use to redo
-  #print "forgetting up to $tforget\n";
-  # print "t=" . localtime($now / 1000). ": forget up to " . localtime($tforget / 1000) . "\n"
+  #print STDERR "forgetting up to $tforget\n";
+  # print STDERR "t=" . localtime($now / 1000). ": forget up to " . localtime($tforget / 1000) . "\n"
   #   if $opts{'f'};
   # forget out streams but last = the result
   for(my $i = 0; $i < $#$out; $i++) {
@@ -738,7 +748,7 @@ sub forget() {
   }
   # forget in streams
   for my $k (keys %in) {
-    #print "forget in $k up to $tforget\n";
+    #print STDERR "forget in $k up to $tforget\n";
     &forget_stream($in{$k}, $tforget);
   }
   $tforgot = $tforget;
@@ -748,7 +758,7 @@ sub forget_stream() {
   my ($s, $t) = @_;
   my $ix = &lastval_ix($s, $t);
   return if !defined($ix) || $ix == 0;
-  #print "forget stream $s up to $ix\n";
+  #print STDERR "forget stream $s up to $ix\n";
   for(my $i = 0; $i < $ix; $i++) {
     shift @$s;
     $forgot++;
@@ -845,15 +855,15 @@ sub tick_set {
     my $ix = &min(keys %$todo);
     delete $todo->{$ix};
     my $str = $out->[$ix];
-    print "tick out[$ix]=$str, node=[$ref_exprs->[$ix][0],$ref_exprs->[$ix][1]]\n" if $opts{'t'};
+    print STDERR "tick out[$ix]=$str, node=[$ref_exprs->[$ix][0],$ref_exprs->[$ix][1]]\n" if $opts{'t'};
     &tick($ref_exprs->[$ix]);
     if($update{$str} == $now) {
-      #print "propagate to: ";
+      #print STDERR "propagate to: ";
       for my $s (@{$iexpr->{$str}}) {
-        #print "$outix->{$s}, ";
+        #print STDERR "$outix->{$s}, ";
         $todo->{$outix->{$s}} = 1;
       }
-      #print "\n";
+      #print STDERR "\n";
     }
   }
 }
@@ -929,13 +939,13 @@ sub export_stream() {
 sub eq_array_f() {
   my ($ref_x, $ref_y, $eq, $pr) = @_;
   if ($#$ref_x != $#$ref_y) {
-    print "diff len: " . &$pr($ref_x) .
+    print STDERR "diff len: " . &$pr($ref_x) .
         "\nvs      : " . &$pr($ref_y) . "\n";
     return 0;
   }
   for (my $i = 0; $i <= $#$ref_x; $i++) {
     if (not &$eq($$ref_x[$i], $$ref_y[$i])) {
-      print "diff elms: " . &$pr($ref_x) .
+      print STDERR "diff elms: " . &$pr($ref_x) .
           "\nvs       : " . &$pr($ref_y) . "\n";
       return 0;
     }
@@ -959,11 +969,11 @@ sub eq_array_array_array_num() {
 }
 
 sub print_timers() {
-  print "timers: ";
+  print STDERR "timers: ";
   for my $k (keys %timer) {
-    print "$k=>[" . (join ",", @{$timer{$k}}) . "] ";
+    print STDERR "$k=>[" . (join ",", @{$timer{$k}}) . "] ";
   }
-  print "\n";
+  print STDERR "\n";
 }
 
 sub sameval() {
@@ -1102,16 +1112,16 @@ sub loop0() {
     my $t;
     if(defined($resval)) {
       $t = &next($last, $ref_res);
-      #print "loop0($op0): compute from [$last, $resval] to $t\n" if defined($t);
+      #print STDERR "loop0($op0): compute from [$last, $resval] to $t\n" if defined($t);
     } else {
       $resval = $$ref_res[$#$ref_res - 1][1];
       die "two top values of $op0 are undef" if !defined($resval);
       $t = $$ref_res[$#$ref_res][0];
-      #print "loop0($op0): recompute from [$$ref_res[$#$ref_res - 1][0], $resval] to $t\n";
+      #print STDERR "loop0($op0): recompute from [$$ref_res[$#$ref_res - 1][0], $resval] to $t\n";
     }
     while(defined($t)) {
       my $val = &$op0($t, $ref_res, $resval);
-      print "loop0: &$op0($t)=$val\n" if $opts{'t'};
+      print STDERR "loop0: &$op0($t)=$val\n" if $opts{'t'};
       if(!&sameval($$ref_res[$#$ref_res][1], $val)) {
         push @$ref_res, [$t, $val];
         $update{$ref_res} = $now;
@@ -1134,7 +1144,7 @@ sub loop1() {
     my $val0 = &$op1(0, $ref_p, $ref_res, undef);
     die "loop1: initial value of $op1(p) is ?"
       if !defined($val0);
-    print "loop1: &$op1(0)=$val0\n" if $opts{'t'};
+    print STDERR "loop1: &$op1(0)=$val0\n" if $opts{'t'};
     push @$ref_res, [0, $val0];
     $update{$ref_res} = 0;
   } else {
@@ -1142,16 +1152,16 @@ sub loop1() {
     my $t;
     if(defined($resval)) {
       $t = &next($last, $ref_res, $ref_p);
-      #print "loop1($op1): compute from [$last, $resval] to $t\n" if defined($t);
+      #print STDERR "loop1($op1): compute from [$last, $resval] to $t\n" if defined($t);
     } else {
       $resval = $$ref_res[$#$ref_res - 1][1];
       die "two top values of $op1 are undef" if !defined($resval);
       $t = $$ref_res[$#$ref_res][0];
-      #print "loop1($op1): recompute from [$$ref_res[$#$ref_res - 1][0], $resval] to $t\n";
+      #print STDERR "loop1($op1): recompute from [$$ref_res[$#$ref_res - 1][0], $resval] to $t\n";
     }
     while(defined($t)) {
       my $val = &$op1($t, $ref_p, $ref_res, $resval);
-      print "loop1: &$op1($t)=$val\n" if $opts{'t'};
+      print STDERR "loop1: &$op1($t)=$val\n" if $opts{'t'};
       if(!&sameval($$ref_res[$#$ref_res][1], $val)) {
         push @$ref_res, [$t, $val];
         $update{$ref_res} = $now;
@@ -1181,16 +1191,16 @@ sub loop2() {
     my $t;
     if(defined($resval)) {
       $t = &next($last, $ref_res, $ref_p, $ref_q);
-      print "loop2($op2): from [$last, $resval] to $t\n" if $opts{'t'} && defined($t);
+      print STDERR "loop2($op2): from [$last, $resval] to $t\n" if $opts{'t'} && defined($t);
     } else {
       $resval = $$ref_res[$#$ref_res - 1][1];
       die "two top values of $op2 are undef" if !defined($resval);
       $t = $$ref_res[$#$ref_res][0];
-      print "loop2($op2): from [$$ref_res[$#$ref_res - 1][0], $resval] to $t\n" if $opts{'t'};
+      print STDERR "loop2($op2): from [$$ref_res[$#$ref_res - 1][0], $resval] to $t\n" if $opts{'t'};
     }
     while(defined($t)) {
       my $val = &$op2($t, $ref_p, $ref_q, $ref_res, $resval);
-      print "loop2: &$op2($t)=$val\n" if $opts{'t'};
+      print STDERR "loop2: &$op2($t)=$val\n" if $opts{'t'};
       if(!&sameval($$ref_res[$#$ref_res][1], $val)) {
         push @$ref_res, [$t, $val];
         $update{$ref_res} = $now;
@@ -1473,7 +1483,7 @@ sub during2() {
   my $q = &tsval($ref_q, $t);
   my $valp = $p->[1];
   my $valq = $q->[1];
-  #print "tsval(p,$t)=[$p->[0],$valp], val(q,$t)=[$q->[0],$valq]\n";
+  #print STDERR "tsval(p,$t)=[$p->[0],$valp], val(q,$t)=[$q->[0],$valq]\n";
   if($p->[0] == $t && $q->[0] < $t ||
      $p->[0] == $t && $q->[0] == $t && &sameval($valq, &lastval($ref_q, $t))) {
     # only p
@@ -1658,7 +1668,7 @@ sub holds2() {
   my $q = &tsval($ref_q, $t);
   my $valp = $p->[1];
   my $valq = $q->[1];
-  #print "tsval(p,$t)=[$p->[0],$valp], val(q,$t)=[$q->[0],$valq]\n";
+  #print STDERR "tsval(p,$t)=[$p->[0],$valp], val(q,$t)=[$q->[0],$valq]\n";
   if($p->[0] == $t && $q->[0] < $t ||
      $p->[0] == $t && $q->[0] == $t && &sameval($valq, &lastval($ref_q, $t))) {
     # only p
@@ -1802,7 +1812,7 @@ sub occ2() {
   my $q = &tsval($ref_q, $t);
   my $valp = $p->[1];
   my $valq = $q->[1];
-  #print "tsval(p,$t)=[$p->[0],$valp], val(q,$t)=[$q->[0],$valq]\n";
+  #print STDERR "tsval(p,$t)=[$p->[0],$valp], val(q,$t)=[$q->[0],$valq]\n";
   if($p->[0] == $t && $q->[0] < $t ||
      $p->[0] == $t && $q->[0] == $t && &sameval($valq, &lastval($ref_q, $t))) {
     # only p
@@ -1999,7 +2009,7 @@ sub btwin2() {
   my $q = &tsval($ref_q, $t);
   my $valp = $p->[1];
   my $valq = $q->[1];
-  #print "tsval(p,$t)=[$p->[0],$valp], val(q,$t)=[$q->[0],$valq]\n";
+  #print STDERR "tsval(p,$t)=[$p->[0],$valp], val(q,$t)=[$q->[0],$valq]\n";
   if($p->[0] == $t && $q->[0] < $t ||
      $p->[0] == $t && $q->[0] == $t && &sameval($valq, &lastval($ref_q, $t))) {
     # only p
@@ -2149,7 +2159,7 @@ sub between2() {
   my $q = &tsval($ref_q, $t);
   my $valp = $p->[1];
   my $valq = $q->[1];
-  #print "tsval(p,$t)=[$p->[0],$valp], val(q,$t)=[$q->[0],$valq]\n";
+  #print STDERR "tsval(p,$t)=[$p->[0],$valp], val(q,$t)=[$q->[0],$valq]\n";
   if($p->[0] == $t && $q->[0] < $t ||
      $p->[0] == $t && $q->[0] == $t && &sameval($valq, &lastval($ref_q, $t))) {
     # only p
@@ -2274,7 +2284,7 @@ sub over2() {
   my $q = &tsval($ref_q, $t);
   my $valp = $p->[1];
   my $valq = $q->[1];
-  #print "tsval(p,$t)=[$p->[0],$valp], val(q,$t)=[$q->[0],$valq]\n";
+  #print STDERR "tsval(p,$t)=[$p->[0],$valp], val(q,$t)=[$q->[0],$valq]\n";
   if($p->[0] == $t && $q->[0] < $t ||
      $p->[0] == $t && $q->[0] == $t && &sameval($valq, &lastval($ref_q, $t))) {
     # only p
@@ -2410,7 +2420,7 @@ sub starts2() {
   my $q = &tsval($ref_q, $t);
   my $valp = $p->[1];
   my $valq = $q->[1];
-  #print "tsval(p,$t)=[$p->[0],$valp], val(q,$t)=[$q->[0],$valq]\n";
+  #print STDERR "tsval(p,$t)=[$p->[0],$valp], val(q,$t)=[$q->[0],$valq]\n";
   if($p->[0] == $t && $q->[0] < $t ||
      $p->[0] == $t && $q->[0] == $t && &sameval($valq, &lastval($ref_q, $t))) {
     # only p
@@ -2540,7 +2550,7 @@ sub eq2() {
   my $q = &tsval($ref_q, $t);
   my $valp = $p->[1];
   my $valq = $q->[1];
-  #print "tsval(p,$t)=[$p->[0],$valp], val(q,$t)=[$q->[0],$valq]\n";
+  #print STDERR "tsval(p,$t)=[$p->[0],$valp], val(q,$t)=[$q->[0],$valq]\n";
   if($p->[0] == $t && $q->[0] < $t ||
      $p->[0] == $t && $q->[0] == $t && &sameval($valq, &lastval($ref_q, $t))) {
     # only p
@@ -2672,7 +2682,7 @@ sub ends2() {
   my $q = &tsval($ref_q, $t);
   my $valp = $p->[1];
   my $valq = $q->[1];
-  #print "tsval(p,$t)=[$p->[0],$valp], val(q,$t)=[$q->[0],$valq]\n";
+  #print STDERR "tsval(p,$t)=[$p->[0],$valp], val(q,$t)=[$q->[0],$valq]\n";
   if($p->[0] == $t && $q->[0] < $t ||
      $p->[0] == $t && $q->[0] == $t && &sameval($valq, &lastval($ref_q, $t))) {
     # only p
@@ -2811,7 +2821,7 @@ sub met2() {
   my $q = &tsval($ref_q, $t);
   my $valp = $p->[1];
   my $valq = $q->[1];
-  #print "tsval(p,$t)=[$p->[0],$valp], val(q,$t)=[$q->[0],$valq]\n";
+  #print STDERR "tsval(p,$t)=[$p->[0],$valp], val(q,$t)=[$q->[0],$valq]\n";
   if($p->[0] == $t && $q->[0] < $t ||
      $p->[0] == $t && $q->[0] == $t && &sameval($valq, &lastval($ref_q, $t))) {
     # only p
@@ -2933,7 +2943,7 @@ sub meets2() {
   my $q = &tsval($ref_q, $t);
   my $valp = $p->[1];
   my $valq = $q->[1];
-  #print "tsval(p,$t)=[$p->[0],$valp], val(q,$t)=[$q->[0],$valq]\n";
+  #print STDERR "tsval(p,$t)=[$p->[0],$valp], val(q,$t)=[$q->[0],$valq]\n";
   if($p->[0] == $t && $q->[0] < $t ||
      $p->[0] == $t && $q->[0] == $t && &sameval($valq, &lastval($ref_q, $t))) {
     # only p
