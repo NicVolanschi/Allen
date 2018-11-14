@@ -1,20 +1,4 @@
-loading library suite.pm...
-load result = ARRAY(0x7fee423ff0e0)
-form: [CODE(0x7fee422e7228),[CODE(0x7fee422d5440),[CODE(0x7fee422e7600),[CODE(0x7fee422d5440),[CODE(0x7fee422d57b8),p,q]],q]],[CODE(0x7fee422e6df0),[CODE(0x7fee422d57b8),p,q],[CODE(0x7fee422d57b8),[CODE(0x7fee422d5440),p],q]]]
-domain: p,q
-codomain: 0,1,2,3,4,5,6,7
-expr: [CODE(0x7fee422e7228),[CODE(0x7fee422d5440),[CODE(0x7fee422e7600),[CODE(0x7fee422d5440),[CODE(0x7fee422d57b8),[[[0,0]]],[[[0,0]]],0],1],[[[0,0]]],2],3],[CODE(0x7fee422e6df0),[[]],[CODE(0x7fee422d57b8),[CODE(0x7fee422d5440),[[[0,0]]],4],[[[0,0]]],5],6],7]
-comp: [CODE(0x7fee422d57b8),in:ARRAY(0x7fee423ed428),in:ARRAY(0x7fee42203d90),$out->[0]]
-comp: [CODE(0x7fee422d5440),$out->[0],$out->[1]]
-comp: [CODE(0x7fee422e7600),$out->[1],in:ARRAY(0x7fee42203d90),$out->[2]]
-comp: [CODE(0x7fee422d5440),$out->[2],$out->[3]]
-comp: [CODE(0x7fee422d5440),in:ARRAY(0x7fee423ed428),$out->[4]]
-comp: [CODE(0x7fee422d57b8),$out->[4],in:ARRAY(0x7fee42203d90),$out->[5]]
-comp: [CODE(0x7fee422e6df0),$out->[0],$out->[5],$out->[6]]
-comp: [CODE(0x7fee422e7228),$out->[3],$out->[6],$out->[7]]
-iexpr: $out->[0]=>[$out->[1],$out->[6]] in:ARRAY(0x7fee423ed428)=>[$out->[0],$out->[4]] in:ARRAY(0x7fee42203d90)=>[$out->[0],$out->[2],$out->[5]] $out->[1]=>[$out->[2]] $out->[2]=>[$out->[3]] $out->[3]=>[$out->[7]] $out->[4]=>[$out->[5]] $out->[5]=>[$out->[6]] $out->[6]=>[$out->[7]] 
-simultaneous events
-forgot 0 events
+# form 0/85
 streams:
 [[[0,0],[14,undef],[14,0],[20,undef],[20,1],[21,0],[22,undef],[22,1],[23,0]],
 [[0,1],[14,undef],[14,1],[20,undef],[20,0],[21,1],[22,undef],[22,0],[23,1]],
@@ -24,674 +8,328 @@ streams:
 [[0,0],[12,undef],[12,1],[14,0],[21,undef],[21,1],[22,0],[23,undef],[23,0]],
 [[0,0],[12,undef],[12,1],[14,undef],[14,0],[20,undef],[20,1],[21,undef],[21,1],[22,undef],[22,1],[23,undef],[23,0]],
 [[0,0],[12,undef],[12,0],[20,undef],[20,1],[21,undef],[21,1],[22,undef],[22,1],[23,undef],[23,0]]]
-Thu Jan  1 01:00:00 1970; 20; 1; 
-Thu Jan  1 01:00:00 1970; 23; 0; 0
-form: [CODE(0x7fee422e6df0),[CODE(0x7fee422d57b8),p,q],[CODE(0x7fee422d57b8),[CODE(0x7fee422d5440),[CODE(0x7fee422d57b8),p,q]],q]]
-domain: p,q
-codomain: 0,1,2,3
-expr: [CODE(0x7fee422e6df0),[CODE(0x7fee422d57b8),[[[0,0]]],[[[0,0]]],0],[CODE(0x7fee422d57b8),[CODE(0x7fee422d5440),[[]],1],[[[0,0]]],2],3]
-comp: [CODE(0x7fee422d57b8),in:ARRAY(0x7fee423e60b0),in:ARRAY(0x7fee423c8a98),$out->[0]]
-comp: [CODE(0x7fee422d5440),$out->[0],$out->[1]]
-comp: [CODE(0x7fee422d57b8),$out->[1],in:ARRAY(0x7fee423c8a98),$out->[2]]
-comp: [CODE(0x7fee422e6df0),$out->[0],$out->[2],$out->[3]]
-iexpr: in:ARRAY(0x7fee423c8a98)=>[$out->[0],$out->[2]] $out->[0]=>[$out->[1],$out->[3]] in:ARRAY(0x7fee423e60b0)=>[$out->[0]] $out->[1]=>[$out->[2]] $out->[2]=>[$out->[3]] 
-simultaneous events
-forgot 0 events
+20;out;1;Thu Jan  1 01:00:00 1970;
+23;out;0;Thu Jan  1 01:00:00 1970;0
+# form 1/85
 streams:
 [[[0,0],[14,undef],[14,0],[20,undef],[20,1],[21,0],[22,undef],[22,1],[23,0]],
 [[0,1],[14,undef],[14,1],[20,undef],[20,0],[21,1],[22,undef],[22,0],[23,1]],
 [[0,0],[14,undef],[14,0],[20,undef],[20,0],[21,undef],[21,1],[22,0],[23,undef],[23,0]],
 [[0,0],[14,undef],[14,0],[20,undef],[20,1],[21,undef],[21,1],[23,undef],[23,0]]]
-Thu Jan  1 01:00:00 1970; 20; 1; 
-Thu Jan  1 01:00:00 1970; 23; 0; 0
-form: [CODE(0x7fee422e7228),[CODE(0x7fee422d57b8),p,q],[CODE(0x7fee422d57b8),[CODE(0x7fee422d5440),[CODE(0x7fee422d57b8),p,q]],q]]
-domain: p,q
-codomain: 0,1,2,3
-expr: [CODE(0x7fee422e7228),[CODE(0x7fee422d57b8),[[[0,0]]],[[[0,0]]],0],[CODE(0x7fee422d57b8),[CODE(0x7fee422d5440),[[]],1],[[[0,0]]],2],3]
-comp: [CODE(0x7fee422d57b8),in:ARRAY(0x7fee4240d738),in:ARRAY(0x7fee4241acd8),$out->[0]]
-comp: [CODE(0x7fee422d5440),$out->[0],$out->[1]]
-comp: [CODE(0x7fee422d57b8),$out->[1],in:ARRAY(0x7fee4241acd8),$out->[2]]
-comp: [CODE(0x7fee422e7228),$out->[0],$out->[2],$out->[3]]
-iexpr: in:ARRAY(0x7fee4240d738)=>[$out->[0]] in:ARRAY(0x7fee4241acd8)=>[$out->[0],$out->[2]] $out->[0]=>[$out->[1],$out->[3]] $out->[1]=>[$out->[2]] $out->[2]=>[$out->[3]] 
-simultaneous events
-forgot 0 events
+20;out;1;Thu Jan  1 01:00:00 1970;
+23;out;0;Thu Jan  1 01:00:00 1970;0
+# form 2/85
 streams:
 [[[0,0],[14,undef],[14,0],[20,undef],[20,1],[21,0],[22,undef],[22,1],[23,0]],
 [[0,1],[14,undef],[14,1],[20,undef],[20,0],[21,1],[22,undef],[22,0],[23,1]],
 [[0,0],[14,undef],[14,0],[20,undef],[20,0],[21,undef],[21,1],[22,0],[23,undef],[23,0]],
 [[0,0],[14,undef],[14,0],[20,undef],[20,0],[22,undef],[22,0]]]
-form: [CODE(0x7fee423cdb10),p]
-domain: p
-codomain: 0
-expr: [CODE(0x7fee423cdb10),[[[0,0]]],0]
-comp: [CODE(0x7fee423cdb10),in:ARRAY(0x7fee423f1ed0),$out->[0]]
-iexpr: in:ARRAY(0x7fee423f1ed0)=>[$out->[0]] 
-forgot 0 events
+# form 3/85
 streams:
 [[[0,0],[10,undef],[10,0],[14,undef],[14,0],[17,undef],[17,1],[18,0],[20,undef],[20,1],[21,0],[22,undef],[22,1],[23,0]]]
-Thu Jan  1 01:00:00 1970; 17; 1; 
-Thu Jan  1 01:00:00 1970; 18; 0; 0
-Thu Jan  1 01:00:00 1970; 20; 1; 
-Thu Jan  1 01:00:00 1970; 21; 0; 0
-Thu Jan  1 01:00:00 1970; 22; 1; 
-Thu Jan  1 01:00:00 1970; 23; 0; 0
-form: [CODE(0x7fee423cdfc0),p]
-domain: p
-codomain: 0
-expr: [CODE(0x7fee423cdfc0),[[[0,0]]],0]
-comp: [CODE(0x7fee423cdfc0),in:ARRAY(0x7fee42413230),$out->[0]]
-iexpr: in:ARRAY(0x7fee42413230)=>[$out->[0]] 
-forgot 0 events
+17;out;1;Thu Jan  1 01:00:00 1970;
+18;out;0;Thu Jan  1 01:00:00 1970;0
+20;out;1;Thu Jan  1 01:00:00 1970;
+21;out;0;Thu Jan  1 01:00:00 1970;0
+22;out;1;Thu Jan  1 01:00:00 1970;
+23;out;0;Thu Jan  1 01:00:00 1970;0
+# form 4/85
 streams:
 [[[0,0],[10,undef],[10,1],[12,0],[14,undef],[14,1],[16,0],[17,undef],[17,1],[18,0],[20,undef],[20,1],[21,0],[22,undef],[22,1],[23,0]]]
-Thu Jan  1 01:00:00 1970; 10; 1; 
-Thu Jan  1 01:00:00 1970; 12; 0; 0
-Thu Jan  1 01:00:00 1970; 14; 1; 
-Thu Jan  1 01:00:00 1970; 16; 0; 0
-Thu Jan  1 01:00:00 1970; 17; 1; 
-Thu Jan  1 01:00:00 1970; 18; 0; 0
-Thu Jan  1 01:00:00 1970; 20; 1; 
-Thu Jan  1 01:00:00 1970; 21; 0; 0
-Thu Jan  1 01:00:00 1970; 22; 1; 
-Thu Jan  1 01:00:00 1970; 23; 0; 0
-form: [CODE(0x7fee423ce2d8),[CODE(0x7fee422d5440),p]]
-domain: p
-codomain: 0,1
-expr: [CODE(0x7fee423ce2d8),[CODE(0x7fee422d5440),[[[0,0]]],0],1]
-comp: [CODE(0x7fee422d5440),in:ARRAY(0x7fee423eeea0),$out->[0]]
-comp: [CODE(0x7fee423ce2d8),$out->[0],$out->[1]]
-iexpr: $out->[0]=>[$out->[1]] in:ARRAY(0x7fee423eeea0)=>[$out->[0]] 
-forgot 0 events
+10;out;1;Thu Jan  1 01:00:00 1970;
+12;out;0;Thu Jan  1 01:00:00 1970;0
+14;out;1;Thu Jan  1 01:00:00 1970;
+16;out;0;Thu Jan  1 01:00:00 1970;0
+17;out;1;Thu Jan  1 01:00:00 1970;
+18;out;0;Thu Jan  1 01:00:00 1970;0
+20;out;1;Thu Jan  1 01:00:00 1970;
+21;out;0;Thu Jan  1 01:00:00 1970;0
+22;out;1;Thu Jan  1 01:00:00 1970;
+23;out;0;Thu Jan  1 01:00:00 1970;0
+# form 5/85
 streams:
 [[[0,1],[10,0],[12,1],[14,0],[16,1],[17,0],[18,1],[20,0],[21,1],[22,0],[23,1]],
 [[0,0],[12,undef],[12,0],[16,undef],[16,1],[17,0],[18,undef],[18,0],[21,undef],[21,1],[22,0],[23,undef],[23,0]]]
-Thu Jan  1 01:00:00 1970; 16; 1; 
-Thu Jan  1 01:00:00 1970; 17; 0; 0
-Thu Jan  1 01:00:00 1970; 21; 1; 
-Thu Jan  1 01:00:00 1970; 22; 0; 0
-form: [CODE(0x7fee423cea80),[CODE(0x7fee422e6df0),[CODE(0x7fee422d57b8),p,q],[CODE(0x7fee422d57b8),[CODE(0x7fee422d5440),p],q]]]
-domain: p,q
-codomain: 0,1,2,3,4
-expr: [CODE(0x7fee423cea80),[CODE(0x7fee422e6df0),[CODE(0x7fee422d57b8),[[[0,0]]],[[[0,0]]],0],[CODE(0x7fee422d57b8),[CODE(0x7fee422d5440),[[[0,0]]],1],[[[0,0]]],2],3],4]
-comp: [CODE(0x7fee422d57b8),in:ARRAY(0x7fee423f0350),in:ARRAY(0x7fee423ef3c8),$out->[0]]
-comp: [CODE(0x7fee422d5440),in:ARRAY(0x7fee423f0350),$out->[1]]
-comp: [CODE(0x7fee422d57b8),$out->[1],in:ARRAY(0x7fee423ef3c8),$out->[2]]
-comp: [CODE(0x7fee422e6df0),$out->[0],$out->[2],$out->[3]]
-comp: [CODE(0x7fee423cea80),$out->[3],$out->[4]]
-iexpr: in:ARRAY(0x7fee423ef3c8)=>[$out->[0],$out->[2]] in:ARRAY(0x7fee423f0350)=>[$out->[0],$out->[1]] $out->[0]=>[$out->[3]] $out->[1]=>[$out->[2]] $out->[2]=>[$out->[3]] $out->[3]=>[$out->[4]] 
-simultaneous events
-forgot 0 events
+16;out;1;Thu Jan  1 01:00:00 1970;
+17;out;0;Thu Jan  1 01:00:00 1970;0
+21;out;1;Thu Jan  1 01:00:00 1970;
+22;out;0;Thu Jan  1 01:00:00 1970;0
+# form 6/85
 streams:
 [[[0,0],[14,undef],[14,0],[20,undef],[20,1],[21,0],[22,undef],[22,1],[23,0]],
 [[0,1],[10,0],[12,1],[14,0],[16,1],[17,0],[18,1],[20,0],[21,1],[22,0],[23,1]],
 [[0,0],[12,undef],[12,1],[14,0],[21,undef],[21,1],[22,0],[23,undef],[23,0]],
 [[0,0],[12,undef],[12,1],[14,undef],[14,0],[20,undef],[20,1],[21,undef],[21,1],[22,undef],[22,1],[23,undef],[23,0]],
 [[0,0],[12,undef],[12,1],[14,0],[20,undef],[20,0],[23,undef],[23,0]]]
-Thu Jan  1 01:00:00 1970; 12; 1; 
-Thu Jan  1 01:00:00 1970; 14; 0; 0
-form: [CODE(0x7fee423d0750),p]
-domain: p
-codomain: 0
-expr: [CODE(0x7fee423d0750),[[[0,0]]],0]
-comp: [CODE(0x7fee423d0750),in:ARRAY(0x7fee42205150),$out->[0]]
-iexpr: in:ARRAY(0x7fee42205150)=>[$out->[0]] 
-forgot 0 events
+12;out;1;Thu Jan  1 01:00:00 1970;
+14;out;0;Thu Jan  1 01:00:00 1970;0
+# form 7/85
 streams:
 [[[0,0],[10,undef],[10,1],[11,0],[14,undef],[14,1],[15,0],[17,undef],[17,1],[18,0],[20,undef],[20,1],[21,0],[22,undef],[22,1],[23,0]]]
-Thu Jan  1 01:00:00 1970; 10; 1; 
-Thu Jan  1 01:00:00 1970; 11; 0; 0
-Thu Jan  1 01:00:00 1970; 14; 1; 
-Thu Jan  1 01:00:00 1970; 15; 0; 0
-Thu Jan  1 01:00:00 1970; 17; 1; 
-Thu Jan  1 01:00:00 1970; 18; 0; 0
-Thu Jan  1 01:00:00 1970; 20; 1; 
-Thu Jan  1 01:00:00 1970; 21; 0; 0
-Thu Jan  1 01:00:00 1970; 22; 1; 
-Thu Jan  1 01:00:00 1970; 23; 0; 0
-form: [CODE(0x7fee423d0bb8),[CODE(0x7fee422e6df0),[CODE(0x7fee422d57b8),p,q],[CODE(0x7fee422d57b8),[CODE(0x7fee422d5440),p],q]]]
-domain: p,q
-codomain: 0,1,2,3,4
-expr: [CODE(0x7fee423d0bb8),[CODE(0x7fee422e6df0),[CODE(0x7fee422d57b8),[[[0,0]]],[[[0,0]]],0],[CODE(0x7fee422d57b8),[CODE(0x7fee422d5440),[[[0,0]]],1],[[[0,0]]],2],3],4]
-comp: [CODE(0x7fee422d57b8),in:ARRAY(0x7fee423eef60),in:ARRAY(0x7fee423eed80),$out->[0]]
-comp: [CODE(0x7fee422d5440),in:ARRAY(0x7fee423eef60),$out->[1]]
-comp: [CODE(0x7fee422d57b8),$out->[1],in:ARRAY(0x7fee423eed80),$out->[2]]
-comp: [CODE(0x7fee422e6df0),$out->[0],$out->[2],$out->[3]]
-comp: [CODE(0x7fee423d0bb8),$out->[3],$out->[4]]
-iexpr: in:ARRAY(0x7fee423eed80)=>[$out->[0],$out->[2]] $out->[0]=>[$out->[3]] in:ARRAY(0x7fee423eef60)=>[$out->[0],$out->[1]] $out->[1]=>[$out->[2]] $out->[2]=>[$out->[3]] $out->[3]=>[$out->[4]] 
-simultaneous events
-forgot 0 events
+10;out;1;Thu Jan  1 01:00:00 1970;
+11;out;0;Thu Jan  1 01:00:00 1970;0
+14;out;1;Thu Jan  1 01:00:00 1970;
+15;out;0;Thu Jan  1 01:00:00 1970;0
+17;out;1;Thu Jan  1 01:00:00 1970;
+18;out;0;Thu Jan  1 01:00:00 1970;0
+20;out;1;Thu Jan  1 01:00:00 1970;
+21;out;0;Thu Jan  1 01:00:00 1970;0
+22;out;1;Thu Jan  1 01:00:00 1970;
+23;out;0;Thu Jan  1 01:00:00 1970;0
+# form 8/85
 streams:
 [[[0,0],[14,undef],[14,0],[20,undef],[20,1],[21,0],[22,undef],[22,1],[23,0]],
 [[0,1],[10,0],[12,1],[14,0],[16,1],[17,0],[18,1],[20,0],[21,1],[22,0],[23,1]],
 [[0,0],[12,undef],[12,1],[14,0],[21,undef],[21,1],[22,0],[23,undef],[23,0]],
 [[0,0],[12,undef],[12,1],[14,undef],[14,0],[20,undef],[20,1],[21,undef],[21,1],[22,undef],[22,1],[23,undef],[23,0]],
 [[0,0],[12,undef],[12,1],[14,0],[20,undef],[20,1],[22,0],[23,undef],[23,0]]]
-Thu Jan  1 01:00:00 1970; 12; 1; 
-Thu Jan  1 01:00:00 1970; 14; 0; 0
-Thu Jan  1 01:00:00 1970; 20; 1; 
-Thu Jan  1 01:00:00 1970; 22; 0; 0
-form: [CODE(0x7fee423d1780),q]
-domain: q
-codomain: 0
-expr: [CODE(0x7fee423d1780),[[[0,0]]],0]
-comp: [CODE(0x7fee423d1780),in:ARRAY(0x7fee420292a0),$out->[0]]
-iexpr: in:ARRAY(0x7fee420292a0)=>[$out->[0]] 
-forgot 0 events
+12;out;1;Thu Jan  1 01:00:00 1970;
+14;out;0;Thu Jan  1 01:00:00 1970;0
+20;out;1;Thu Jan  1 01:00:00 1970;
+22;out;0;Thu Jan  1 01:00:00 1970;0
+# form 9/85
 streams:
 [[[0,0],[11,undef],[11,1],[15,0],[19,undef],[19,1],[23,0]]]
-Thu Jan  1 01:00:00 1970; 11; 1; 
-Thu Jan  1 01:00:00 1970; 15; 0; 0
-Thu Jan  1 01:00:00 1970; 19; 1; 
-Thu Jan  1 01:00:00 1970; 23; 0; 0
-form: [CODE(0x7fee423d1bb8)]
-domain: 
-codomain: 0
-expr: [CODE(0x7fee423d1bb8),0]
-comp: [CODE(0x7fee423d1bb8),,$out->[0]]
-iexpr: 
-forgot 0 events
+11;out;1;Thu Jan  1 01:00:00 1970;
+15;out;0;Thu Jan  1 01:00:00 1970;0
+19;out;1;Thu Jan  1 01:00:00 1970;
+23;out;0;Thu Jan  1 01:00:00 1970;0
+# form 10/85
 streams:
 [[[0,0],[1,1]]]
-Thu Jan  1 01:00:00 1970; 1; 1; 
-form: [CODE(0x7fee423d2020)]
-domain: 
-codomain: 0
-expr: [CODE(0x7fee423d2020),0]
-comp: [CODE(0x7fee423d2020),,$out->[0]]
-iexpr: 
-forgot 0 events
+1;out;1;Thu Jan  1 01:00:00 1970;
+# form 11/85
 streams:
 [[[0,0],[1,1]]]
-Thu Jan  1 01:00:00 1970; 1; 1; 
-form: [CODE(0x7fee422d5440),[CODE(0x7fee423d2518)]]
-domain: 
-codomain: 0,1
-expr: [CODE(0x7fee422d5440),[CODE(0x7fee423d2518),0],1]
-comp: [CODE(0x7fee423d2518),,$out->[0]]
-comp: [CODE(0x7fee422d5440),$out->[0],$out->[1]]
-iexpr: $out->[0]=>[$out->[1]] 
-forgot 0 events
+1;out;1;Thu Jan  1 01:00:00 1970;
+# form 12/85
 streams:
 [[[0,0],[1,1]],
 [[0,1],[1,0]]]
-Thu Jan  1 01:00:00 1970; 0; 1; 
-Thu Jan  1 01:00:00 1970; 1; 0; 0
-form: [CODE(0x7fee422e7228),[CODE(0x7fee423d2c48)],[CODE(0x7fee423d30b0)]]
-domain: 
-codomain: 0,1,2
-expr: [CODE(0x7fee422e7228),[CODE(0x7fee423d2c48),0],[CODE(0x7fee423d30b0),1],2]
-comp: [CODE(0x7fee423d2c48),,$out->[0]]
-comp: [CODE(0x7fee423d30b0),,$out->[1]]
-comp: [CODE(0x7fee422e7228),$out->[0],$out->[1],$out->[2]]
-iexpr: $out->[0]=>[$out->[2]] $out->[1]=>[$out->[2]] 
-forgot 0 events
+0;out;1;Thu Jan  1 01:00:00 1970;
+1;out;0;Thu Jan  1 01:00:00 1970;0
+# form 13/85
 streams:
 [[[0,0],[1,1],[3,0],[4,1],[6,0],[7,1],[9,0]],
 [[0,0],[2,1],[5,0],[7,1],[10,0]],
 [[0,0],[2,1],[3,0],[4,1],[5,0],[7,1],[9,0]]]
-Thu Jan  1 01:00:00 1970; 2; 1; 
-Thu Jan  1 01:00:00 1970; 3; 0; 0
-Thu Jan  1 01:00:00 1970; 4; 1; 
-Thu Jan  1 01:00:00 1970; 5; 0; 0
-Thu Jan  1 01:00:00 1970; 7; 1; 
-Thu Jan  1 01:00:00 1970; 9; 0; 0
-form: [CODE(0x7fee423d4720),p]
-domain: p
-codomain: 0
-expr: [CODE(0x7fee423d4720),[[[0,0]]],0]
-comp: [CODE(0x7fee423d4720),in:ARRAY(0x7fee42412660),$out->[0]]
-iexpr: in:ARRAY(0x7fee42412660)=>[$out->[0]] 
-forgot 0 events
+2;out;1;Thu Jan  1 01:00:00 1970;
+3;out;0;Thu Jan  1 01:00:00 1970;0
+4;out;1;Thu Jan  1 01:00:00 1970;
+5;out;0;Thu Jan  1 01:00:00 1970;0
+7;out;1;Thu Jan  1 01:00:00 1970;
+9;out;0;Thu Jan  1 01:00:00 1970;0
+# form 14/85
 streams:
 [[[0,0],[11,1],[13,0],[15,1],[17,0],[18,1],[19,0],[21,1],[22,0],[23,1],[24,0]]]
-Thu Jan  1 01:00:00 1970; 11; 1; 
-Thu Jan  1 01:00:00 1970; 13; 0; 0
-Thu Jan  1 01:00:00 1970; 15; 1; 
-Thu Jan  1 01:00:00 1970; 17; 0; 0
-Thu Jan  1 01:00:00 1970; 18; 1; 
-Thu Jan  1 01:00:00 1970; 19; 0; 0
-Thu Jan  1 01:00:00 1970; 21; 1; 
-Thu Jan  1 01:00:00 1970; 22; 0; 0
-Thu Jan  1 01:00:00 1970; 23; 1; 
-Thu Jan  1 01:00:00 1970; 24; 0; 0
-form: [CODE(0x7fee423d4b28),q]
-domain: q
-codomain: 0
-expr: [CODE(0x7fee423d4b28),[[[0,0]]],0]
-comp: [CODE(0x7fee423d4b28),in:ARRAY(0x7fee42411960),$out->[0]]
-iexpr: in:ARRAY(0x7fee42411960)=>[$out->[0]] 
-forgot 0 events
+11;out;1;Thu Jan  1 01:00:00 1970;
+13;out;0;Thu Jan  1 01:00:00 1970;0
+15;out;1;Thu Jan  1 01:00:00 1970;
+17;out;0;Thu Jan  1 01:00:00 1970;0
+18;out;1;Thu Jan  1 01:00:00 1970;
+19;out;0;Thu Jan  1 01:00:00 1970;0
+21;out;1;Thu Jan  1 01:00:00 1970;
+22;out;0;Thu Jan  1 01:00:00 1970;0
+23;out;1;Thu Jan  1 01:00:00 1970;
+24;out;0;Thu Jan  1 01:00:00 1970;0
+# form 15/85
 streams:
 [[[0,0],[12,1],[16,0],[20,1],[25,0]]]
-Thu Jan  1 01:00:00 1970; 12; 1; 
-Thu Jan  1 01:00:00 1970; 16; 0; 0
-Thu Jan  1 01:00:00 1970; 20; 1; 
-Thu Jan  1 01:00:00 1970; 25; 0; 0
-form: [CODE(0x7fee423d5008),[CODE(0x7fee423d5170)]]
-domain: 
-codomain: 0,1
-expr: [CODE(0x7fee423d5008),[CODE(0x7fee423d5170),0],1]
-comp: [CODE(0x7fee423d5170),,$out->[0]]
-comp: [CODE(0x7fee423d5008),$out->[0],$out->[1]]
-iexpr: $out->[0]=>[$out->[1]] 
-forgot 0 events
+12;out;1;Thu Jan  1 01:00:00 1970;
+16;out;0;Thu Jan  1 01:00:00 1970;0
+20;out;1;Thu Jan  1 01:00:00 1970;
+25;out;0;Thu Jan  1 01:00:00 1970;0
+# form 16/85
 streams:
 [[[0,0],[2,1],[5,0],[7,1],[10,0]],
 [[0,0],[3,1],[6,0],[8,1],[11,0]]]
-Thu Jan  1 01:00:00 1970; 3; 1; 
-Thu Jan  1 01:00:00 1970; 6; 0; 0
-Thu Jan  1 01:00:00 1970; 8; 1; 
-Thu Jan  1 01:00:00 1970; 11; 0; 0
-form: [CODE(0x7fee422d57b8),p,[CODE(0x7fee423d5810),[CODE(0x7fee423d5960)]]]
-domain: p
-codomain: 0,1,2
-expr: [CODE(0x7fee422d57b8),[[[0,0]]],[CODE(0x7fee423d5810),[CODE(0x7fee423d5960),0],1],2]
-comp: [CODE(0x7fee423d5960),,$out->[0]]
-comp: [CODE(0x7fee423d5810),$out->[0],$out->[1]]
-comp: [CODE(0x7fee422d57b8),in:ARRAY(0x7fee423efc00),$out->[1],$out->[2]]
-iexpr: in:ARRAY(0x7fee423efc00)=>[$out->[2]] $out->[0]=>[$out->[1]] $out->[1]=>[$out->[2]] 
-forgot 0 events
+3;out;1;Thu Jan  1 01:00:00 1970;
+6;out;0;Thu Jan  1 01:00:00 1970;0
+8;out;1;Thu Jan  1 01:00:00 1970;
+11;out;0;Thu Jan  1 01:00:00 1970;0
+# form 17/85
 streams:
 [[[0,0],[12,1],[16,0],[18,1],[22,0],[24,1],[28,0]],
 [[0,0],[13,1],[17,0],[19,1],[23,0],[25,1],[29,0]],
 [[0,0],[14,undef],[14,1],[16,0],[20,undef],[20,1],[21,0],[22,undef],[22,0]]]
-Thu Jan  1 01:00:00 1970; 14; 1; 
-Thu Jan  1 01:00:00 1970; 16; 0; 0
-Thu Jan  1 01:00:00 1970; 20; 1; 
-Thu Jan  1 01:00:00 1970; 21; 0; 0
-form: [CODE(0x7fee422d57b8),[CODE(0x7fee422d5440),q],[CODE(0x7fee422d5440),p]]
-domain: p,q
-codomain: 0,1,2
-expr: [CODE(0x7fee422d57b8),[CODE(0x7fee422d5440),[[[0,0]]],0],[CODE(0x7fee422d5440),[[[0,0]]],1],2]
-comp: [CODE(0x7fee422d5440),in:ARRAY(0x7fee423ef248),$out->[0]]
-comp: [CODE(0x7fee422d5440),in:ARRAY(0x7fee4241a7b0),$out->[1]]
-comp: [CODE(0x7fee422d57b8),$out->[0],$out->[1],$out->[2]]
-iexpr: in:ARRAY(0x7fee423ef248)=>[$out->[0]] in:ARRAY(0x7fee4241a7b0)=>[$out->[1]] $out->[0]=>[$out->[2]] $out->[1]=>[$out->[2]] 
-simultaneous events
-forgot 0 events
+14;out;1;Thu Jan  1 01:00:00 1970;
+16;out;0;Thu Jan  1 01:00:00 1970;0
+20;out;1;Thu Jan  1 01:00:00 1970;
+21;out;0;Thu Jan  1 01:00:00 1970;0
+# form 18/85
 streams:
 [[[0,1],[11,0],[15,1],[19,0],[24,1]],
 [[0,1],[10,0],[12,1],[14,0],[16,1],[17,0],[18,1],[20,0],[21,1],[22,0],[23,1]],
 [[0,0],[24,undef]]]
-form: [CODE(0x7fee422f7600),p,q]
-domain: p,q
-codomain: 0
-expr: [CODE(0x7fee422f7600),[[[0,0]]],[[[0,0]]],0]
-comp: [CODE(0x7fee422f7600),in:ARRAY(0x7fee4240c4d0),in:ARRAY(0x7fee424132a8),$out->[0]]
-iexpr: in:ARRAY(0x7fee4240c4d0)=>[$out->[0]] in:ARRAY(0x7fee424132a8)=>[$out->[0]] 
-simultaneous events
-forgot 0 events
+# form 19/85
 streams:
 [[[0,0],[11,1],[15,0],[20,1],[24,0]]]
-Thu Jan  1 01:00:00 1970; 11; 1; 
-Thu Jan  1 01:00:00 1970; 15; 0; 0
-Thu Jan  1 01:00:00 1970; 20; 1; 
-Thu Jan  1 01:00:00 1970; 24; 0; 0
-form: [CODE(0x7fee422f7600),q,p]
-domain: q,p
-codomain: 0
-expr: [CODE(0x7fee422f7600),[[[0,0]]],[[[0,0]]],0]
-comp: [CODE(0x7fee422f7600),in:ARRAY(0x7fee423efba0),in:ARRAY(0x7fee423c86d8),$out->[0]]
-iexpr: in:ARRAY(0x7fee423c86d8)=>[$out->[0]] in:ARRAY(0x7fee423efba0)=>[$out->[0]] 
-simultaneous events
-forgot 0 events
+11;out;1;Thu Jan  1 01:00:00 1970;
+15;out;0;Thu Jan  1 01:00:00 1970;0
+20;out;1;Thu Jan  1 01:00:00 1970;
+24;out;0;Thu Jan  1 01:00:00 1970;0
+# form 20/85
 streams:
 [[[0,0],[11,1],[12,0],[14,1],[16,0],[20,1],[21,0],[22,1],[23,0]]]
-Thu Jan  1 01:00:00 1970; 11; 1; 
-Thu Jan  1 01:00:00 1970; 12; 0; 0
-Thu Jan  1 01:00:00 1970; 14; 1; 
-Thu Jan  1 01:00:00 1970; 16; 0; 0
-Thu Jan  1 01:00:00 1970; 20; 1; 
-Thu Jan  1 01:00:00 1970; 21; 0; 0
-Thu Jan  1 01:00:00 1970; 22; 1; 
-Thu Jan  1 01:00:00 1970; 23; 0; 0
-form: [CODE(0x7fee422f7600),[CODE(0x7fee422d5440),p],q]
-domain: q,p
-codomain: 0,1
-expr: [CODE(0x7fee422f7600),[CODE(0x7fee422d5440),[[[0,0]]],0],[[[0,0]]],1]
-comp: [CODE(0x7fee422d5440),in:ARRAY(0x7fee4240f0e0),$out->[0]]
-comp: [CODE(0x7fee422f7600),$out->[0],in:ARRAY(0x7fee42411960),$out->[1]]
-iexpr: $out->[0]=>[$out->[1]] in:ARRAY(0x7fee42411960)=>[$out->[1]] in:ARRAY(0x7fee4240f0e0)=>[$out->[0]] 
-simultaneous events
-forgot 0 events
+11;out;1;Thu Jan  1 01:00:00 1970;
+12;out;0;Thu Jan  1 01:00:00 1970;0
+14;out;1;Thu Jan  1 01:00:00 1970;
+16;out;0;Thu Jan  1 01:00:00 1970;0
+20;out;1;Thu Jan  1 01:00:00 1970;
+21;out;0;Thu Jan  1 01:00:00 1970;0
+22;out;1;Thu Jan  1 01:00:00 1970;
+23;out;0;Thu Jan  1 01:00:00 1970;0
+# form 21/85
 streams:
 [[[0,1],[10,0],[12,1],[14,0],[16,1],[17,0],[18,1],[20,0],[21,1],[22,0],[23,1]],
 [[0,0],[12,1],[15,0],[19,1],[24,0]]]
-Thu Jan  1 01:00:00 1970; 12; 1; 
-Thu Jan  1 01:00:00 1970; 15; 0; 0
-Thu Jan  1 01:00:00 1970; 19; 1; 
-Thu Jan  1 01:00:00 1970; 24; 0; 0
-form: [CODE(0x7fee422f7600),[CODE(0x7fee422d5440),q],p]
-domain: p,q
-codomain: 0,1
-expr: [CODE(0x7fee422f7600),[CODE(0x7fee422d5440),[[[0,0]]],0],[[[0,0]]],1]
-comp: [CODE(0x7fee422d5440),in:ARRAY(0x7fee423eed20),$out->[0]]
-comp: [CODE(0x7fee422f7600),$out->[0],in:ARRAY(0x7fee4240c128),$out->[1]]
-iexpr: in:ARRAY(0x7fee4240c128)=>[$out->[1]] $out->[0]=>[$out->[1]] in:ARRAY(0x7fee423eed20)=>[$out->[0]] 
-simultaneous events
-forgot 0 events
+12;out;1;Thu Jan  1 01:00:00 1970;
+15;out;0;Thu Jan  1 01:00:00 1970;0
+19;out;1;Thu Jan  1 01:00:00 1970;
+24;out;0;Thu Jan  1 01:00:00 1970;0
+# form 22/85
 streams:
 [[[0,1],[11,0],[15,1],[19,0],[24,1]],
 [[0,0],[10,1],[12,0],[15,1],[16,0],[17,1],[18,0]]]
-Thu Jan  1 01:00:00 1970; 10; 1; 
-Thu Jan  1 01:00:00 1970; 12; 0; 0
-Thu Jan  1 01:00:00 1970; 15; 1; 
-Thu Jan  1 01:00:00 1970; 16; 0; 0
-Thu Jan  1 01:00:00 1970; 17; 1; 
-Thu Jan  1 01:00:00 1970; 18; 0; 0
-form: [CODE(0x7fee422f7600),[CODE(0x7fee422d5440),p],p]
-domain: p
-codomain: 0,1
-expr: [CODE(0x7fee422f7600),[CODE(0x7fee422d5440),[[[0,0]]],0],[[[0,0]]],1]
-comp: [CODE(0x7fee422d5440),in:ARRAY(0x7fee423fea80),$out->[0]]
-comp: [CODE(0x7fee422f7600),$out->[0],in:ARRAY(0x7fee423fea80),$out->[1]]
-iexpr: $out->[0]=>[$out->[1]] in:ARRAY(0x7fee423fea80)=>[$out->[0],$out->[1]] 
-forgot 0 events
+10;out;1;Thu Jan  1 01:00:00 1970;
+12;out;0;Thu Jan  1 01:00:00 1970;0
+15;out;1;Thu Jan  1 01:00:00 1970;
+16;out;0;Thu Jan  1 01:00:00 1970;0
+17;out;1;Thu Jan  1 01:00:00 1970;
+18;out;0;Thu Jan  1 01:00:00 1970;0
+# form 23/85
 streams:
 [[[0,1],[10,0],[12,1],[14,0],[16,1],[17,0],[18,1],[20,0],[21,1],[22,0],[23,1]],
 [[0,0]]]
-form: [CODE(0x7fee4231d438),p,q]
-domain: q,p
-codomain: 0
-expr: [CODE(0x7fee4231d438),[[[0,0]]],[[[0,0]]],0]
-comp: [CODE(0x7fee4231d438),in:ARRAY(0x7fee4240f428),in:ARRAY(0x7fee424127e0),$out->[0]]
-iexpr: in:ARRAY(0x7fee4240f428)=>[$out->[0]] in:ARRAY(0x7fee424127e0)=>[$out->[0]] 
-simultaneous events
-forgot 0 events
+# form 24/85
 streams:
 [[[0,0],[16,undef],[16,0],[18,undef],[18,1],[19,0]]]
-Thu Jan  1 01:00:00 1970; 18; 1; 
-Thu Jan  1 01:00:00 1970; 19; 0; 0
-form: [CODE(0x7fee4231d438),q,p]
-domain: q,p
-codomain: 0
-expr: [CODE(0x7fee4231d438),[[[0,0]]],[[[0,0]]],0]
-comp: [CODE(0x7fee4231d438),in:ARRAY(0x7fee42031158),in:ARRAY(0x7fee424107b0),$out->[0]]
-iexpr: in:ARRAY(0x7fee424107b0)=>[$out->[0]] in:ARRAY(0x7fee42031158)=>[$out->[0]] 
-simultaneous events
-forgot 0 events
+18;out;1;Thu Jan  1 01:00:00 1970;
+19;out;0;Thu Jan  1 01:00:00 1970;0
+# form 25/85
 streams:
 [[[0,0],[24,undef]]]
-form: [CODE(0x7fee4231d438),p,p]
-domain: p
-codomain: 0
-expr: [CODE(0x7fee4231d438),[[[0,0]]],[[[0,0]]],0]
-comp: [CODE(0x7fee4231d438),in:ARRAY(0x7fee4240ed50),in:ARRAY(0x7fee4240ed50),$out->[0]]
-iexpr: in:ARRAY(0x7fee4240ed50)=>[$out->[0],$out->[0]] 
-forgot 0 events
+# form 26/85
 streams:
 [[[0,0],[12,undef],[12,1],[14,0],[16,undef],[16,1],[17,0],[18,undef],[18,1],[20,0],[21,undef],[21,1],[22,0],[23,undef]]]
-Thu Jan  1 01:00:00 1970; 12; 1; 
-Thu Jan  1 01:00:00 1970; 14; 0; 0
-Thu Jan  1 01:00:00 1970; 16; 1; 
-Thu Jan  1 01:00:00 1970; 17; 0; 0
-Thu Jan  1 01:00:00 1970; 18; 1; 
-Thu Jan  1 01:00:00 1970; 20; 0; 0
-Thu Jan  1 01:00:00 1970; 21; 1; 
-Thu Jan  1 01:00:00 1970; 22; 0; 0
-form: [CODE(0x7fee423288a0),p,q]
-domain: p,q
-codomain: 0
-expr: [CODE(0x7fee423288a0),[[[0,0]]],[[[0,0]]],0]
-comp: [CODE(0x7fee423288a0),in:ARRAY(0x7fee4240e9d8),in:ARRAY(0x7fee423f1278),$out->[0]]
-iexpr: in:ARRAY(0x7fee423f1278)=>[$out->[0]] in:ARRAY(0x7fee4240e9d8)=>[$out->[0]] 
-simultaneous events
-forgot 0 events
+12;out;1;Thu Jan  1 01:00:00 1970;
+14;out;0;Thu Jan  1 01:00:00 1970;0
+16;out;1;Thu Jan  1 01:00:00 1970;
+17;out;0;Thu Jan  1 01:00:00 1970;0
+18;out;1;Thu Jan  1 01:00:00 1970;
+20;out;0;Thu Jan  1 01:00:00 1970;0
+21;out;1;Thu Jan  1 01:00:00 1970;
+22;out;0;Thu Jan  1 01:00:00 1970;0
+# form 27/85
 streams:
 [[[0,0],[12,undef],[12,0],[16,undef],[16,0],[18,undef],[18,1],[19,0],[21,undef],[21,0],[23,undef]]]
-Thu Jan  1 01:00:00 1970; 18; 1; 
-Thu Jan  1 01:00:00 1970; 19; 0; 0
-form: [CODE(0x7fee423288a0),q,p]
-domain: p,q
-codomain: 0
-expr: [CODE(0x7fee423288a0),[[[0,0]]],[[[0,0]]],0]
-comp: [CODE(0x7fee423288a0),in:ARRAY(0x7fee423da500),in:ARRAY(0x7fee423f0350),$out->[0]]
-iexpr: in:ARRAY(0x7fee423f0350)=>[$out->[0]] in:ARRAY(0x7fee423da500)=>[$out->[0]] 
-simultaneous events
-forgot 0 events
+18;out;1;Thu Jan  1 01:00:00 1970;
+19;out;0;Thu Jan  1 01:00:00 1970;0
+# form 28/85
 streams:
 [[[0,0],[15,undef],[15,1],[17,0],[24,undef]]]
-Thu Jan  1 01:00:00 1970; 15; 1; 
-Thu Jan  1 01:00:00 1970; 17; 0; 0
-form: [CODE(0x7fee423288a0),[CODE(0x7fee422d5440),q],p]
-domain: p,q
-codomain: 0,1
-expr: [CODE(0x7fee423288a0),[CODE(0x7fee422d5440),[[[0,0]]],0],[[[0,0]]],1]
-comp: [CODE(0x7fee422d5440),in:ARRAY(0x7fee423c8d38),$out->[0]]
-comp: [CODE(0x7fee423288a0),$out->[0],in:ARRAY(0x7fee424107b0),$out->[1]]
-iexpr: $out->[0]=>[$out->[1]] in:ARRAY(0x7fee423c8d38)=>[$out->[0]] in:ARRAY(0x7fee424107b0)=>[$out->[1]] 
-simultaneous events
-forgot 0 events
+15;out;1;Thu Jan  1 01:00:00 1970;
+17;out;0;Thu Jan  1 01:00:00 1970;0
+# form 29/85
 streams:
 [[[0,1],[11,0],[15,1],[19,0],[24,1]],
 [[0,0],[11,undef],[11,1],[14,0],[19,undef],[19,1],[20,0]]]
-Thu Jan  1 01:00:00 1970; 11; 1; 
-Thu Jan  1 01:00:00 1970; 14; 0; 0
-Thu Jan  1 01:00:00 1970; 19; 1; 
-Thu Jan  1 01:00:00 1970; 20; 0; 0
-form: [CODE(0x7fee423288a0),[CODE(0x7fee422d5440),p],q]
-domain: p,q
-codomain: 0,1
-expr: [CODE(0x7fee423288a0),[CODE(0x7fee422d5440),[[[0,0]]],0],[[[0,0]]],1]
-comp: [CODE(0x7fee422d5440),in:ARRAY(0x7fee4240e858),$out->[0]]
-comp: [CODE(0x7fee423288a0),$out->[0],in:ARRAY(0x7fee42411170),$out->[1]]
-iexpr: $out->[0]=>[$out->[1]] in:ARRAY(0x7fee4240e858)=>[$out->[0]] in:ARRAY(0x7fee42411170)=>[$out->[1]] 
-simultaneous events
-forgot 0 events
+11;out;1;Thu Jan  1 01:00:00 1970;
+14;out;0;Thu Jan  1 01:00:00 1970;0
+19;out;1;Thu Jan  1 01:00:00 1970;
+20;out;0;Thu Jan  1 01:00:00 1970;0
+# form 30/85
 streams:
 [[[0,1],[10,0],[12,1],[14,0],[16,1],[17,0],[18,1],[20,0],[21,1],[22,0],[23,1]],
 [[0,0],[10,undef],[10,1],[11,0],[14,undef],[14,0],[17,undef],[17,1],[19,0],[20,undef],[20,0],[22,undef]]]
-Thu Jan  1 01:00:00 1970; 10; 1; 
-Thu Jan  1 01:00:00 1970; 11; 0; 0
-Thu Jan  1 01:00:00 1970; 17; 1; 
-Thu Jan  1 01:00:00 1970; 19; 0; 0
-form: [CODE(0x7fee423288a0),[CODE(0x7fee422d5440),p],[CODE(0x7fee422d5440),q]]
-domain: p,q
-codomain: 0,1,2
-expr: [CODE(0x7fee423288a0),[CODE(0x7fee422d5440),[[[0,0]]],0],[CODE(0x7fee422d5440),[[[0,0]]],1],2]
-comp: [CODE(0x7fee422d5440),in:ARRAY(0x7fee42031a40),$out->[0]]
-comp: [CODE(0x7fee422d5440),in:ARRAY(0x7fee42412518),$out->[1]]
-comp: [CODE(0x7fee423288a0),$out->[0],$out->[1],$out->[2]]
-iexpr: in:ARRAY(0x7fee42412518)=>[$out->[1]] in:ARRAY(0x7fee42031a40)=>[$out->[0]] $out->[0]=>[$out->[2]] $out->[1]=>[$out->[2]] 
-simultaneous events
-forgot 0 events
+10;out;1;Thu Jan  1 01:00:00 1970;
+11;out;0;Thu Jan  1 01:00:00 1970;0
+17;out;1;Thu Jan  1 01:00:00 1970;
+19;out;0;Thu Jan  1 01:00:00 1970;0
+# form 31/85
 streams:
 [[[0,1],[10,0],[12,1],[14,0],[16,1],[17,0],[18,1],[20,0],[21,1],[22,0],[23,1]],
 [[0,1],[11,0],[15,1],[19,0],[24,1]],
 [[0,0],[10,undef],[10,0],[14,undef],[14,1],[15,0],[17,undef],[17,0],[20,undef],[20,0],[22,undef],[22,1],[24,0]]]
-Thu Jan  1 01:00:00 1970; 14; 1; 
-Thu Jan  1 01:00:00 1970; 15; 0; 0
-Thu Jan  1 01:00:00 1970; 22; 1; 
-Thu Jan  1 01:00:00 1970; 24; 0; 0
-form: [CODE(0x7fee423288a0),[CODE(0x7fee422d5440),q],[CODE(0x7fee422d5440),p]]
-domain: p,q
-codomain: 0,1,2
-expr: [CODE(0x7fee423288a0),[CODE(0x7fee422d5440),[[[0,0]]],0],[CODE(0x7fee422d5440),[[[0,0]]],1],2]
-comp: [CODE(0x7fee422d5440),in:ARRAY(0x7fee423efba0),$out->[0]]
-comp: [CODE(0x7fee422d5440),in:ARRAY(0x7fee423ee8a0),$out->[1]]
-comp: [CODE(0x7fee423288a0),$out->[0],$out->[1],$out->[2]]
-iexpr: $out->[0]=>[$out->[2]] in:ARRAY(0x7fee423efba0)=>[$out->[0]] in:ARRAY(0x7fee423ee8a0)=>[$out->[1]] $out->[1]=>[$out->[2]] 
-simultaneous events
-forgot 0 events
+14;out;1;Thu Jan  1 01:00:00 1970;
+15;out;0;Thu Jan  1 01:00:00 1970;0
+22;out;1;Thu Jan  1 01:00:00 1970;
+24;out;0;Thu Jan  1 01:00:00 1970;0
+# form 32/85
 streams:
 [[[0,1],[11,0],[15,1],[19,0],[24,1]],
 [[0,1],[10,0],[12,1],[14,0],[16,1],[17,0],[18,1],[20,0],[21,1],[22,0],[23,1]],
 [[0,0],[11,undef],[11,1],[12,0],[19,undef],[19,1],[21,0]]]
-Thu Jan  1 01:00:00 1970; 11; 1; 
-Thu Jan  1 01:00:00 1970; 12; 0; 0
-Thu Jan  1 01:00:00 1970; 19; 1; 
-Thu Jan  1 01:00:00 1970; 21; 0; 0
-form: [CODE(0x7fee423288a0),p,p]
-domain: p
-codomain: 0
-expr: [CODE(0x7fee423288a0),[[[0,0]]],[[[0,0]]],0]
-comp: [CODE(0x7fee423288a0),in:ARRAY(0x7fee42411900),in:ARRAY(0x7fee42411900),$out->[0]]
-iexpr: in:ARRAY(0x7fee42411900)=>[$out->[0],$out->[0]] 
-forgot 0 events
+11;out;1;Thu Jan  1 01:00:00 1970;
+12;out;0;Thu Jan  1 01:00:00 1970;0
+19;out;1;Thu Jan  1 01:00:00 1970;
+21;out;0;Thu Jan  1 01:00:00 1970;0
+# form 33/85
 streams:
 [[[0,0],[12,undef],[12,1],[14,0],[16,undef],[16,1],[17,0],[18,undef],[18,1],[20,0],[21,undef],[21,1],[22,0],[23,undef]]]
-Thu Jan  1 01:00:00 1970; 12; 1; 
-Thu Jan  1 01:00:00 1970; 14; 0; 0
-Thu Jan  1 01:00:00 1970; 16; 1; 
-Thu Jan  1 01:00:00 1970; 17; 0; 0
-Thu Jan  1 01:00:00 1970; 18; 1; 
-Thu Jan  1 01:00:00 1970; 20; 0; 0
-Thu Jan  1 01:00:00 1970; 21; 1; 
-Thu Jan  1 01:00:00 1970; 22; 0; 0
-form: [CODE(0x7fee423288a0),q,q]
-domain: q
-codomain: 0
-expr: [CODE(0x7fee423288a0),[[[0,0]]],[[[0,0]]],0]
-comp: [CODE(0x7fee423288a0),in:ARRAY(0x7fee4240f1a0),in:ARRAY(0x7fee4240f1a0),$out->[0]]
-iexpr: in:ARRAY(0x7fee4240f1a0)=>[$out->[0],$out->[0]] 
-forgot 0 events
+12;out;1;Thu Jan  1 01:00:00 1970;
+14;out;0;Thu Jan  1 01:00:00 1970;0
+16;out;1;Thu Jan  1 01:00:00 1970;
+17;out;0;Thu Jan  1 01:00:00 1970;0
+18;out;1;Thu Jan  1 01:00:00 1970;
+20;out;0;Thu Jan  1 01:00:00 1970;0
+21;out;1;Thu Jan  1 01:00:00 1970;
+22;out;0;Thu Jan  1 01:00:00 1970;0
+# form 34/85
 streams:
 [[[0,0],[15,undef],[15,1],[19,0],[24,undef]]]
-Thu Jan  1 01:00:00 1970; 15; 1; 
-Thu Jan  1 01:00:00 1970; 19; 0; 0
-form: [CODE(0x7fee4233dcf8),p,q]
-domain: p,q
-codomain: 0
-expr: [CODE(0x7fee4233dcf8),[[[0,0]]],[[[0,0]]],0]
-comp: [CODE(0x7fee4233dcf8),in:ARRAY(0x7fee4240bc78),in:ARRAY(0x7fee4240ecf0),$out->[0]]
-iexpr: in:ARRAY(0x7fee4240ecf0)=>[$out->[0]] in:ARRAY(0x7fee4240bc78)=>[$out->[0]] 
-simultaneous events
-forgot 0 events
+15;out;1;Thu Jan  1 01:00:00 1970;
+19;out;0;Thu Jan  1 01:00:00 1970;0
+# form 35/85
 streams:
 [[[0,0],[11,undef],[11,1],[12,0]]]
-Thu Jan  1 01:00:00 1970; 11; 1; 
-Thu Jan  1 01:00:00 1970; 12; 0; 0
-form: [CODE(0x7fee4233dcf8),q,p]
-domain: q,p
-codomain: 0
-expr: [CODE(0x7fee4233dcf8),[[[0,0]]],[[[0,0]]],0]
-comp: [CODE(0x7fee4233dcf8),in:ARRAY(0x7fee4240a6a8),in:ARRAY(0x7fee42410b88),$out->[0]]
-iexpr: in:ARRAY(0x7fee4240a6a8)=>[$out->[0]] in:ARRAY(0x7fee42410b88)=>[$out->[0]] 
-simultaneous events
-forgot 0 events
+11;out;1;Thu Jan  1 01:00:00 1970;
+12;out;0;Thu Jan  1 01:00:00 1970;0
+# form 36/85
 streams:
 [[[0,0],[14,undef],[14,1],[15,0],[20,undef],[20,0],[22,undef],[22,0]]]
-Thu Jan  1 01:00:00 1970; 14; 1; 
-Thu Jan  1 01:00:00 1970; 15; 0; 0
-form: [CODE(0x7fee4233dcf8),[CODE(0x7fee422e7600),[CODE(0x7fee422d5440),[CODE(0x7fee422d57b8),p,q]],q],p]
-domain: p,q
-codomain: 0,1,2,3
-expr: [CODE(0x7fee4233dcf8),[CODE(0x7fee422e7600),[CODE(0x7fee422d5440),[CODE(0x7fee422d57b8),[[[0,0]]],[[[0,0]]],0],1],[[[0,0]]],2],[[[0,0]]],3]
-comp: [CODE(0x7fee422d57b8),in:ARRAY(0x7fee423efee8),in:ARRAY(0x7fee42411b88),$out->[0]]
-comp: [CODE(0x7fee422d5440),$out->[0],$out->[1]]
-comp: [CODE(0x7fee422e7600),$out->[1],in:ARRAY(0x7fee42411b88),$out->[2]]
-comp: [CODE(0x7fee4233dcf8),$out->[2],in:ARRAY(0x7fee423efee8),$out->[3]]
-iexpr: $out->[0]=>[$out->[1]] in:ARRAY(0x7fee423efee8)=>[$out->[0],$out->[3]] in:ARRAY(0x7fee42411b88)=>[$out->[0],$out->[2]] $out->[1]=>[$out->[2]] $out->[2]=>[$out->[3]] 
-simultaneous events
-forgot 0 events
+14;out;1;Thu Jan  1 01:00:00 1970;
+15;out;0;Thu Jan  1 01:00:00 1970;0
+# form 37/85
 streams:
 [[[0,0],[14,undef],[14,0],[20,undef],[20,1],[21,0],[22,undef],[22,1],[23,0]],
 [[0,1],[14,undef],[14,1],[20,undef],[20,0],[21,1],[22,undef],[22,0],[23,1]],
 [[0,0],[11,undef],[11,1],[15,0],[19,undef],[19,0]],
 [[0,0],[14,undef],[14,1],[15,0],[20,undef],[20,0]]]
-Thu Jan  1 01:00:00 1970; 14; 1; 
-Thu Jan  1 01:00:00 1970; 15; 0; 0
-form: [CODE(0x7fee423532b8),p,q]
-domain: p,q
-codomain: 0
-expr: [CODE(0x7fee423532b8),[[[0,0]]],[[[0,0]]],0]
-comp: [CODE(0x7fee423532b8),in:ARRAY(0x7fee424108e8),in:ARRAY(0x7fee42411ff0),$out->[0]]
-iexpr: in:ARRAY(0x7fee424108e8)=>[$out->[0]] in:ARRAY(0x7fee42411ff0)=>[$out->[0]] 
-simultaneous events
-forgot 0 events
+14;out;1;Thu Jan  1 01:00:00 1970;
+15;out;0;Thu Jan  1 01:00:00 1970;0
+# form 38/85
 streams:
 [[[0,0]]]
-form: [CODE(0x7fee423532b8),p,p]
-domain: p
-codomain: 0
-expr: [CODE(0x7fee423532b8),[[[0,0]]],[[[0,0]]],0]
-comp: [CODE(0x7fee423532b8),in:ARRAY(0x7fee42411b88),in:ARRAY(0x7fee42411b88),$out->[0]]
-iexpr: in:ARRAY(0x7fee42411b88)=>[$out->[0],$out->[0]] 
-forgot 0 events
+# form 39/85
 streams:
 [[[0,0],[10,undef],[10,0],[14,undef],[14,0],[17,undef],[17,0],[20,undef],[20,0],[22,undef],[22,0]]]
-form: [CODE(0x7fee423532b8),p,[CODE(0x7fee422f7600),p,q]]
-domain: q,p
-codomain: 0,1
-expr: [CODE(0x7fee423532b8),[[[0,0]]],[CODE(0x7fee422f7600),[[[0,0]]],[[[0,0]]],0],1]
-comp: [CODE(0x7fee422f7600),in:ARRAY(0x7fee423ef428),in:ARRAY(0x7fee423eee40),$out->[0]]
-comp: [CODE(0x7fee423532b8),in:ARRAY(0x7fee423ef428),$out->[0],$out->[1]]
-iexpr: in:ARRAY(0x7fee423ef428)=>[$out->[0],$out->[1]] in:ARRAY(0x7fee423eee40)=>[$out->[0]] $out->[0]=>[$out->[1]] 
-simultaneous events
-forgot 0 events
+# form 40/85
 streams:
 [[[0,0],[11,1],[15,0],[20,1],[24,0]],
 [[0,0],[20,undef],[20,1],[21,0]]]
-Thu Jan  1 01:00:00 1970; 20; 1; 
-Thu Jan  1 01:00:00 1970; 21; 0; 0
-form: [CODE(0x7fee423532b8),q,[CODE(0x7fee422f7600),q,[CODE(0x7fee422d5440),p]]]
-domain: q,p
-codomain: 0,1,2
-expr: [CODE(0x7fee423532b8),[[[0,0]]],[CODE(0x7fee422f7600),[[[0,0]]],[CODE(0x7fee422d5440),[[[0,0]]],0],1],2]
-comp: [CODE(0x7fee422d5440),in:ARRAY(0x7fee423eed20),$out->[0]]
-comp: [CODE(0x7fee422f7600),in:ARRAY(0x7fee4241acd8),$out->[0],$out->[1]]
-comp: [CODE(0x7fee423532b8),in:ARRAY(0x7fee4241acd8),$out->[1],$out->[2]]
-iexpr: $out->[0]=>[$out->[1]] in:ARRAY(0x7fee4241acd8)=>[$out->[1],$out->[2]] in:ARRAY(0x7fee423eed20)=>[$out->[0]] $out->[1]=>[$out->[2]] 
-simultaneous events
-forgot 0 events
+20;out;1;Thu Jan  1 01:00:00 1970;
+21;out;0;Thu Jan  1 01:00:00 1970;0
+# form 41/85
 streams:
 [[[0,1],[10,0],[12,1],[14,0],[16,1],[17,0],[18,1],[20,0],[21,1],[22,0],[23,1]],
 [[0,0],[12,1],[14,0],[19,1],[20,0],[21,1],[22,0],[23,1]],
 [[0,0],[19,undef],[19,0]]]
-form: [CODE(0x7fee423532b8),q,[CODE(0x7fee422f7600),q,p]]
-domain: q,p
-codomain: 0,1
-expr: [CODE(0x7fee423532b8),[[[0,0]]],[CODE(0x7fee422f7600),[[[0,0]]],[[[0,0]]],0],1]
-comp: [CODE(0x7fee422f7600),in:ARRAY(0x7fee42413518),in:ARRAY(0x7fee423efeb8),$out->[0]]
-comp: [CODE(0x7fee423532b8),in:ARRAY(0x7fee42413518),$out->[0],$out->[1]]
-iexpr: in:ARRAY(0x7fee423efeb8)=>[$out->[0]] in:ARRAY(0x7fee42413518)=>[$out->[0],$out->[1]] $out->[0]=>[$out->[1]] 
-simultaneous events
-forgot 0 events
+# form 42/85
 streams:
 [[[0,0],[11,1],[12,0],[14,1],[16,0],[20,1],[21,0],[22,1],[23,0]],
 [[0,0],[11,undef],[11,0]]]
-form: [CODE(0x7fee423532b8),p,[CODE(0x7fee422e6df0),p,q]]
-domain: p,q
-codomain: 0,1
-expr: [CODE(0x7fee423532b8),[[[0,0]]],[CODE(0x7fee422e6df0),[[[0,0]]],[[[0,0]]],0],1]
-comp: [CODE(0x7fee422e6df0),in:ARRAY(0x7fee423f0ea0),in:ARRAY(0x7fee4240e7f8),$out->[0]]
-comp: [CODE(0x7fee423532b8),in:ARRAY(0x7fee423f0ea0),$out->[0],$out->[1]]
-iexpr: in:ARRAY(0x7fee423f0ea0)=>[$out->[0],$out->[1]] $out->[0]=>[$out->[1]] in:ARRAY(0x7fee4240e7f8)=>[$out->[0]] 
-simultaneous events
-forgot 0 events
+# form 43/85
 streams:
 [[[0,0],[10,1],[16,0],[17,1],[18,0],[19,1],[24,0]],
 [[0,0],[10,undef],[10,1],[12,0],[17,undef],[17,0]]]
-Thu Jan  1 01:00:00 1970; 10; 1; 
-Thu Jan  1 01:00:00 1970; 12; 0; 0
-form: [CODE(0x7fee423532b8),q,[CODE(0x7fee422e6df0),p,q]]
-domain: q,p
-codomain: 0,1
-expr: [CODE(0x7fee423532b8),[[[0,0]]],[CODE(0x7fee422e6df0),[[[0,0]]],[[[0,0]]],0],1]
-comp: [CODE(0x7fee422e6df0),in:ARRAY(0x7fee423f00f8),in:ARRAY(0x7fee423efb40),$out->[0]]
-comp: [CODE(0x7fee423532b8),in:ARRAY(0x7fee423efb40),$out->[0],$out->[1]]
-iexpr: in:ARRAY(0x7fee423f00f8)=>[$out->[0]] in:ARRAY(0x7fee423efb40)=>[$out->[0],$out->[1]] $out->[0]=>[$out->[1]] 
-simultaneous events
-forgot 0 events
+10;out;1;Thu Jan  1 01:00:00 1970;
+12;out;0;Thu Jan  1 01:00:00 1970;0
+# form 44/85
 streams:
 [[[0,0],[10,1],[16,0],[17,1],[18,0],[19,1],[24,0]],
 [[0,0],[19,undef],[19,0]]]
-form: [CODE(0x7fee423532b8),p,[CODE(0x7fee422e7228),[CODE(0x7fee422d5440),[CODE(0x7fee422e7600),[CODE(0x7fee422d5440),[CODE(0x7fee422d57b8),p,q]],q]],[CODE(0x7fee422e6df0),[CODE(0x7fee422d57b8),p,q],[CODE(0x7fee422d57b8),[CODE(0x7fee422d5440),p],q]]]]
-domain: p,q
-codomain: 0,1,2,3,4,5,6,7,8
-expr: [CODE(0x7fee423532b8),[[[0,0]]],[CODE(0x7fee422e7228),[CODE(0x7fee422d5440),[CODE(0x7fee422e7600),[CODE(0x7fee422d5440),[CODE(0x7fee422d57b8),[[[0,0]]],[[[0,0]]],0],1],[[[0,0]]],2],3],[CODE(0x7fee422e6df0),[[]],[CODE(0x7fee422d57b8),[CODE(0x7fee422d5440),[[[0,0]]],4],[[[0,0]]],5],6],7],8]
-comp: [CODE(0x7fee422d57b8),in:ARRAY(0x7fee42412660),in:ARRAY(0x7fee423f1c30),$out->[0]]
-comp: [CODE(0x7fee422d5440),$out->[0],$out->[1]]
-comp: [CODE(0x7fee422e7600),$out->[1],in:ARRAY(0x7fee423f1c30),$out->[2]]
-comp: [CODE(0x7fee422d5440),$out->[2],$out->[3]]
-comp: [CODE(0x7fee422d5440),in:ARRAY(0x7fee42412660),$out->[4]]
-comp: [CODE(0x7fee422d57b8),$out->[4],in:ARRAY(0x7fee423f1c30),$out->[5]]
-comp: [CODE(0x7fee422e6df0),$out->[0],$out->[5],$out->[6]]
-comp: [CODE(0x7fee422e7228),$out->[3],$out->[6],$out->[7]]
-comp: [CODE(0x7fee423532b8),in:ARRAY(0x7fee42412660),$out->[7],$out->[8]]
-iexpr: $out->[0]=>[$out->[1],$out->[6]] in:ARRAY(0x7fee423f1c30)=>[$out->[0],$out->[2],$out->[5]] in:ARRAY(0x7fee42412660)=>[$out->[0],$out->[4],$out->[8]] $out->[1]=>[$out->[2]] $out->[2]=>[$out->[3]] $out->[3]=>[$out->[7]] $out->[4]=>[$out->[5]] $out->[5]=>[$out->[6]] $out->[6]=>[$out->[7]] $out->[7]=>[$out->[8]] 
-simultaneous events
-forgot 0 events
+# form 45/85
 streams:
 [[[0,0],[14,undef],[14,0],[20,undef],[20,1],[21,0],[22,undef],[22,1],[23,0]],
 [[0,1],[14,undef],[14,1],[20,undef],[20,0],[21,1],[22,undef],[22,0],[23,1]],
@@ -702,152 +340,70 @@ streams:
 [[0,0],[12,undef],[12,1],[14,undef],[14,0],[20,undef],[20,1],[21,undef],[21,1],[22,undef],[22,1],[23,undef],[23,0]],
 [[0,0],[12,undef],[12,0],[20,undef],[20,1],[21,undef],[21,1],[22,undef],[22,1],[23,undef],[23,0]],
 [[0,0],[14,undef],[14,0],[20,undef],[20,1],[21,0]]]
-Thu Jan  1 01:00:00 1970; 20; 1; 
-Thu Jan  1 01:00:00 1970; 21; 0; 0
-form: [CODE(0x7fee4236a418),p,q]
-domain: p,q
-codomain: 0
-expr: [CODE(0x7fee4236a418),[[[0,0]]],[[[0,0]]],0]
-comp: [CODE(0x7fee4236a418),in:ARRAY(0x7fee42424110),in:ARRAY(0x7fee423f0900),$out->[0]]
-iexpr: in:ARRAY(0x7fee423f0900)=>[$out->[0]] in:ARRAY(0x7fee42424110)=>[$out->[0]] 
-simultaneous events
-forgot 0 events
+20;out;1;Thu Jan  1 01:00:00 1970;
+21;out;0;Thu Jan  1 01:00:00 1970;0
+# form 46/85
 streams:
 [[[0,0]]]
-form: [CODE(0x7fee4236a418),p,p]
-domain: p
-codomain: 0
-expr: [CODE(0x7fee4236a418),[[[0,0]]],[[[0,0]]],0]
-comp: [CODE(0x7fee4236a418),in:ARRAY(0x7fee423f1c30),in:ARRAY(0x7fee423f1c30),$out->[0]]
-iexpr: in:ARRAY(0x7fee423f1c30)=>[$out->[0],$out->[0]] 
-forgot 0 events
+# form 47/85
 streams:
 [[[0,0],[10,undef],[10,1],[12,0],[14,undef],[14,1],[16,0],[17,undef],[17,1],[18,0],[20,undef],[20,1],[21,0],[22,undef],[22,1],[23,0]]]
-Thu Jan  1 01:00:00 1970; 10; 1; 
-Thu Jan  1 01:00:00 1970; 12; 0; 0
-Thu Jan  1 01:00:00 1970; 14; 1; 
-Thu Jan  1 01:00:00 1970; 16; 0; 0
-Thu Jan  1 01:00:00 1970; 17; 1; 
-Thu Jan  1 01:00:00 1970; 18; 0; 0
-Thu Jan  1 01:00:00 1970; 20; 1; 
-Thu Jan  1 01:00:00 1970; 21; 0; 0
-Thu Jan  1 01:00:00 1970; 22; 1; 
-Thu Jan  1 01:00:00 1970; 23; 0; 0
-form: [CODE(0x7fee4236a418),p,[CODE(0x7fee422d5440),p]]
-domain: p
-codomain: 0,1
-expr: [CODE(0x7fee4236a418),[[[0,0]]],[CODE(0x7fee422d5440),[[[0,0]]],0],1]
-comp: [CODE(0x7fee422d5440),in:ARRAY(0x7fee42421cd8),$out->[0]]
-comp: [CODE(0x7fee4236a418),in:ARRAY(0x7fee42421cd8),$out->[0],$out->[1]]
-iexpr: in:ARRAY(0x7fee42421cd8)=>[$out->[0],$out->[1]] $out->[0]=>[$out->[1]] 
-forgot 0 events
+10;out;1;Thu Jan  1 01:00:00 1970;
+12;out;0;Thu Jan  1 01:00:00 1970;0
+14;out;1;Thu Jan  1 01:00:00 1970;
+16;out;0;Thu Jan  1 01:00:00 1970;0
+17;out;1;Thu Jan  1 01:00:00 1970;
+18;out;0;Thu Jan  1 01:00:00 1970;0
+20;out;1;Thu Jan  1 01:00:00 1970;
+21;out;0;Thu Jan  1 01:00:00 1970;0
+22;out;1;Thu Jan  1 01:00:00 1970;
+23;out;0;Thu Jan  1 01:00:00 1970;0
+# form 48/85
 streams:
 [[[0,1],[10,0],[12,1],[14,0],[16,1],[17,0],[18,1],[20,0],[21,1],[22,0],[23,1]],
 [[0,0]]]
-form: [CODE(0x7fee4236a418),p,[CODE(0x7fee422d57b8),p,q]]
-domain: p,q
-codomain: 0,1
-expr: [CODE(0x7fee4236a418),[[[0,0]]],[CODE(0x7fee422d57b8),[[[0,0]]],[[[0,0]]],0],1]
-comp: [CODE(0x7fee422d57b8),in:ARRAY(0x7fee4241b9d8),in:ARRAY(0x7fee42413248),$out->[0]]
-comp: [CODE(0x7fee4236a418),in:ARRAY(0x7fee4241b9d8),$out->[0],$out->[1]]
-iexpr: in:ARRAY(0x7fee42413248)=>[$out->[0]] $out->[0]=>[$out->[1]] in:ARRAY(0x7fee4241b9d8)=>[$out->[0],$out->[1]] 
-simultaneous events
-forgot 0 events
+# form 49/85
 streams:
 [[[0,0],[14,undef],[14,0],[20,undef],[20,1],[21,0],[22,undef],[22,1],[23,0]],
 [[0,0],[14,undef],[14,0],[20,undef],[20,1],[21,0],[22,undef],[22,1],[23,0]]]
-Thu Jan  1 01:00:00 1970; 20; 1; 
-Thu Jan  1 01:00:00 1970; 21; 0; 0
-Thu Jan  1 01:00:00 1970; 22; 1; 
-Thu Jan  1 01:00:00 1970; 23; 0; 0
-form: [CODE(0x7fee4236a418),[CODE(0x7fee422d57b8),p,q],[CODE(0x7fee422d57b8),p,q]]
-domain: p,q
-codomain: 0,1,2
-expr: [CODE(0x7fee4236a418),[CODE(0x7fee422d57b8),[[[0,0]]],[[[0,0]]],0],[CODE(0x7fee422d57b8),[[[0,0]]],[[[0,0]]],1],2]
-comp: [CODE(0x7fee422d57b8),in:ARRAY(0x7fee42424050),in:ARRAY(0x7fee423db2f0),$out->[0]]
-comp: [CODE(0x7fee422d57b8),in:ARRAY(0x7fee42424050),in:ARRAY(0x7fee423db2f0),$out->[1]]
-comp: [CODE(0x7fee4236a418),$out->[0],$out->[1],$out->[2]]
-iexpr: in:ARRAY(0x7fee42424050)=>[$out->[0],$out->[1]] $out->[0]=>[$out->[2]] in:ARRAY(0x7fee423db2f0)=>[$out->[0],$out->[1]] $out->[1]=>[$out->[2]] 
-simultaneous events
-forgot 0 events
+20;out;1;Thu Jan  1 01:00:00 1970;
+21;out;0;Thu Jan  1 01:00:00 1970;0
+22;out;1;Thu Jan  1 01:00:00 1970;
+23;out;0;Thu Jan  1 01:00:00 1970;0
+# form 50/85
 streams:
 [[[0,0],[14,undef],[14,0],[20,undef],[20,1],[21,0],[22,undef],[22,1],[23,0]],
 [[0,0],[14,undef],[14,0],[20,undef],[20,1],[21,0],[22,undef],[22,1],[23,0]],
 [[0,0],[14,undef],[14,0],[20,undef],[20,1],[21,0],[22,undef],[22,1],[23,0]]]
-Thu Jan  1 01:00:00 1970; 20; 1; 
-Thu Jan  1 01:00:00 1970; 21; 0; 0
-Thu Jan  1 01:00:00 1970; 22; 1; 
-Thu Jan  1 01:00:00 1970; 23; 0; 0
-form: [CODE(0x7fee4236a418),[CODE(0x7fee422d5440),[CODE(0x7fee422d57b8),p,q]],[CODE(0x7fee422d57b8),[CODE(0x7fee422d5440),p],q]]
-domain: q,p
-codomain: 0,1,2,3,4
-expr: [CODE(0x7fee4236a418),[CODE(0x7fee422d5440),[CODE(0x7fee422d57b8),[[[0,0]]],[[[0,0]]],0],1],[CODE(0x7fee422d57b8),[CODE(0x7fee422d5440),[[[0,0]]],2],[[[0,0]]],3],4]
-comp: [CODE(0x7fee422d57b8),in:ARRAY(0x7fee4241ebd0),in:ARRAY(0x7fee4241a918),$out->[0]]
-comp: [CODE(0x7fee422d5440),$out->[0],$out->[1]]
-comp: [CODE(0x7fee422d5440),in:ARRAY(0x7fee4241ebd0),$out->[2]]
-comp: [CODE(0x7fee422d57b8),$out->[2],in:ARRAY(0x7fee4241a918),$out->[3]]
-comp: [CODE(0x7fee4236a418),$out->[1],$out->[3],$out->[4]]
-iexpr: $out->[0]=>[$out->[1]] in:ARRAY(0x7fee4241ebd0)=>[$out->[0],$out->[2]] in:ARRAY(0x7fee4241a918)=>[$out->[0],$out->[3]] $out->[1]=>[$out->[4]] $out->[2]=>[$out->[3]] $out->[3]=>[$out->[4]] 
-simultaneous events
-forgot 0 events
+20;out;1;Thu Jan  1 01:00:00 1970;
+21;out;0;Thu Jan  1 01:00:00 1970;0
+22;out;1;Thu Jan  1 01:00:00 1970;
+23;out;0;Thu Jan  1 01:00:00 1970;0
+# form 51/85
 streams:
 [[[0,0],[14,undef],[14,0],[20,undef],[20,1],[21,0],[22,undef],[22,1],[23,0]],
 [[0,1],[14,undef],[14,1],[20,undef],[20,0],[21,1],[22,undef],[22,0],[23,1]],
 [[0,1],[10,0],[12,1],[14,0],[16,1],[17,0],[18,1],[20,0],[21,1],[22,0],[23,1]],
 [[0,0],[12,undef],[12,1],[14,0],[21,undef],[21,1],[22,0],[23,undef],[23,0]],
 [[0,0],[21,undef],[21,1],[22,0],[23,undef],[23,0]]]
-Thu Jan  1 01:00:00 1970; 21; 1; 
-Thu Jan  1 01:00:00 1970; 22; 0; 0
-form: [CODE(0x7fee4236b1b0),p,[CODE(0x7fee422e6df0),p,q]]
-domain: p,q
-codomain: 0,1
-expr: [CODE(0x7fee4236b1b0),[[[0,0]]],[CODE(0x7fee422e6df0),[[[0,0]]],[[[0,0]]],0],1]
-comp: [CODE(0x7fee422e6df0),in:ARRAY(0x7fee423dae58),in:ARRAY(0x7fee42422578),$out->[0]]
-comp: [CODE(0x7fee4236b1b0),in:ARRAY(0x7fee423dae58),$out->[0],$out->[1]]
-iexpr: in:ARRAY(0x7fee42422578)=>[$out->[0]] $out->[0]=>[$out->[1]] in:ARRAY(0x7fee423dae58)=>[$out->[0],$out->[1]] 
-simultaneous events
-forgot 0 events
+21;out;1;Thu Jan  1 01:00:00 1970;
+22;out;0;Thu Jan  1 01:00:00 1970;0
+# form 52/85
 streams:
 [[[0,0],[10,1],[16,0],[17,1],[18,0],[19,1],[24,0]],
 [[0,0],[14,undef],[14,1],[16,0],[20,undef],[20,0],[22,undef],[22,0]]]
-Thu Jan  1 01:00:00 1970; 14; 1; 
-Thu Jan  1 01:00:00 1970; 16; 0; 0
-form: [CODE(0x7fee4236b1b0),[CODE(0x7fee422d5440),p],[CODE(0x7fee422e6df0),[CODE(0x7fee422d5440),p],[CODE(0x7fee422d5440),q]]]
-domain: p,q
-codomain: 0,1,2,3,4
-expr: [CODE(0x7fee4236b1b0),[CODE(0x7fee422d5440),[[[0,0]]],0],[CODE(0x7fee422e6df0),[CODE(0x7fee422d5440),[[[0,0]]],1],[CODE(0x7fee422d5440),[[[0,0]]],2],3],4]
-comp: [CODE(0x7fee422d5440),in:ARRAY(0x7fee424237c8),$out->[0]]
-comp: [CODE(0x7fee422d5440),in:ARRAY(0x7fee424237c8),$out->[1]]
-comp: [CODE(0x7fee422d5440),in:ARRAY(0x7fee42424560),$out->[2]]
-comp: [CODE(0x7fee422e6df0),$out->[1],$out->[2],$out->[3]]
-comp: [CODE(0x7fee4236b1b0),$out->[0],$out->[3],$out->[4]]
-iexpr: in:ARRAY(0x7fee42424560)=>[$out->[2]] in:ARRAY(0x7fee424237c8)=>[$out->[0],$out->[1]] $out->[0]=>[$out->[4]] $out->[1]=>[$out->[3]] $out->[2]=>[$out->[3]] $out->[3]=>[$out->[4]] 
-simultaneous events
-forgot 0 events
+14;out;1;Thu Jan  1 01:00:00 1970;
+16;out;0;Thu Jan  1 01:00:00 1970;0
+# form 53/85
 streams:
 [[[0,1],[10,0],[12,1],[14,0],[16,1],[17,0],[18,1],[20,0],[21,1],[22,0],[23,1]],
 [[0,1],[10,0],[12,1],[14,0],[16,1],[17,0],[18,1],[20,0],[21,1],[22,0],[23,1]],
 [[0,1],[11,0],[15,1],[19,0],[24,1]],
 [[0,1],[11,0],[12,1],[14,0],[15,1],[20,0],[21,1],[22,0],[23,1]],
 [[0,0],[16,undef],[16,0],[18,undef],[18,1],[20,0]]]
-Thu Jan  1 01:00:00 1970; 18; 1; 
-Thu Jan  1 01:00:00 1970; 20; 0; 0
-form: [CODE(0x7fee4236b1b0),p,[CODE(0x7fee422e7228),[CODE(0x7fee422d5440),[CODE(0x7fee422e7600),[CODE(0x7fee422d5440),[CODE(0x7fee422d57b8),p,q]],q]],[CODE(0x7fee422e6df0),[CODE(0x7fee422d57b8),p,q],[CODE(0x7fee422d57b8),[CODE(0x7fee422d5440),p],q]]]]
-domain: q,p
-codomain: 0,1,2,3,4,5,6,7,8
-expr: [CODE(0x7fee4236b1b0),[[[0,0]]],[CODE(0x7fee422e7228),[CODE(0x7fee422d5440),[CODE(0x7fee422e7600),[CODE(0x7fee422d5440),[CODE(0x7fee422d57b8),[[[0,0]]],[[[0,0]]],0],1],[[[0,0]]],2],3],[CODE(0x7fee422e6df0),[[]],[CODE(0x7fee422d57b8),[CODE(0x7fee422d5440),[[[0,0]]],4],[[[0,0]]],5],6],7],8]
-comp: [CODE(0x7fee422d57b8),in:ARRAY(0x7fee4241f810),in:ARRAY(0x7fee4241c428),$out->[0]]
-comp: [CODE(0x7fee422d5440),$out->[0],$out->[1]]
-comp: [CODE(0x7fee422e7600),$out->[1],in:ARRAY(0x7fee4241c428),$out->[2]]
-comp: [CODE(0x7fee422d5440),$out->[2],$out->[3]]
-comp: [CODE(0x7fee422d5440),in:ARRAY(0x7fee4241f810),$out->[4]]
-comp: [CODE(0x7fee422d57b8),$out->[4],in:ARRAY(0x7fee4241c428),$out->[5]]
-comp: [CODE(0x7fee422e6df0),$out->[0],$out->[5],$out->[6]]
-comp: [CODE(0x7fee422e7228),$out->[3],$out->[6],$out->[7]]
-comp: [CODE(0x7fee4236b1b0),in:ARRAY(0x7fee4241f810),$out->[7],$out->[8]]
-iexpr: in:ARRAY(0x7fee4241c428)=>[$out->[0],$out->[2],$out->[5]] $out->[0]=>[$out->[1],$out->[6]] in:ARRAY(0x7fee4241f810)=>[$out->[0],$out->[4],$out->[8]] $out->[1]=>[$out->[2]] $out->[2]=>[$out->[3]] $out->[3]=>[$out->[7]] $out->[4]=>[$out->[5]] $out->[5]=>[$out->[6]] $out->[6]=>[$out->[7]] $out->[7]=>[$out->[8]] 
-simultaneous events
-forgot 0 events
+18;out;1;Thu Jan  1 01:00:00 1970;
+20;out;0;Thu Jan  1 01:00:00 1970;0
+# form 54/85
 streams:
 [[[0,0],[14,undef],[14,0],[20,undef],[20,1],[21,0],[22,undef],[22,1],[23,0]],
 [[0,1],[14,undef],[14,1],[20,undef],[20,0],[21,1],[22,undef],[22,0],[23,1]],
@@ -858,250 +414,124 @@ streams:
 [[0,0],[12,undef],[12,1],[14,undef],[14,0],[20,undef],[20,1],[21,undef],[21,1],[22,undef],[22,1],[23,undef],[23,0]],
 [[0,0],[12,undef],[12,0],[20,undef],[20,1],[21,undef],[21,1],[22,undef],[22,1],[23,undef],[23,0]],
 [[0,0],[14,undef],[14,0],[22,undef],[22,1],[23,0]]]
-Thu Jan  1 01:00:00 1970; 22; 1; 
-Thu Jan  1 01:00:00 1970; 23; 0; 0
-form: [CODE(0x7fee4237e3b8),p,[CODE(0x7fee422d5440),p]]
-domain: p
-codomain: 0,1
-expr: [CODE(0x7fee4237e3b8),[[[0,0]]],[CODE(0x7fee422d5440),[[[0,0]]],0],1]
-comp: [CODE(0x7fee422d5440),in:ARRAY(0x7fee4241fd20),$out->[0]]
-comp: [CODE(0x7fee4237e3b8),in:ARRAY(0x7fee4241fd20),$out->[0],$out->[1]]
-iexpr: in:ARRAY(0x7fee4241fd20)=>[$out->[0],$out->[1]] $out->[0]=>[$out->[1]] 
-forgot 0 events
+22;out;1;Thu Jan  1 01:00:00 1970;
+23;out;0;Thu Jan  1 01:00:00 1970;0
+# form 55/85
 streams:
 [[[0,1],[10,0],[12,1],[14,0],[16,1],[17,0],[18,1],[20,0],[21,1],[22,0],[23,1]],
 [[0,0],[10,1],[12,0],[14,1],[16,0],[17,1],[18,0],[20,1],[21,0],[22,1],[23,0]]]
-Thu Jan  1 01:00:00 1970; 10; 1; 
-Thu Jan  1 01:00:00 1970; 12; 0; 0
-Thu Jan  1 01:00:00 1970; 14; 1; 
-Thu Jan  1 01:00:00 1970; 16; 0; 0
-Thu Jan  1 01:00:00 1970; 17; 1; 
-Thu Jan  1 01:00:00 1970; 18; 0; 0
-Thu Jan  1 01:00:00 1970; 20; 1; 
-Thu Jan  1 01:00:00 1970; 21; 0; 0
-Thu Jan  1 01:00:00 1970; 22; 1; 
-Thu Jan  1 01:00:00 1970; 23; 0; 0
-form: [CODE(0x7fee4237e3b8),[CODE(0x7fee422d5440),p],p]
-domain: p
-codomain: 0,1
-expr: [CODE(0x7fee4237e3b8),[CODE(0x7fee422d5440),[[[0,0]]],0],[[[0,0]]],1]
-comp: [CODE(0x7fee422d5440),in:ARRAY(0x7fee42423350),$out->[0]]
-comp: [CODE(0x7fee4237e3b8),$out->[0],in:ARRAY(0x7fee42423350),$out->[1]]
-iexpr: in:ARRAY(0x7fee42423350)=>[$out->[0],$out->[1]] $out->[0]=>[$out->[1]] 
-forgot 0 events
+10;out;1;Thu Jan  1 01:00:00 1970;
+12;out;0;Thu Jan  1 01:00:00 1970;0
+14;out;1;Thu Jan  1 01:00:00 1970;
+16;out;0;Thu Jan  1 01:00:00 1970;0
+17;out;1;Thu Jan  1 01:00:00 1970;
+18;out;0;Thu Jan  1 01:00:00 1970;0
+20;out;1;Thu Jan  1 01:00:00 1970;
+21;out;0;Thu Jan  1 01:00:00 1970;0
+22;out;1;Thu Jan  1 01:00:00 1970;
+23;out;0;Thu Jan  1 01:00:00 1970;0
+# form 56/85
 streams:
 [[[0,1],[10,0],[12,1],[14,0],[16,1],[17,0],[18,1],[20,0],[21,1],[22,0],[23,1]],
 [[0,0],[12,1],[14,0],[16,1],[17,0],[18,1],[20,0],[21,1],[22,0],[23,1]]]
-Thu Jan  1 01:00:00 1970; 12; 1; 
-Thu Jan  1 01:00:00 1970; 14; 0; 0
-Thu Jan  1 01:00:00 1970; 16; 1; 
-Thu Jan  1 01:00:00 1970; 17; 0; 0
-Thu Jan  1 01:00:00 1970; 18; 1; 
-Thu Jan  1 01:00:00 1970; 20; 0; 0
-Thu Jan  1 01:00:00 1970; 21; 1; 
-Thu Jan  1 01:00:00 1970; 22; 0; 0
-Thu Jan  1 01:00:00 1970; 23; 1; 
-form: [CODE(0x7fee4237e3b8),p,[CODE(0x7fee422d57b8),[CODE(0x7fee422d5440),p],q]]
-domain: q,p
-codomain: 0,1,2
-expr: [CODE(0x7fee4237e3b8),[[[0,0]]],[CODE(0x7fee422d57b8),[CODE(0x7fee422d5440),[[[0,0]]],0],[[[0,0]]],1],2]
-comp: [CODE(0x7fee422d5440),in:ARRAY(0x7fee42426428),$out->[0]]
-comp: [CODE(0x7fee422d57b8),$out->[0],in:ARRAY(0x7fee42413308),$out->[1]]
-comp: [CODE(0x7fee4237e3b8),in:ARRAY(0x7fee42426428),$out->[1],$out->[2]]
-iexpr: $out->[0]=>[$out->[1]] in:ARRAY(0x7fee42426428)=>[$out->[0],$out->[2]] in:ARRAY(0x7fee42413308)=>[$out->[1]] $out->[1]=>[$out->[2]] 
-simultaneous events
-forgot 0 events
+12;out;1;Thu Jan  1 01:00:00 1970;
+14;out;0;Thu Jan  1 01:00:00 1970;0
+16;out;1;Thu Jan  1 01:00:00 1970;
+17;out;0;Thu Jan  1 01:00:00 1970;0
+18;out;1;Thu Jan  1 01:00:00 1970;
+20;out;0;Thu Jan  1 01:00:00 1970;0
+21;out;1;Thu Jan  1 01:00:00 1970;
+22;out;0;Thu Jan  1 01:00:00 1970;0
+23;out;1;Thu Jan  1 01:00:00 1970;
+# form 57/85
 streams:
 [[[0,1],[10,0],[12,1],[14,0],[16,1],[17,0],[18,1],[20,0],[21,1],[22,0],[23,1]],
 [[0,0],[12,undef],[12,1],[14,0],[21,undef],[21,1],[22,0],[23,undef],[23,0]],
 [[0,0],[14,1],[16,0],[22,1],[23,0]]]
-Thu Jan  1 01:00:00 1970; 14; 1; 
-Thu Jan  1 01:00:00 1970; 16; 0; 0
-Thu Jan  1 01:00:00 1970; 22; 1; 
-Thu Jan  1 01:00:00 1970; 23; 0; 0
-form: [CODE(0x7fee4237e3b8),p,[CODE(0x7fee423288a0),q,p]]
-domain: q,p
-codomain: 0,1
-expr: [CODE(0x7fee4237e3b8),[[[0,0]]],[CODE(0x7fee423288a0),[[[0,0]]],[[[0,0]]],0],1]
-comp: [CODE(0x7fee423288a0),in:ARRAY(0x7fee423db158),in:ARRAY(0x7fee42411d08),$out->[0]]
-comp: [CODE(0x7fee4237e3b8),in:ARRAY(0x7fee42411d08),$out->[0],$out->[1]]
-iexpr: in:ARRAY(0x7fee423db158)=>[$out->[0]] $out->[0]=>[$out->[1]] in:ARRAY(0x7fee42411d08)=>[$out->[0],$out->[1]] 
-simultaneous events
-forgot 0 events
+14;out;1;Thu Jan  1 01:00:00 1970;
+16;out;0;Thu Jan  1 01:00:00 1970;0
+22;out;1;Thu Jan  1 01:00:00 1970;
+23;out;0;Thu Jan  1 01:00:00 1970;0
+# form 58/85
 streams:
 [[[0,0],[15,undef],[15,1],[17,0],[24,undef]],
 [[0,0],[17,1],[18,0]]]
-Thu Jan  1 01:00:00 1970; 17; 1; 
-Thu Jan  1 01:00:00 1970; 18; 0; 0
-form: [CODE(0x7fee4237e3b8),q,[CODE(0x7fee423288a0),p,q]]
-domain: p,q
-codomain: 0,1
-expr: [CODE(0x7fee4237e3b8),[[[0,0]]],[CODE(0x7fee423288a0),[[[0,0]]],[[[0,0]]],0],1]
-comp: [CODE(0x7fee423288a0),in:ARRAY(0x7fee4241e4a0),in:ARRAY(0x7fee424216f0),$out->[0]]
-comp: [CODE(0x7fee4237e3b8),in:ARRAY(0x7fee424216f0),$out->[0],$out->[1]]
-iexpr: in:ARRAY(0x7fee424216f0)=>[$out->[0],$out->[1]] $out->[0]=>[$out->[1]] in:ARRAY(0x7fee4241e4a0)=>[$out->[0]] 
-simultaneous events
-forgot 0 events
+17;out;1;Thu Jan  1 01:00:00 1970;
+18;out;0;Thu Jan  1 01:00:00 1970;0
+# form 59/85
 streams:
 [[[0,0],[12,undef],[12,0],[16,undef],[16,0],[18,undef],[18,1],[19,0],[21,undef],[21,0],[23,undef]],
 [[0,0],[19,1],[24,0]]]
-Thu Jan  1 01:00:00 1970; 19; 1; 
-Thu Jan  1 01:00:00 1970; 24; 0; 0
-form: [CODE(0x7fee4237e3b8),p,[CODE(0x7fee423288a0),[CODE(0x7fee422d5440),q],p]]
-domain: q,p
-codomain: 0,1,2
-expr: [CODE(0x7fee4237e3b8),[[[0,0]]],[CODE(0x7fee423288a0),[CODE(0x7fee422d5440),[[[0,0]]],0],[[[0,0]]],1],2]
-comp: [CODE(0x7fee422d5440),in:ARRAY(0x7fee4241ad98),$out->[0]]
-comp: [CODE(0x7fee423288a0),$out->[0],in:ARRAY(0x7fee42420128),$out->[1]]
-comp: [CODE(0x7fee4237e3b8),in:ARRAY(0x7fee42420128),$out->[1],$out->[2]]
-iexpr: $out->[0]=>[$out->[1]] in:ARRAY(0x7fee42420128)=>[$out->[1],$out->[2]] in:ARRAY(0x7fee4241ad98)=>[$out->[0]] $out->[1]=>[$out->[2]] 
-simultaneous events
-forgot 0 events
+19;out;1;Thu Jan  1 01:00:00 1970;
+24;out;0;Thu Jan  1 01:00:00 1970;0
+# form 60/85
 streams:
 [[[0,1],[11,0],[15,1],[19,0],[24,1]],
 [[0,0],[11,undef],[11,1],[14,0],[19,undef],[19,1],[20,0]],
 [[0,0],[14,1],[16,0],[20,1],[21,0]]]
-Thu Jan  1 01:00:00 1970; 14; 1; 
-Thu Jan  1 01:00:00 1970; 16; 0; 0
-Thu Jan  1 01:00:00 1970; 20; 1; 
-Thu Jan  1 01:00:00 1970; 21; 0; 0
-form: [CODE(0x7fee4237e3b8),[CODE(0x7fee422d5440),p],[CODE(0x7fee423288a0),[CODE(0x7fee422d5440),q],[CODE(0x7fee422d5440),p]]]
-domain: q,p
-codomain: 0,1,2,3,4
-expr: [CODE(0x7fee4237e3b8),[CODE(0x7fee422d5440),[[[0,0]]],0],[CODE(0x7fee423288a0),[CODE(0x7fee422d5440),[[[0,0]]],1],[CODE(0x7fee422d5440),[[[0,0]]],2],3],4]
-comp: [CODE(0x7fee422d5440),in:ARRAY(0x7fee42413308),$out->[0]]
-comp: [CODE(0x7fee422d5440),in:ARRAY(0x7fee4241f6f0),$out->[1]]
-comp: [CODE(0x7fee422d5440),in:ARRAY(0x7fee42413308),$out->[2]]
-comp: [CODE(0x7fee423288a0),$out->[1],$out->[2],$out->[3]]
-comp: [CODE(0x7fee4237e3b8),$out->[0],$out->[3],$out->[4]]
-iexpr: in:ARRAY(0x7fee4241f6f0)=>[$out->[1]] in:ARRAY(0x7fee42413308)=>[$out->[0],$out->[2]] $out->[0]=>[$out->[4]] $out->[1]=>[$out->[3]] $out->[2]=>[$out->[3]] $out->[3]=>[$out->[4]] 
-simultaneous events
-forgot 0 events
+14;out;1;Thu Jan  1 01:00:00 1970;
+16;out;0;Thu Jan  1 01:00:00 1970;0
+20;out;1;Thu Jan  1 01:00:00 1970;
+21;out;0;Thu Jan  1 01:00:00 1970;0
+# form 61/85
 streams:
 [[[0,1],[10,0],[12,1],[14,0],[16,1],[17,0],[18,1],[20,0],[21,1],[22,0],[23,1]],
 [[0,1],[11,0],[15,1],[19,0],[24,1]],
 [[0,1],[10,0],[12,1],[14,0],[16,1],[17,0],[18,1],[20,0],[21,1],[22,0],[23,1]],
 [[0,0],[11,undef],[11,1],[12,0],[19,undef],[19,1],[21,0]],
 [[0,0],[12,1],[14,0],[21,1],[22,0]]]
-Thu Jan  1 01:00:00 1970; 12; 1; 
-Thu Jan  1 01:00:00 1970; 14; 0; 0
-Thu Jan  1 01:00:00 1970; 21; 1; 
-Thu Jan  1 01:00:00 1970; 22; 0; 0
-form: [CODE(0x7fee422e7228),q,[CODE(0x7fee422d5440),[CODE(0x7fee422e7600),[CODE(0x7fee422d5440),p],q]]]
-domain: p,q
-codomain: 0,1,2,3
-expr: [CODE(0x7fee422e7228),[[[0,0]]],[CODE(0x7fee422d5440),[CODE(0x7fee422e7600),[CODE(0x7fee422d5440),[[[0,0]]],0],[[[0,0]]],1],2],3]
-comp: [CODE(0x7fee422d5440),in:ARRAY(0x7fee423c88b8),$out->[0]]
-comp: [CODE(0x7fee422e7600),$out->[0],in:ARRAY(0x7fee42410e58),$out->[1]]
-comp: [CODE(0x7fee422d5440),$out->[1],$out->[2]]
-comp: [CODE(0x7fee422e7228),in:ARRAY(0x7fee42410e58),$out->[2],$out->[3]]
-iexpr: in:ARRAY(0x7fee423c88b8)=>[$out->[0]] in:ARRAY(0x7fee42410e58)=>[$out->[1],$out->[3]] $out->[0]=>[$out->[1]] $out->[1]=>[$out->[2]] $out->[2]=>[$out->[3]] 
-simultaneous events
-forgot 0 events
+12;out;1;Thu Jan  1 01:00:00 1970;
+14;out;0;Thu Jan  1 01:00:00 1970;0
+21;out;1;Thu Jan  1 01:00:00 1970;
+22;out;0;Thu Jan  1 01:00:00 1970;0
+# form 62/85
 streams:
 [[[0,1],[10,0],[12,1],[14,0],[16,1],[17,0],[18,1],[20,0],[21,1],[22,0],[23,1]],
 [[0,0],[19,undef],[19,0]],
 [[0,1],[19,undef],[19,1]],
 [[0,0],[11,1],[15,0],[19,undef],[19,1],[24,0]]]
-Thu Jan  1 01:00:00 1970; 11; 1; 
-Thu Jan  1 01:00:00 1970; 15; 0; 0
-Thu Jan  1 01:00:00 1970; 19; 1; 
-Thu Jan  1 01:00:00 1970; 24; 0; 0
-form: [CODE(0x7fee422e7228),q,[CODE(0x7fee422d5440),[CODE(0x7fee422e7600),p,q]]]
-domain: p,q
-codomain: 0,1,2
-expr: [CODE(0x7fee422e7228),[[[0,0]]],[CODE(0x7fee422d5440),[CODE(0x7fee422e7600),[[[0,0]]],[[[0,0]]],0],1],2]
-comp: [CODE(0x7fee422e7600),in:ARRAY(0x7fee423eeea0),in:ARRAY(0x7fee424259a8),$out->[0]]
-comp: [CODE(0x7fee422d5440),$out->[0],$out->[1]]
-comp: [CODE(0x7fee422e7228),in:ARRAY(0x7fee424259a8),$out->[1],$out->[2]]
-iexpr: in:ARRAY(0x7fee423eeea0)=>[$out->[0]] $out->[0]=>[$out->[1]] in:ARRAY(0x7fee424259a8)=>[$out->[0],$out->[2]] $out->[1]=>[$out->[2]] 
-simultaneous events
-forgot 0 events
+11;out;1;Thu Jan  1 01:00:00 1970;
+15;out;0;Thu Jan  1 01:00:00 1970;0
+19;out;1;Thu Jan  1 01:00:00 1970;
+24;out;0;Thu Jan  1 01:00:00 1970;0
+# form 63/85
 streams:
 [[[0,0],[11,undef],[11,0]],
 [[0,1],[11,undef],[11,1]],
 [[0,0],[11,undef],[11,1],[15,0],[19,1],[24,0]]]
-Thu Jan  1 01:00:00 1970; 11; 1; 
-Thu Jan  1 01:00:00 1970; 15; 0; 0
-Thu Jan  1 01:00:00 1970; 19; 1; 
-Thu Jan  1 01:00:00 1970; 24; 0; 0
-form: [CODE(0x7fee422e7228),[CODE(0x7fee422d5440),q],[CODE(0x7fee422d5440),[CODE(0x7fee422e7600),p,[CODE(0x7fee422d5440),q]]]]
-domain: q,p
-codomain: 0,1,2,3,4
-expr: [CODE(0x7fee422e7228),[CODE(0x7fee422d5440),[[[0,0]]],0],[CODE(0x7fee422d5440),[CODE(0x7fee422e7600),[[[0,0]]],[CODE(0x7fee422d5440),[[[0,0]]],1],2],3],4]
-comp: [CODE(0x7fee422d5440),in:ARRAY(0x7fee4241b578),$out->[0]]
-comp: [CODE(0x7fee422d5440),in:ARRAY(0x7fee4241b578),$out->[1]]
-comp: [CODE(0x7fee422e7600),in:ARRAY(0x7fee424119c0),$out->[1],$out->[2]]
-comp: [CODE(0x7fee422d5440),$out->[2],$out->[3]]
-comp: [CODE(0x7fee422e7228),$out->[0],$out->[3],$out->[4]]
-iexpr: in:ARRAY(0x7fee424119c0)=>[$out->[2]] $out->[0]=>[$out->[4]] in:ARRAY(0x7fee4241b578)=>[$out->[0],$out->[1]] $out->[1]=>[$out->[2]] $out->[2]=>[$out->[3]] $out->[3]=>[$out->[4]] 
-simultaneous events
-forgot 0 events
+11;out;1;Thu Jan  1 01:00:00 1970;
+15;out;0;Thu Jan  1 01:00:00 1970;0
+19;out;1;Thu Jan  1 01:00:00 1970;
+24;out;0;Thu Jan  1 01:00:00 1970;0
+# form 64/85
 streams:
 [[[0,1],[11,0],[15,1],[19,0],[24,1]],
 [[0,1],[11,0],[15,1],[19,0],[24,1]],
 [[0,0],[15,undef],[15,0]],
 [[0,1],[15,undef],[15,1]],
 [[0,1],[11,0],[15,undef],[15,1],[19,0],[24,1]]]
-Thu Jan  1 01:00:00 1970; 0; 1; 
-Thu Jan  1 01:00:00 1970; 11; 0; 0
-Thu Jan  1 01:00:00 1970; 15; 1; 
-Thu Jan  1 01:00:00 1970; 19; 0; 0
-Thu Jan  1 01:00:00 1970; 24; 1; 
-form: [CODE(0x7fee422f7600),[CODE(0x7fee423532b8),p,q],q]
-domain: p,q
-codomain: 0,1
-expr: [CODE(0x7fee422f7600),[CODE(0x7fee423532b8),[[[0,0]]],[[[0,0]]],0],[[[0,0]]],1]
-comp: [CODE(0x7fee423532b8),in:ARRAY(0x7fee423f03b0),in:ARRAY(0x7fee4240a798),$out->[0]]
-comp: [CODE(0x7fee422f7600),$out->[0],in:ARRAY(0x7fee4240a798),$out->[1]]
-iexpr: in:ARRAY(0x7fee4240a798)=>[$out->[0],$out->[1]] $out->[0]=>[$out->[1]] in:ARRAY(0x7fee423f03b0)=>[$out->[0]] 
-simultaneous events
-forgot 0 events
+0;out;1;Thu Jan  1 01:00:00 1970;
+11;out;0;Thu Jan  1 01:00:00 1970;0
+15;out;1;Thu Jan  1 01:00:00 1970;
+19;out;0;Thu Jan  1 01:00:00 1970;0
+24;out;1;Thu Jan  1 01:00:00 1970;
+# form 65/85
 streams:
 [[[0,0]],
 [[0,0]]]
-form: [CODE(0x7fee422f7600),[CODE(0x7fee423532b8),p,p],p]
-domain: p
-codomain: 0,1
-expr: [CODE(0x7fee422f7600),[CODE(0x7fee423532b8),[[[0,0]]],[[[0,0]]],0],[[[0,0]]],1]
-comp: [CODE(0x7fee423532b8),in:ARRAY(0x7fee42421a98),in:ARRAY(0x7fee42421a98),$out->[0]]
-comp: [CODE(0x7fee422f7600),$out->[0],in:ARRAY(0x7fee42421a98),$out->[1]]
-iexpr: $out->[0]=>[$out->[1]] in:ARRAY(0x7fee42421a98)=>[$out->[0],$out->[0],$out->[1]] 
-forgot 0 events
+# form 66/85
 streams:
 [[[0,0],[10,undef],[10,0],[14,undef],[14,0],[17,undef],[17,0],[20,undef],[20,0],[22,undef],[22,0]],
 [[0,0],[10,undef],[10,0],[14,undef],[14,0],[17,undef],[17,0],[20,undef],[20,0],[22,undef],[22,0]]]
-form: [CODE(0x7fee422f7600),[CODE(0x7fee423532b8),p,[CODE(0x7fee422f7600),p,q]],[CODE(0x7fee422f7600),p,q]]
-domain: q,p
-codomain: 0,1,2,3
-expr: [CODE(0x7fee422f7600),[CODE(0x7fee423532b8),[[[0,0]]],[CODE(0x7fee422f7600),[[[0,0]]],[[[0,0]]],0],1],[CODE(0x7fee422f7600),[[[0,0]]],[[[0,0]]],2],3]
-comp: [CODE(0x7fee422f7600),in:ARRAY(0x7fee4241b578),in:ARRAY(0x7fee4241fe10),$out->[0]]
-comp: [CODE(0x7fee423532b8),in:ARRAY(0x7fee4241b578),$out->[0],$out->[1]]
-comp: [CODE(0x7fee422f7600),in:ARRAY(0x7fee4241b578),in:ARRAY(0x7fee4241fe10),$out->[2]]
-comp: [CODE(0x7fee422f7600),$out->[1],$out->[2],$out->[3]]
-iexpr: $out->[0]=>[$out->[1]] in:ARRAY(0x7fee4241b578)=>[$out->[0],$out->[1],$out->[2]] in:ARRAY(0x7fee4241fe10)=>[$out->[0],$out->[2]] $out->[1]=>[$out->[3]] $out->[2]=>[$out->[3]] 
-simultaneous events
-forgot 0 events
+# form 67/85
 streams:
 [[[0,0],[11,1],[15,0],[20,1],[24,0]],
 [[0,0],[20,undef],[20,1],[21,0]],
 [[0,0],[11,1],[15,0],[20,1],[24,0]],
 [[0,0],[20,undef],[20,1],[24,0]]]
-Thu Jan  1 01:00:00 1970; 20; 1; 
-Thu Jan  1 01:00:00 1970; 24; 0; 0
-form: [CODE(0x7fee422f7600),[CODE(0x7fee423532b8),q,[CODE(0x7fee422f7600),q,[CODE(0x7fee422d5440),p]]],[CODE(0x7fee422f7600),q,[CODE(0x7fee422d5440),p]]]
-domain: q,p
-codomain: 0,1,2,3,4,5
-expr: [CODE(0x7fee422f7600),[CODE(0x7fee423532b8),[[[0,0]]],[CODE(0x7fee422f7600),[[[0,0]]],[CODE(0x7fee422d5440),[[[0,0]]],0],1],2],[CODE(0x7fee422f7600),[[[0,0]]],[CODE(0x7fee422d5440),[[[0,0]]],3],4],5]
-comp: [CODE(0x7fee422d5440),in:ARRAY(0x7fee42205030),$out->[0]]
-comp: [CODE(0x7fee422f7600),in:ARRAY(0x7fee42410e58),$out->[0],$out->[1]]
-comp: [CODE(0x7fee423532b8),in:ARRAY(0x7fee42410e58),$out->[1],$out->[2]]
-comp: [CODE(0x7fee422d5440),in:ARRAY(0x7fee42205030),$out->[3]]
-comp: [CODE(0x7fee422f7600),in:ARRAY(0x7fee42410e58),$out->[3],$out->[4]]
-comp: [CODE(0x7fee422f7600),$out->[2],$out->[4],$out->[5]]
-iexpr: $out->[0]=>[$out->[1]] in:ARRAY(0x7fee42410e58)=>[$out->[1],$out->[2],$out->[4]] in:ARRAY(0x7fee42205030)=>[$out->[0],$out->[3]] $out->[1]=>[$out->[2]] $out->[2]=>[$out->[5]] $out->[3]=>[$out->[4]] $out->[4]=>[$out->[5]] 
-simultaneous events
-forgot 0 events
+20;out;1;Thu Jan  1 01:00:00 1970;
+24;out;0;Thu Jan  1 01:00:00 1970;0
+# form 68/85
 streams:
 [[[0,1],[10,0],[12,1],[14,0],[16,1],[17,0],[18,1],[20,0],[21,1],[22,0],[23,1]],
 [[0,0],[12,1],[14,0],[19,1],[20,0],[21,1],[22,0],[23,1]],
@@ -1109,297 +539,141 @@ streams:
 [[0,1],[10,0],[12,1],[14,0],[16,1],[17,0],[18,1],[20,0],[21,1],[22,0],[23,1]],
 [[0,0],[12,1],[14,0],[19,1],[20,0],[21,1],[22,0],[23,1]],
 [[0,0],[19,undef],[19,0]]]
-form: [CODE(0x7fee422f7600),[CODE(0x7fee423532b8),[CODE(0x7fee422e7228),p,q],p],p]
-domain: q,p
-codomain: 0,1,2
-expr: [CODE(0x7fee422f7600),[CODE(0x7fee423532b8),[CODE(0x7fee422e7228),[[[0,0]]],[[[0,0]]],0],[[[0,0]]],1],[[[0,0]]],2]
-comp: [CODE(0x7fee422e7228),in:ARRAY(0x7fee42402068),in:ARRAY(0x7fee42426530),$out->[0]]
-comp: [CODE(0x7fee423532b8),$out->[0],in:ARRAY(0x7fee42402068),$out->[1]]
-comp: [CODE(0x7fee422f7600),$out->[1],in:ARRAY(0x7fee42402068),$out->[2]]
-iexpr: in:ARRAY(0x7fee42402068)=>[$out->[0],$out->[1],$out->[2]] in:ARRAY(0x7fee42426530)=>[$out->[0]] $out->[0]=>[$out->[1]] $out->[1]=>[$out->[2]] 
-simultaneous events
-forgot 0 events
+# form 69/85
 streams:
 [[[0,0],[11,1],[12,0],[14,1],[15,0],[20,1],[21,0],[22,1],[23,0]],
 [[0,0],[14,undef],[14,1],[15,0],[20,undef],[20,0],[22,undef],[22,0]],
 [[0,0],[14,undef],[14,1],[16,0],[20,undef],[20,0],[22,undef],[22,0]]]
-Thu Jan  1 01:00:00 1970; 14; 1; 
-Thu Jan  1 01:00:00 1970; 16; 0; 0
-form: [CODE(0x7fee422f7600),[CODE(0x7fee423532b8),[CODE(0x7fee422e7228),p,q],q],q]
-domain: q,p
-codomain: 0,1,2
-expr: [CODE(0x7fee422f7600),[CODE(0x7fee423532b8),[CODE(0x7fee422e7228),[[[0,0]]],[[[0,0]]],0],[[[0,0]]],1],[[[0,0]]],2]
-comp: [CODE(0x7fee422e7228),in:ARRAY(0x7fee42402500),in:ARRAY(0x7fee4241b0b0),$out->[0]]
-comp: [CODE(0x7fee423532b8),$out->[0],in:ARRAY(0x7fee4241b0b0),$out->[1]]
-comp: [CODE(0x7fee422f7600),$out->[1],in:ARRAY(0x7fee4241b0b0),$out->[2]]
-iexpr: in:ARRAY(0x7fee4241b0b0)=>[$out->[0],$out->[1],$out->[2]] in:ARRAY(0x7fee42402500)=>[$out->[0]] $out->[0]=>[$out->[1]] $out->[1]=>[$out->[2]] 
-simultaneous events
-forgot 0 events
+14;out;1;Thu Jan  1 01:00:00 1970;
+16;out;0;Thu Jan  1 01:00:00 1970;0
+# form 70/85
 streams:
 [[[0,0],[11,1],[12,0],[14,1],[15,0],[20,1],[21,0],[22,1],[23,0]],
 [[0,0],[11,undef],[11,1],[12,0]],
 [[0,0],[11,undef],[11,1],[15,0]]]
-Thu Jan  1 01:00:00 1970; 11; 1; 
-Thu Jan  1 01:00:00 1970; 15; 0; 0
-form: [CODE(0x7fee422e7228),p,[CODE(0x7fee422d5440),[CODE(0x7fee422e7600),[CODE(0x7fee422d5440),[CODE(0x7fee422d57b8),q,p]],p]]]
-domain: q,p
-codomain: 0,1,2,3,4
-expr: [CODE(0x7fee422e7228),[[[0,0]]],[CODE(0x7fee422d5440),[CODE(0x7fee422e7600),[CODE(0x7fee422d5440),[CODE(0x7fee422d57b8),[[[0,0]]],[[[0,0]]],0],1],[[[0,0]]],2],3],4]
-comp: [CODE(0x7fee422d57b8),in:ARRAY(0x7fee4240ec18),in:ARRAY(0x7fee42426500),$out->[0]]
-comp: [CODE(0x7fee422d5440),$out->[0],$out->[1]]
-comp: [CODE(0x7fee422e7600),$out->[1],in:ARRAY(0x7fee42426500),$out->[2]]
-comp: [CODE(0x7fee422d5440),$out->[2],$out->[3]]
-comp: [CODE(0x7fee422e7228),in:ARRAY(0x7fee42426500),$out->[3],$out->[4]]
-iexpr: in:ARRAY(0x7fee4240ec18)=>[$out->[0]] in:ARRAY(0x7fee42426500)=>[$out->[0],$out->[2],$out->[4]] $out->[0]=>[$out->[1]] $out->[1]=>[$out->[2]] $out->[2]=>[$out->[3]] $out->[3]=>[$out->[4]] 
-simultaneous events
-forgot 0 events
+11;out;1;Thu Jan  1 01:00:00 1970;
+15;out;0;Thu Jan  1 01:00:00 1970;0
+# form 71/85
 streams:
 [[[0,0],[11,undef],[11,0]],
 [[0,1],[11,undef],[11,1]],
 [[0,0],[10,undef],[10,1],[12,0],[14,undef],[14,1],[16,0],[17,undef],[17,1],[18,0],[20,undef],[20,1],[21,0],[22,undef],[22,1],[23,0]],
 [[0,1],[10,undef],[10,0],[12,1],[14,undef],[14,0],[16,1],[17,undef],[17,0],[18,1],[20,undef],[20,0],[21,1],[22,undef],[22,0],[23,1]],
 [[0,0],[10,undef],[10,0],[14,undef],[14,0],[17,undef],[17,0],[20,undef],[20,0],[22,undef],[22,0]]]
-form: [CODE(0x7fee422e7228),q,[CODE(0x7fee422d5440),[CODE(0x7fee422e7600),[CODE(0x7fee422d5440),[CODE(0x7fee422d57b8),p,q]],q]]]
-domain: p,q
-codomain: 0,1,2,3,4
-expr: [CODE(0x7fee422e7228),[[[0,0]]],[CODE(0x7fee422d5440),[CODE(0x7fee422e7600),[CODE(0x7fee422d5440),[CODE(0x7fee422d57b8),[[[0,0]]],[[[0,0]]],0],1],[[[0,0]]],2],3],4]
-comp: [CODE(0x7fee422d57b8),in:ARRAY(0x7fee424018a0),in:ARRAY(0x7fee4241fea0),$out->[0]]
-comp: [CODE(0x7fee422d5440),$out->[0],$out->[1]]
-comp: [CODE(0x7fee422e7600),$out->[1],in:ARRAY(0x7fee4241fea0),$out->[2]]
-comp: [CODE(0x7fee422d5440),$out->[2],$out->[3]]
-comp: [CODE(0x7fee422e7228),in:ARRAY(0x7fee4241fea0),$out->[3],$out->[4]]
-iexpr: $out->[0]=>[$out->[1]] in:ARRAY(0x7fee424018a0)=>[$out->[0]] in:ARRAY(0x7fee4241fea0)=>[$out->[0],$out->[2],$out->[4]] $out->[1]=>[$out->[2]] $out->[2]=>[$out->[3]] $out->[3]=>[$out->[4]] 
-simultaneous events
-forgot 0 events
+# form 72/85
 streams:
 [[[0,0],[14,undef],[14,0],[20,undef],[20,1],[21,0],[22,undef],[22,1],[23,0]],
 [[0,1],[14,undef],[14,1],[20,undef],[20,0],[21,1],[22,undef],[22,0],[23,1]],
 [[0,0],[11,undef],[11,1],[15,0],[19,undef],[19,0]],
 [[0,1],[11,undef],[11,0],[15,1],[19,undef],[19,1]],
 [[0,0],[11,undef],[11,0],[19,undef],[19,1],[24,0]]]
-Thu Jan  1 01:00:00 1970; 19; 1; 
-Thu Jan  1 01:00:00 1970; 24; 0; 0
-form: [CODE(0x7fee422f7600),[CODE(0x7fee4233dcf8),q,p],p]
-domain: p,q
-codomain: 0,1
-expr: [CODE(0x7fee422f7600),[CODE(0x7fee4233dcf8),[[[0,0]]],[[[0,0]]],0],[[[0,0]]],1]
-comp: [CODE(0x7fee4233dcf8),in:ARRAY(0x7fee42421b40),in:ARRAY(0x7fee42425eb8),$out->[0]]
-comp: [CODE(0x7fee422f7600),$out->[0],in:ARRAY(0x7fee42425eb8),$out->[1]]
-iexpr: in:ARRAY(0x7fee42421b40)=>[$out->[0]] in:ARRAY(0x7fee42425eb8)=>[$out->[0],$out->[1]] $out->[0]=>[$out->[1]] 
-simultaneous events
-forgot 0 events
+19;out;1;Thu Jan  1 01:00:00 1970;
+24;out;0;Thu Jan  1 01:00:00 1970;0
+# form 73/85
 streams:
 [[[0,0],[14,undef],[14,1],[15,0],[20,undef],[20,0],[22,undef],[22,0]],
 [[0,0],[14,undef],[14,1],[16,0],[20,undef],[20,0],[22,undef],[22,0]]]
-Thu Jan  1 01:00:00 1970; 14; 1; 
-Thu Jan  1 01:00:00 1970; 16; 0; 0
-form: [CODE(0x7fee422f7600),[CODE(0x7fee4233dcf8),p,q],q]
-domain: p,q
-codomain: 0,1
-expr: [CODE(0x7fee422f7600),[CODE(0x7fee4233dcf8),[[[0,0]]],[[[0,0]]],0],[[[0,0]]],1]
-comp: [CODE(0x7fee4233dcf8),in:ARRAY(0x7fee42425708),in:ARRAY(0x7fee4240f308),$out->[0]]
-comp: [CODE(0x7fee422f7600),$out->[0],in:ARRAY(0x7fee4240f308),$out->[1]]
-iexpr: $out->[0]=>[$out->[1]] in:ARRAY(0x7fee42425708)=>[$out->[0]] in:ARRAY(0x7fee4240f308)=>[$out->[0],$out->[1]] 
-simultaneous events
-forgot 0 events
+14;out;1;Thu Jan  1 01:00:00 1970;
+16;out;0;Thu Jan  1 01:00:00 1970;0
+# form 74/85
 streams:
 [[[0,0],[11,undef],[11,1],[12,0]],
 [[0,0],[11,undef],[11,1],[15,0]]]
-Thu Jan  1 01:00:00 1970; 11; 1; 
-Thu Jan  1 01:00:00 1970; 15; 0; 0
-form: [CODE(0x7fee422e7228),p,[CODE(0x7fee422d5440),[CODE(0x7fee422e7600),[CODE(0x7fee422d5440),[CODE(0x7fee4233dcf8),p,q]],p]]]
-domain: q,p
-codomain: 0,1,2,3,4
-expr: [CODE(0x7fee422e7228),[[[0,0]]],[CODE(0x7fee422d5440),[CODE(0x7fee422e7600),[CODE(0x7fee422d5440),[CODE(0x7fee4233dcf8),[[[0,0]]],[[[0,0]]],0],1],[[[0,0]]],2],3],4]
-comp: [CODE(0x7fee4233dcf8),in:ARRAY(0x7fee4241f170),in:ARRAY(0x7fee424017c8),$out->[0]]
-comp: [CODE(0x7fee422d5440),$out->[0],$out->[1]]
-comp: [CODE(0x7fee422e7600),$out->[1],in:ARRAY(0x7fee4241f170),$out->[2]]
-comp: [CODE(0x7fee422d5440),$out->[2],$out->[3]]
-comp: [CODE(0x7fee422e7228),in:ARRAY(0x7fee4241f170),$out->[3],$out->[4]]
-iexpr: $out->[0]=>[$out->[1]] in:ARRAY(0x7fee4241f170)=>[$out->[0],$out->[2],$out->[4]] in:ARRAY(0x7fee424017c8)=>[$out->[0]] $out->[1]=>[$out->[2]] $out->[2]=>[$out->[3]] $out->[3]=>[$out->[4]] 
-simultaneous events
-forgot 0 events
+11;out;1;Thu Jan  1 01:00:00 1970;
+15;out;0;Thu Jan  1 01:00:00 1970;0
+# form 75/85
 streams:
 [[[0,0],[11,undef],[11,1],[12,0]],
 [[0,1],[11,undef],[11,0],[12,1]],
 [[0,0],[10,undef],[10,0],[14,undef],[14,1],[16,0],[17,undef],[17,1],[18,0],[20,undef],[20,1],[21,0],[22,undef],[22,1],[23,0]],
 [[0,1],[10,undef],[10,1],[14,undef],[14,0],[16,1],[17,undef],[17,0],[18,1],[20,undef],[20,0],[21,1],[22,undef],[22,0],[23,1]],
 [[0,0],[10,undef],[10,1],[12,0],[14,undef],[14,0],[17,undef],[17,0],[20,undef],[20,0],[22,undef],[22,0]]]
-Thu Jan  1 01:00:00 1970; 10; 1; 
-Thu Jan  1 01:00:00 1970; 12; 0; 0
-form: [CODE(0x7fee422e7228),q,[CODE(0x7fee422d5440),[CODE(0x7fee422e7600),[CODE(0x7fee422d5440),[CODE(0x7fee4233dcf8),q,p]],q]]]
-domain: q,p
-codomain: 0,1,2,3,4
-expr: [CODE(0x7fee422e7228),[[[0,0]]],[CODE(0x7fee422d5440),[CODE(0x7fee422e7600),[CODE(0x7fee422d5440),[CODE(0x7fee4233dcf8),[[[0,0]]],[[[0,0]]],0],1],[[[0,0]]],2],3],4]
-comp: [CODE(0x7fee4233dcf8),in:ARRAY(0x7fee4241dd98),in:ARRAY(0x7fee4241e098),$out->[0]]
-comp: [CODE(0x7fee422d5440),$out->[0],$out->[1]]
-comp: [CODE(0x7fee422e7600),$out->[1],in:ARRAY(0x7fee4241dd98),$out->[2]]
-comp: [CODE(0x7fee422d5440),$out->[2],$out->[3]]
-comp: [CODE(0x7fee422e7228),in:ARRAY(0x7fee4241dd98),$out->[3],$out->[4]]
-iexpr: in:ARRAY(0x7fee4241e098)=>[$out->[0]] $out->[0]=>[$out->[1]] in:ARRAY(0x7fee4241dd98)=>[$out->[0],$out->[2],$out->[4]] $out->[1]=>[$out->[2]] $out->[2]=>[$out->[3]] $out->[3]=>[$out->[4]] 
-simultaneous events
-forgot 0 events
+10;out;1;Thu Jan  1 01:00:00 1970;
+12;out;0;Thu Jan  1 01:00:00 1970;0
+# form 76/85
 streams:
 [[[0,0],[14,undef],[14,1],[15,0],[20,undef],[20,0],[22,undef],[22,0]],
 [[0,1],[14,undef],[14,0],[15,1],[20,undef],[20,1],[22,undef],[22,1]],
 [[0,0],[11,undef],[11,0],[19,undef],[19,1],[24,0]],
 [[0,1],[11,undef],[11,1],[19,undef],[19,0],[24,1]],
 [[0,0],[11,undef],[11,1],[15,0],[19,undef],[19,0]]]
-Thu Jan  1 01:00:00 1970; 11; 1; 
-Thu Jan  1 01:00:00 1970; 15; 0; 0
-form: [CODE(0x7fee4237e3b8),p,[CODE(0x7fee423288a0),q,p]]
-domain: q,p
-codomain: 0,1
-expr: [CODE(0x7fee4237e3b8),[[[0,0]]],[CODE(0x7fee423288a0),[[[0,0]]],[[[0,0]]],0],1]
-comp: [CODE(0x7fee423288a0),in:ARRAY(0x7fee423da500),in:ARRAY(0x7fee42422e28),$out->[0]]
-comp: [CODE(0x7fee4237e3b8),in:ARRAY(0x7fee42422e28),$out->[0],$out->[1]]
-iexpr: $out->[0]=>[$out->[1]] in:ARRAY(0x7fee423da500)=>[$out->[0]] in:ARRAY(0x7fee42422e28)=>[$out->[0],$out->[1]] 
-simultaneous events
-forgot 0 events
+11;out;1;Thu Jan  1 01:00:00 1970;
+15;out;0;Thu Jan  1 01:00:00 1970;0
+# form 77/85
 streams:
 [[[0,0],[15,undef],[15,1],[17,0],[24,undef]],
 [[0,0],[17,1],[18,0]]]
-Thu Jan  1 01:00:00 1970; 17; 1; 
-Thu Jan  1 01:00:00 1970; 18; 0; 0
-form: [CODE(0x7fee4237e3b8),q,[CODE(0x7fee423288a0),p,q]]
-domain: p,q
-codomain: 0,1
-expr: [CODE(0x7fee4237e3b8),[[[0,0]]],[CODE(0x7fee423288a0),[[[0,0]]],[[[0,0]]],0],1]
-comp: [CODE(0x7fee423288a0),in:ARRAY(0x7fee42420458),in:ARRAY(0x7fee4240d738),$out->[0]]
-comp: [CODE(0x7fee4237e3b8),in:ARRAY(0x7fee4240d738),$out->[0],$out->[1]]
-iexpr: in:ARRAY(0x7fee4240d738)=>[$out->[0],$out->[1]] $out->[0]=>[$out->[1]] in:ARRAY(0x7fee42420458)=>[$out->[0]] 
-simultaneous events
-forgot 0 events
+17;out;1;Thu Jan  1 01:00:00 1970;
+18;out;0;Thu Jan  1 01:00:00 1970;0
+# form 78/85
 streams:
 [[[0,0],[12,undef],[12,0],[16,undef],[16,0],[18,undef],[18,1],[19,0],[21,undef],[21,0],[23,undef]],
 [[0,0],[19,1],[24,0]]]
-Thu Jan  1 01:00:00 1970; 19; 1; 
-Thu Jan  1 01:00:00 1970; 24; 0; 0
-form: [CODE(0x7fee42392690),p,[CODE(0x7fee422d5440),p]]
-domain: p
-codomain: 0,1
-expr: [CODE(0x7fee42392690),[[[0,0]]],[CODE(0x7fee422d5440),[[[0,0]]],0],1]
-comp: [CODE(0x7fee422d5440),in:ARRAY(0x7fee4241f6f0),$out->[0]]
-comp: [CODE(0x7fee42392690),in:ARRAY(0x7fee4241f6f0),$out->[0],$out->[1]]
-iexpr: in:ARRAY(0x7fee4241f6f0)=>[$out->[0],$out->[1]] $out->[0]=>[$out->[1]] 
-forgot 0 events
+19;out;1;Thu Jan  1 01:00:00 1970;
+24;out;0;Thu Jan  1 01:00:00 1970;0
+# form 79/85
 streams:
 [[[0,1],[10,0],[12,1],[14,0],[16,1],[17,0],[18,1],[20,0],[21,1],[22,0],[23,1]],
 [[0,0],[10,undef],[10,1],[12,0],[14,undef],[14,1],[16,0],[17,undef],[17,1],[18,0],[20,undef],[20,1],[21,0],[22,undef],[22,1],[23,0]]]
-Thu Jan  1 01:00:00 1970; 10; 1; 
-Thu Jan  1 01:00:00 1970; 12; 0; 0
-Thu Jan  1 01:00:00 1970; 14; 1; 
-Thu Jan  1 01:00:00 1970; 16; 0; 0
-Thu Jan  1 01:00:00 1970; 17; 1; 
-Thu Jan  1 01:00:00 1970; 18; 0; 0
-Thu Jan  1 01:00:00 1970; 20; 1; 
-Thu Jan  1 01:00:00 1970; 21; 0; 0
-Thu Jan  1 01:00:00 1970; 22; 1; 
-Thu Jan  1 01:00:00 1970; 23; 0; 0
-form: [CODE(0x7fee42392690),q,[CODE(0x7fee422d5440),q]]
-domain: q
-codomain: 0,1
-expr: [CODE(0x7fee42392690),[[[0,0]]],[CODE(0x7fee422d5440),[[[0,0]]],0],1]
-comp: [CODE(0x7fee422d5440),in:ARRAY(0x7fee42423e40),$out->[0]]
-comp: [CODE(0x7fee42392690),in:ARRAY(0x7fee42423e40),$out->[0],$out->[1]]
-iexpr: $out->[0]=>[$out->[1]] in:ARRAY(0x7fee42423e40)=>[$out->[0],$out->[1]] 
-forgot 0 events
+10;out;1;Thu Jan  1 01:00:00 1970;
+12;out;0;Thu Jan  1 01:00:00 1970;0
+14;out;1;Thu Jan  1 01:00:00 1970;
+16;out;0;Thu Jan  1 01:00:00 1970;0
+17;out;1;Thu Jan  1 01:00:00 1970;
+18;out;0;Thu Jan  1 01:00:00 1970;0
+20;out;1;Thu Jan  1 01:00:00 1970;
+21;out;0;Thu Jan  1 01:00:00 1970;0
+22;out;1;Thu Jan  1 01:00:00 1970;
+23;out;0;Thu Jan  1 01:00:00 1970;0
+# form 80/85
 streams:
 [[[0,1],[11,0],[15,1],[19,0],[24,1]],
 [[0,0],[11,undef],[11,1],[15,0],[19,undef],[19,1],[24,0]]]
-Thu Jan  1 01:00:00 1970; 11; 1; 
-Thu Jan  1 01:00:00 1970; 15; 0; 0
-Thu Jan  1 01:00:00 1970; 19; 1; 
-Thu Jan  1 01:00:00 1970; 24; 0; 0
-form: [CODE(0x7fee42392690),p,[CODE(0x7fee423288a0),p,q]]
-domain: p,q
-codomain: 0,1
-expr: [CODE(0x7fee42392690),[[[0,0]]],[CODE(0x7fee423288a0),[[[0,0]]],[[[0,0]]],0],1]
-comp: [CODE(0x7fee423288a0),in:ARRAY(0x7fee423f0f90),in:ARRAY(0x7fee4240e948),$out->[0]]
-comp: [CODE(0x7fee42392690),in:ARRAY(0x7fee423f0f90),$out->[0],$out->[1]]
-iexpr: in:ARRAY(0x7fee4240e948)=>[$out->[0]] in:ARRAY(0x7fee423f0f90)=>[$out->[0],$out->[1]] $out->[0]=>[$out->[1]] 
-simultaneous events
-forgot 0 events
+11;out;1;Thu Jan  1 01:00:00 1970;
+15;out;0;Thu Jan  1 01:00:00 1970;0
+19;out;1;Thu Jan  1 01:00:00 1970;
+24;out;0;Thu Jan  1 01:00:00 1970;0
+# form 81/85
 streams:
 [[[0,0],[12,undef],[12,0],[16,undef],[16,0],[18,undef],[18,1],[19,0],[21,undef],[21,0],[23,undef]],
 [[0,0],[10,undef],[10,0],[14,undef],[14,0],[17,undef],[17,1],[18,0],[20,undef],[20,0],[22,undef]]]
-Thu Jan  1 01:00:00 1970; 17; 1; 
-Thu Jan  1 01:00:00 1970; 18; 0; 0
-form: [CODE(0x7fee42392690),q,[CODE(0x7fee423288a0),q,p]]
-domain: p,q
-codomain: 0,1
-expr: [CODE(0x7fee42392690),[[[0,0]]],[CODE(0x7fee423288a0),[[[0,0]]],[[[0,0]]],0],1]
-comp: [CODE(0x7fee423288a0),in:ARRAY(0x7fee423c88b8),in:ARRAY(0x7fee4241c428),$out->[0]]
-comp: [CODE(0x7fee42392690),in:ARRAY(0x7fee423c88b8),$out->[0],$out->[1]]
-iexpr: $out->[0]=>[$out->[1]] in:ARRAY(0x7fee423c88b8)=>[$out->[0],$out->[1]] in:ARRAY(0x7fee4241c428)=>[$out->[0]] 
-simultaneous events
-forgot 0 events
+17;out;1;Thu Jan  1 01:00:00 1970;
+18;out;0;Thu Jan  1 01:00:00 1970;0
+# form 82/85
 streams:
 [[[0,0],[15,undef],[15,1],[17,0],[24,undef]],
 [[0,0],[11,undef],[11,1],[15,0],[19,undef]]]
-Thu Jan  1 01:00:00 1970; 11; 1; 
-Thu Jan  1 01:00:00 1970; 15; 0; 0
-form: [CODE(0x7fee422f7600),[CODE(0x7fee423fb488),[CODE(0x7fee422d5440),p]],[CODE(0x7fee422d5440),[CODE(0x7fee423fcc18),q]]]
-domain: p,q
-codomain: 0,1,2,3,4
-expr: [CODE(0x7fee422f7600),[CODE(0x7fee423fb488),[CODE(0x7fee422d5440),[[[0,0]]],0],1],[CODE(0x7fee422d5440),[CODE(0x7fee423fcc18),[[[0,0]]],2],3],4]
-comp: [CODE(0x7fee422d5440),in:ARRAY(0x7fee423f15a8),$out->[0]]
-comp: [CODE(0x7fee423fb488),$out->[0],$out->[1]]
-comp: [CODE(0x7fee423fcc18),in:ARRAY(0x7fee423ba650),$out->[2]]
-comp: [CODE(0x7fee422d5440),$out->[2],$out->[3]]
-comp: [CODE(0x7fee422f7600),$out->[1],$out->[3],$out->[4]]
-iexpr: $out->[0]=>[$out->[1]] in:ARRAY(0x7fee423f15a8)=>[$out->[0]] in:ARRAY(0x7fee423ba650)=>[$out->[2]] $out->[1]=>[$out->[4]] $out->[2]=>[$out->[3]] $out->[3]=>[$out->[4]] 
-simultaneous events
-forgot 0 events
+11;out;1;Thu Jan  1 01:00:00 1970;
+15;out;0;Thu Jan  1 01:00:00 1970;0
+# form 83/85
 streams:
 [[[0,1],[10,0],[12,1],[14,0],[16,1],[17,0],[18,1],[20,0],[21,1],[22,0],[23,1]],
 [[0,0],[12,undef],[12,1],[13,0],[16,undef],[16,1],[17,0],[18,undef],[18,1],[19,0],[21,undef],[21,1],[22,0],[23,undef],[23,1],[24,0]],
 [[0,0],[11,undef],[11,1],[12,0],[19,undef],[19,1],[20,0]],
 [[0,1],[11,undef],[11,0],[12,1],[19,undef],[19,0],[20,1]],
 [[0,0],[11,undef],[11,0],[12,undef],[12,1],[19,undef],[19,0],[21,undef],[21,1]]]
-Thu Jan  1 01:00:00 1970; 12; 1; 
-Thu Jan  1 01:00:00 1970; 19; 0; 0
-Thu Jan  1 01:00:00 1970; 21; 1; 
-form: [CODE(0x7fee422f7600),[CODE(0x7fee423fd428),p],[CODE(0x7fee422d5440),[CODE(0x7fee423fd7b0),q]]]
-domain: q,p
-codomain: 0,1,2,3
-expr: [CODE(0x7fee422f7600),[CODE(0x7fee423fd428),[[[0,0]]],0],[CODE(0x7fee422d5440),[CODE(0x7fee423fd7b0),[[[0,0]]],1],2],3]
-comp: [CODE(0x7fee423fd428),in:ARRAY(0x7fee4240b7f8),$out->[0]]
-comp: [CODE(0x7fee423fd7b0),in:ARRAY(0x7fee42401d50),$out->[1]]
-comp: [CODE(0x7fee422d5440),$out->[1],$out->[2]]
-comp: [CODE(0x7fee422f7600),$out->[0],$out->[2],$out->[3]]
-iexpr: $out->[0]=>[$out->[3]] in:ARRAY(0x7fee4240b7f8)=>[$out->[0]] in:ARRAY(0x7fee42401d50)=>[$out->[1]] $out->[1]=>[$out->[2]] $out->[2]=>[$out->[3]] 
-simultaneous events
-forgot 0 events
+12;out;1;Thu Jan  1 01:00:00 1970;
+19;out;0;Thu Jan  1 01:00:00 1970;0
+21;out;1;Thu Jan  1 01:00:00 1970;
+# form 84/85
 streams:
 [[[0,0],[10,undef],[10,1],[11,0],[14,undef],[14,1],[15,0],[17,undef],[17,1],[18,0],[20,undef],[20,1],[21,0],[22,undef],[22,1],[23,0]],
 [[0,0],[11,undef],[11,1],[12,0],[19,undef],[19,1],[20,0]],
 [[0,1],[11,undef],[11,0],[12,1],[19,undef],[19,0],[20,1]],
 [[0,0],[10,undef],[10,1],[11,undef],[11,0],[14,undef],[14,1],[19,undef],[19,0],[20,undef],[20,1]]]
-Thu Jan  1 01:00:00 1970; 10; 1; 
-Thu Jan  1 01:00:00 1970; 11; 0; 0
-Thu Jan  1 01:00:00 1970; 14; 1; 
-Thu Jan  1 01:00:00 1970; 19; 0; 0
-Thu Jan  1 01:00:00 1970; 20; 1; 
-form: [CODE(0x7fee422f7600),[CODE(0x7fee423fe050),p],[CODE(0x7fee422d5440),[CODE(0x7fee423fe578),[CODE(0x7fee422d5440),q]]]]
-domain: q,p
-codomain: 0,1,2,3,4
-expr: [CODE(0x7fee422f7600),[CODE(0x7fee423fe050),[[[0,0]]],0],[CODE(0x7fee422d5440),[CODE(0x7fee423fe578),[CODE(0x7fee422d5440),[[[0,0]]],1],2],3],4]
-comp: [CODE(0x7fee423fe050),in:ARRAY(0x7fee424204b8),$out->[0]]
-comp: [CODE(0x7fee422d5440),in:ARRAY(0x7fee42422b88),$out->[1]]
-comp: [CODE(0x7fee423fe578),$out->[1],$out->[2]]
-comp: [CODE(0x7fee422d5440),$out->[2],$out->[3]]
-comp: [CODE(0x7fee422f7600),$out->[0],$out->[3],$out->[4]]
-iexpr: $out->[0]=>[$out->[4]] in:ARRAY(0x7fee42422b88)=>[$out->[1]] in:ARRAY(0x7fee424204b8)=>[$out->[0]] $out->[1]=>[$out->[2]] $out->[2]=>[$out->[3]] $out->[3]=>[$out->[4]] 
-simultaneous events
-forgot 0 events
+10;out;1;Thu Jan  1 01:00:00 1970;
+11;out;0;Thu Jan  1 01:00:00 1970;0
+14;out;1;Thu Jan  1 01:00:00 1970;
+19;out;0;Thu Jan  1 01:00:00 1970;0
+20;out;1;Thu Jan  1 01:00:00 1970;
+# form 85/85
 streams:
 [[[0,0],[10,undef],[10,1],[11,0],[14,undef],[14,1],[15,0],[17,undef],[17,1],[18,0],[20,undef],[20,1],[21,0],[22,undef],[22,1],[23,0]],
 [[0,1],[11,0],[15,1],[19,0],[24,1]],
 [[0,0],[15,undef],[15,1],[16,0],[24,undef],[24,1],[25,0]],
 [[0,1],[15,undef],[15,0],[16,1],[24,undef],[24,0],[25,1]],
 [[0,0],[10,undef],[10,1],[15,undef],[15,0],[17,undef],[17,1],[24,undef],[24,0]]]
-Thu Jan  1 01:00:00 1970; 10; 1; 
-Thu Jan  1 01:00:00 1970; 15; 0; 0
-Thu Jan  1 01:00:00 1970; 17; 1; 
-Thu Jan  1 01:00:00 1970; 24; 0; 0
+10;out;1;Thu Jan  1 01:00:00 1970;
+15;out;0;Thu Jan  1 01:00:00 1970;0
+17;out;1;Thu Jan  1 01:00:00 1970;
+24;out;0;Thu Jan  1 01:00:00 1970;0

@@ -10,8 +10,7 @@ out/suite-s-Apt1: suite.pm
 	$(SRC)/allen -s log0.csv -d suite.pm >$@
 
 out/%.diff: out/%
-	diff $< ref/$(<:out/%=%) | \
-	  egrep -v '^[<>] (form:|domain:|codomain:|comp:|expr:|iexpr:) ' >$@
+	diff $< ref/$(<:out/%=%) >$@
 
 clean:
 	rm -f suite.pm out/*

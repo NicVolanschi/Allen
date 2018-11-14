@@ -925,7 +925,7 @@ sub export_stream() {
     my ($ts, $val) = @$e;
     if(defined($val) && $val != $lastval) {
       use integer;
-      print localtime($ts / 1000) . "; $ts; " . $val . "; ";
+      print "$ts;out;" . $val . ";" . localtime($ts / 1000) . ";" ;
       if($val == 0) {
         print (($ts - $lastts) / 1000);
       }
