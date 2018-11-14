@@ -22,10 +22,8 @@ my $usage = 'usage: allen [options] ruleset
 where:
 * ruleset is a Perl module ending with a list of rules. This file is usually
   produced by the Allen compiler starting from an ".aln" file.
-* standard input has one event per line containing at least (any order):
-  "timestamp":int
-  "id":"string"
-  "value":0/1
+* standard input must be in CSV format with at least three columns:
+  timestamp;sensor;value[;comments]
 * options may be the following ones:
   -q \'/regex/>=val,...\': threshold-quantify matching numeric sensors as boolean
   -s log: execute all rules in sequence on file log rather than on stdin
@@ -709,9 +707,7 @@ sub parse_event() {
   #my (undef, $val, $s, undef, $ts) =
   #  ($line =~ /\{"date":"[^"]*"(,"id":"[^"]*")?,"value":([-?\d.]*(?:[eE]-?\d+)?),"device":\{"location":"[^"]*","id":"([^"]*)"(,"type":"[^"]*")?\},"timestamp":(\d*)\}/o);
   #die "parse error:\n$_" if !defined($ts);
-  my ($ts) = ($line =~ /"timestamp":(\d*)/);
-  my ($s) = ($line =~ /"id":"([^"]*)"/);
-  my ($val) = ($line =~ /"value":([-?\d.]*(?:[eE]-?\d+)?)/);
+  my ($ts, $s, $val) = split /\s*;\s*/, $line;
   die "parse error:\n$_" if !defined($ts) ||!defined($s) || !defined($val);
   # quantify values of numeric sensors:
   while (my ($regex, $thr) = each %threshold) {

@@ -6,7 +6,7 @@ TST=../test
 
 # Sample target:
 ex: ex.pm
-	$(SRC)/allen -s $(TST)/log0.json $< 
+	$(SRC)/allen -s $(TST)/log0.csv $< 
 
 clean:
 	rm -f *.pm
