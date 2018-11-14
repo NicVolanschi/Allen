@@ -371,7 +371,7 @@ for(my $i=0; $i<$#$rules; $i+=2) {
   die "rule form expected, found $f" if ref $f ne "ARRAY";
   push @rules, $n;
   push @forms, $f;
-  print STDERR "rule\[$i\]:$n=$f\n";
+  #print STDERR "rule\[$i\]:$n=$f\n";
 }
 if(defined($opts{'s'})) { # compute rules in sequence
   for (my $i=0; $i<=$#rules; $i++) {
