@@ -368,7 +368,9 @@ for(my $i=0; $i<$#$rules; $i+=2) {
   my $n = $rules->[$i];
   my $f = $rules->[$i + 1];
   die "rule name expected, found $n" if ref $n ne "";
-  die "rule form expected, found $f" if ref $f ne "ARRAY";
+  die "duplicated rule name: $n" if exists($rules{'$n'});
+  # $f may be a string (sensor name) or an ARRAY (operator application)
+  # die "rule form expected, found $f" if ref $f ne "ARRAY";
   push @rules, $n;
   push @forms, $f;
   #print STDERR "rule\[$i\]:$n=$f\n";
