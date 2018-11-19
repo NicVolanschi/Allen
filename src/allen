@@ -18,10 +18,10 @@
 # The Allen virtual machine, implemented as a deeply embedded DSL interpreter.
 #
 
-my $usage = 'usage: allen [options] ruleset
+my $usage = 'usage: allen [options] contexts
 where:
-* ruleset is a Perl module ending with a list of rules. This file is usually
-  produced by the Allen compiler starting from an ".aln" file.
+* contexts is a Perl module containing a list of compiled contexts. This file
+  is usually produced by the Allen compiler starting from an ".aln" file.
 * standard input must be in CSV format with at least three columns:
   timestamp;sensor;value[;...]
 * options may be the following ones:
@@ -39,7 +39,7 @@ our %opts = ();
 my $forgot; # counter of forgot events
 my $tforgot; # memorize the time up to which we forgot the events
 
-getopts('q:s:r:l:f:td', \%opts) or die $usage;
+getopts('q:s:r:l:f:tdg', \%opts) or die $usage;
 
 die "f option must be a number N > 0"
   if defined($opts{'f'}) && $opts{'f'} !~ /^\d+$/;
@@ -608,11 +608,10 @@ sub interpret() {
   };
   print STDERR "\n" if (defined($opts{'g'}));
   my %h = &domain_h($form);
-  &csp(\@lexprs, \%iexpr, \%h, \@out, \%outix);
+  &csp(\@lexprs, \%iexpr, \%h, \@out, \%outix, $name);
   if(defined($opts{'d'})) {
     print "streams:\n" . &print_streams(\@out) . "\n";
   }
-  &export_stream($out[$#out], $name);
 }
 
 sub stream_name {
@@ -629,9 +628,12 @@ my $now;
 my $last; # last value of "now"
 my %timeout_now; # set of streams having timeout now (precomputed for tick())
 my %update; # time of last update to each stream
+my %outname; # name of exported output streams
+my %lastoutval; # last value of each exported output stream
+my %lastoutts; # last time each exported output stream changed
 
 sub csp() {
-  my ($lexprs, $iexpr, $base, $out, $outix) = @_;
+  my ($lexprs, $iexpr, $base, $out, $outix, $name) = @_;
   my %lastval = (); # last value of each sensor
   my %lastts = (); # last timestamp of each sensor value
   my @pack = ();
@@ -642,6 +644,10 @@ sub csp() {
   $forgot = 0;
   $tforgot = 0;
   %timeout_now = ();
+  %update = ();
+  %lastoutval = ($out->[$#$out] => 0);
+  %lastoutts = ($out->[$#$out] => 0);
+  %outname = ($out->[$#$out] => $name);
   for my $expr (@$lexprs) { # tick everything
     &tick($expr);
   }
@@ -673,14 +679,26 @@ sub csp() {
   print STDERR "forgot $forgot events\n" if (defined($opts{'g'}));
 }
 
+sub update() {
+  my ($str, $t, $val) = @_;
+  push @{$str}, [$t, $val];
+  $update{$str} = $now;
+  if (exists($outname{$str})) {
+    if (defined($val) && $val != $lastoutval{$str}) {
+        &export_stream_line($t, $outname{$str}, $val, $lastoutts{$str});
+      $lastoutval{$str} = $val;
+      $lastoutts{$str} = $t;
+    }
+  }
+}
+
 sub next_event() {
   my ($base) = @_;
   while(<IN>) {
     next if /^\s*#/; # skip comment lines
     my ($ts, $s, $val) = &parse_event($_);
     if($val != 1 && $val != 0) {
-      print STDERR "skipping non-bool value ($val, $s, $ts)\n"
-        if (defined($opts{'g'}));
+      print STDERR "skipping non-bool value ($val, $s, $ts)\n";
       next;
     }
     next if !exists($base->{$s}); # skip irrelevant values
@@ -718,8 +736,7 @@ sub process_pack() {
   for my $event (@$ref_pack) {
     my ($val1, $s1, $ts1) = @$event;
     $in{$s1} = [] if !exists($in{$s1});
-    push @{$in{$s1}}, [$now, $val1];
-    $update{$in{$s1}} = $now;
+    &update($in{$s1}, $now, $val1);
     push @inputs, $in{$s1};
     print STDERR " $s1" if defined($opts{'t'});
   }
@@ -877,14 +894,15 @@ sub tick_set {
     delete $todo->{$ix};
     my $str = $out->[$ix];
     print STDERR "tick out[$ix]=$str, node=[$ref_exprs->[$ix][0],$ref_exprs->[$ix][1]]\n" if $opts{'t'};
+    my $top0 = $#$str;
     &tick($ref_exprs->[$ix]);
-    if($update{$str} == $now) {
+    my $top1 = $#$str;
+    if($top1 > $top0) {
       #print STDERR "propagate to: ";
       for my $s (@{$iexpr->{$str}}) {
         #print STDERR "$outix->{$s}, ";
         $todo->{$outix->{$s}} = 1;
       }
-      #print STDERR "\n";
     }
   }
 }
@@ -938,23 +956,14 @@ sub print_streams() {
   return &print_array_array_array($ref_l);
 }
 
-sub export_stream() {
-  my ($ref_p, $name) = @_;
-  my $lastval = 0;
-  my $lastts = 0;
-  for my $e (@{$ref_p}) {
-    my ($ts, $val) = @$e;
-    if(defined($val) && $val != $lastval) {
-      use integer;
-      print "$ts;$name;" . $val . ";" . localtime($ts / 1000) . ";" ;
-      if($val == 0) {
-        print (($ts - $lastts) / 1000);
-      }
-      print "\n";
-      $lastval = $val;
-      $lastts = $ts;
-    }
+sub export_stream_line() {
+  my ($ts, $name, $val, $lastoutts) = @_;
+  use integer;
+  print "$ts;$name;" . $val . ";" . localtime($ts / 1000) . ";" ;
+  if($val == 0) {
+    print (($ts - $lastoutts) / 1000);
   }
+  print "\n";
 }
 
 sub eq_array_f() {
@@ -1126,8 +1135,7 @@ sub loop0() {
     my $val0 = &$op0(0, $ref_res, undef);
     die "loop0: initial value of $op0(p) is ?"
       if !defined($val0);
-    push @$ref_res, [0, $val0];
-    $update{$ref_res} = 0;
+    &update($ref_res, 0, $val0);
   } else {
     my $resval = $$ref_res[$#$ref_res][1];
     my $t;
@@ -1144,8 +1152,7 @@ sub loop0() {
       my $val = &$op0($t, $ref_res, $resval);
       print STDERR "loop0: &$op0($t)=$val\n" if $opts{'t'};
       if(!&sameval($$ref_res[$#$ref_res][1], $val)) {
-        push @$ref_res, [$t, $val];
-        $update{$ref_res} = $now;
+        &update($ref_res, $t, $val);
       }
       last if !defined($val);
       $resval = $val;
@@ -1166,8 +1173,7 @@ sub loop1() {
     die "loop1: initial value of $op1(p) is ?"
       if !defined($val0);
     print STDERR "loop1: &$op1(0)=$val0\n" if $opts{'t'};
-    push @$ref_res, [0, $val0];
-    $update{$ref_res} = 0;
+    &update($ref_res, 0, $val0);
   } else {
     my $resval = $$ref_res[$#$ref_res][1];
     my $t;
@@ -1184,8 +1190,7 @@ sub loop1() {
       my $val = &$op1($t, $ref_p, $ref_res, $resval);
       print STDERR "loop1: &$op1($t)=$val\n" if $opts{'t'};
       if(!&sameval($$ref_res[$#$ref_res][1], $val)) {
-        push @$ref_res, [$t, $val];
-        $update{$ref_res} = $now;
+        &update($ref_res, $t, $val);
       }
       last if !defined($val);
       $resval = $val;
@@ -1205,8 +1210,7 @@ sub loop2() {
     my $val0 = &$op2(0, $ref_p, $ref_q, $ref_res, undef);
     die "loop2: initial value of $op2(p,q) is ?"
       if !defined($val0);
-    push @$ref_res, [0, $val0];
-    $update{$ref_res} = 0;
+    &update($ref_res, 0, $val0);
   } else {
     my $resval = $$ref_res[$#$ref_res][1];
     my $t;
@@ -1223,8 +1227,7 @@ sub loop2() {
       my $val = &$op2($t, $ref_p, $ref_q, $ref_res, $resval);
       print STDERR "loop2: &$op2($t)=$val\n" if $opts{'t'};
       if(!&sameval($$ref_res[$#$ref_res][1], $val)) {
-        push @$ref_res, [$t, $val];
-        $update{$ref_res} = $now;
+        &update($ref_res, $t, $val);
       }
       last if !defined($val);
       $resval = $val;

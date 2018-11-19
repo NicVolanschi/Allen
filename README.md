@@ -19,7 +19,7 @@ Main concepts and features:
 
 Allen consists of two executables, implemented as Perl scripts, available under directory src/:
 * allenc: the Allen compiler. It compiles a source Allen file (extension ".aln") into a Perl module (extension ".pm"). For help on the compiler command, invoke it with no options and arguments.
-* allen: the Allen virtual machine. It executes a ruleset compiled from an Allen program on a log of events. For help on the VM command, and also on the format of the log file, invoke it with no options and arguments.
+* allen: the Allen virtual machine. It executes a set of contexts compiled from an Allen program on a log of events. For help on the VM command, and also on the format of the log file, invoke it with no options and arguments.
 
 ## References
 
