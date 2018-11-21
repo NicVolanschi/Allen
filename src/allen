@@ -26,8 +26,9 @@ where:
   timestamp;sensor;value[;...]
 * options may be the following ones:
   -q \'/regex/>=val,...\': threshold-quantify matching numeric sensors as boolean
-  -s log: execute all rules in sequence on file log rather than on stdin
-  -r N: execute only rule #N
+  -s log: detect all contexts in sequence on file log rather than on stdin
+  -r nm: execute only context named nm
+  -p: execute any_up(@contexts), i.e. signal the up fronts of all contexts
   -l lib: load operator library lib
   -f N: try forgetting old events every N virtual seconds (0=never, default=10K)
   -t: print trace of events & timeouts
@@ -39,7 +40,7 @@ our %opts = ();
 my $forgot; # counter of forgot events
 my $tforgot; # memorize the time up to which we forgot the events
 
-getopts('q:s:r:l:f:tdg', \%opts) or die $usage;
+getopts('q:s:r:pl:f:tdg', \%opts) or die $usage;
 
 die "f option must be a number N > 0"
   if defined($opts{'f'}) && $opts{'f'} !~ /^\d+$/;
@@ -362,6 +363,7 @@ if(defined($opts{'l'})) {
 my $fname = "$rules";
 my $rules = &load($fname); # get list of name/form pairs
 my %rules = (@$rules); # put the list of pairs in a hash
+my %names = (); # name of each form (inverse of %rules)
 my @rules = (); # rule names in order
 my @forms = (); # forms in order
 for(my $i=0; $i<$#$rules; $i+=2) {
@@ -371,6 +373,7 @@ for(my $i=0; $i<$#$rules; $i+=2) {
   die "duplicated rule name: $n" if exists($rules{'$n'});
   # $f may be a string (sensor name) or an ARRAY (operator application)
   # die "rule form expected, found $f" if ref $f ne "ARRAY";
+  $names{$f} = $n;
   push @rules, $n;
   push @forms, $f;
   #print STDERR "rule\[$i\]:$n=$f\n";
@@ -381,19 +384,28 @@ if(defined($opts{'s'})) { # compute rules in sequence
     my $f = $forms[$i];
     warn "form $n ($i/$#rules)\n";
     print "# form $n ($i/$#rules)\n";
-    &interpret($f, $n);
+    &interpret([$f]);
     seek IN, 0, 0;
   }
 } elsif(defined($opts{'r'})) { # compute only one rule
   my $n = $opts{'r'};
   die "no rule $n" if !exists($rules{$n});
-  &interpret($rules{$n}, $n);
-} else { # compute rules in parallel
-  &interpret(&any_up(@forms), "out");
+  &interpret([$rules{$n}]);
+} elsif(defined($opts{'p'})) { # compute any_up of the rules
+  my $form = &any_up(@forms);
+  %names = ($form => "out"); # hide original forms
+  &interpret([$form]);
+} else { # execute all named rules
+  &interpret(\@forms);
 }
 exit;
 
 # ------------------------------------------------------
+
+sub print_forms() {
+  my @forms = @_;
+  return "(" . (join ",\n", (map {&print_form($_)} @forms)) . ")";
+}
 
 sub print_form() {
   my ($form) = @_;
@@ -408,8 +420,8 @@ sub print_form() {
 }
 
 sub domain() {
-  my ($form) = @_;
-  my %h = (&domain_h($form));
+  my @forms = @_;
+  my %h = (map {&domain_h($_)} @forms);
   return keys %h;
 }
 
@@ -431,20 +443,20 @@ sub domain_h() {
 }
 
 sub codomain() {
-  my ($form, $out) = @_;
+  my @forms = @_;
   my %h=();
   my $n=0;
-  return &codomain_rec($form, $out, \%h, \$n);
+  return map {&codomain_rec($_, \%h, \$n)} @forms;
 }
 
 sub codomain_rec() {
-  my ($form, $out, $h, $n) = @_;
+  my ($form, $h, $n) = @_;
   if(ref $form eq "ARRAY") {
     if(defined($h->{$form})) { # shared subtree
       return ();
     }
     my @trees = @$form[1 .. $#$form];
-    my @res = ((map {&codomain_rec($_, $out, $h, $n)} @trees), ($h->{$form} = $$n++));
+    my @res = ((map {&codomain_rec($_, $h, $n)} @trees), ($h->{$form} = $$n++));
     return @res;
   } elsif(ref $form eq "") { # leaf
     return ();
@@ -453,21 +465,23 @@ sub codomain_rec() {
   }
 }
 
-sub form2expr() {
-  my ($form, $out) = @_;
+sub forms2exprs() {
+  my ($forms, $out, $outform) = @_;
   my %h=();
   my $n=0;
-  return &form2expr_rec($form, $out, \%h, \$n);
+  %$outform = ();
+  return (map {&form2expr_rec($_, $out, \%h, \$n, $outform)} @$forms);
 }
 
 sub form2expr_rec() {
-  my ($form, $out, $h, $n) = @_;
+  my ($form, $out, $h, $n, $outform) = @_;
   if(ref $form eq "ARRAY") {
     if(defined($h->{$form})) { # shared subtree
       return [$$out[$h->{$form}]];
     }
     my @trees = @$form[1 .. $#$form];
-    my $res = [$$form[0], (map {&form2expr_rec($_, $out, $h, $n)} @trees), ($h->{$form} = $$n++)];
+    my $res = [$$form[0], (map {&form2expr_rec($_, $out, $h, $n, $outform)} @trees), ($h->{$form} = $$n++)];
+    $outform->{$out->[$h->{$form}]} = $form;
     return $res;
   } elsif(ref $form eq "") { # leaf
     return [$in{$form}];
@@ -477,10 +491,10 @@ sub form2expr_rec() {
 }
 
 sub link() {
-  my ($expr, $out, $outix) = @_;
+  my ($exprs, $out, $outix) = @_;
   my %h=();
   %$outix = ();
-  return &link_rec($expr, $out, \%h, $outix);
+  return map {&link_rec($_, $out, \%h, $outix)} @$exprs;
 }
 
 # Return a list of out stream computations: [op [outs-arg...] outs-res],
@@ -512,9 +526,9 @@ sub link_rec() {
 
 # inverse linking: compute list of parents in expr (in/out-stream => out-stream)
 sub ilink() {
-  my ($expr, $out) = @_;
+  my ($exprs, $out) = @_;
   my %h=();
-  my @irel = &ilink_rec($expr, $out, \%h);
+  my @irel = map {&ilink_rec($_, $out, \%h)} @$exprs;
   return &rel2hash(@irel);
 }
 
@@ -558,6 +572,11 @@ sub rel2hash() {
   return %res;
 }
 
+sub print_exprs() {
+  my @exprs = @_;
+  return "(" . (join ",\n", (map {&print_expr($_)} @exprs)) . ")";
+}
+
 sub print_expr() {
   my ($expr) = @_;
   if(ref $expr eq "ARRAY") {
@@ -572,34 +591,37 @@ sub print_expr() {
   }
 }
 
+my %outform; # map output streams to the corresponding forms (when applicable)
+
 sub interpret() {
-  my ($form, $name) = @_;
+  my ($forms) = @_;
   if (defined($opts{'g'})) {
-    print STDERR "form: " . &print_form($form) . "\n";
+    print STDERR "forms: " . &print_forms(@$forms) . "\n";
     print STDERR "domain: ";
-    print STDERR join ",", &domain($form);
+    print STDERR join ",", &domain(@$forms);
     print STDERR "\n";
     print STDERR "codomain: ";
-    print STDERR join ",", &codomain($form);
+    print STDERR join ",", &codomain(@$forms);
     print STDERR "\n";
   }
   @in = ();
-  for my $s (&domain($form)) {
+  for my $s (&domain(@$forms)) {
     $in{$s} = [[0,0]];
   }
   my @out = ();
-  for my $i (&codomain($form)) {
+  for my $i (&codomain(@$forms)) {
     $out[$i] = [];
   }
-  my $expr = &form2expr($form, \@out);
+  %outform = ();
+  my @exprs = &forms2exprs($forms, \@out, \%outform);
   if (defined($opts{'g'})) {
-    print STDERR "expr: ";
-    print STDERR &print_expr($expr);
+    print STDERR "exprs: ";
+    print STDERR &print_exprs(@exprs);
     print STDERR "\n";
   }
   my %outix; # map out streams back to their index in @out
-  my @lexprs = &link($expr, \@out, \%outix);
-  my %iexpr = &ilink($expr, \@out);
+  my @lexprs = &link(\@exprs, \@out, \%outix);
+  my %iexpr = &ilink(\@exprs, \@out);
   print STDERR "iexpr: " if (defined($opts{'g'}));
   for my $k (sort {$outix{$a} <=> $outix{$b}} keys %iexpr) {
     my $knm = &stream_name($k, \%outix);
@@ -607,8 +629,8 @@ sub interpret() {
       if (defined($opts{'g'}));
   };
   print STDERR "\n" if (defined($opts{'g'}));
-  my %h = &domain_h($form);
-  &csp(\@lexprs, \%iexpr, \%h, \@out, \%outix, $name);
+  my %h = (map {&domain_h($_)} @$forms);
+  &csp(\@lexprs, \%iexpr, \%h, \@out, \%outix);
   if(defined($opts{'d'})) {
     print "streams:\n" . &print_streams(\@out) . "\n";
   }
@@ -628,12 +650,11 @@ my $now;
 my $last; # last value of "now"
 my %timeout_now; # set of streams having timeout now (precomputed for tick())
 my %update; # time of last update to each stream
-my %outname; # name of exported output streams
 my %lastoutval; # last value of each exported output stream
 my %lastoutts; # last time each exported output stream changed
 
 sub csp() {
-  my ($lexprs, $iexpr, $base, $out, $outix, $name) = @_;
+  my ($lexprs, $iexpr, $base, $out, $outix) = @_;
   my %lastval = (); # last value of each sensor
   my %lastts = (); # last timestamp of each sensor value
   my @pack = ();
@@ -647,7 +668,6 @@ sub csp() {
   %update = ();
   %lastoutval = ($out->[$#$out] => 0);
   %lastoutts = ($out->[$#$out] => 0);
-  %outname = ($out->[$#$out] => $name);
   for my $expr (@$lexprs) { # tick everything
     &tick($expr);
   }
@@ -683,9 +703,9 @@ sub update() {
   my ($str, $t, $val) = @_;
   push @{$str}, [$t, $val];
   $update{$str} = $now;
-  if (exists($outname{$str})) {
+  if (exists($names{$outform{$str}})) {
     if (defined($val) && $val != $lastoutval{$str}) {
-        &export_stream_line($t, $outname{$str}, $val, $lastoutts{$str});
+        &export_stream_line($t, $names{$outform{$str}}, $val, $lastoutts{$str});
       $lastoutval{$str} = $val;
       $lastoutts{$str} = $t;
     }
