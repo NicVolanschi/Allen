@@ -478,9 +478,9 @@ sub form2expr_rec() {
 
 sub link() {
   my ($expr, $out, $outix) = @_;
-  my $h=();
+  my %h=();
   %$outix = ();
-  return &link_rec($expr, $out, $h, $outix);
+  return &link_rec($expr, $out, \%h, $outix);
 }
 
 # Return a list of out stream computations: [op [outs-arg...] outs-res],
