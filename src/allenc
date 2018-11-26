@@ -229,11 +229,12 @@ sub parse_context() {
     die "id expected in let, found $tok2 at $line"
       if $typ2 ne "id";
     die "duplicated variable $tok2" if defined($var{$tok2});
-    $var{$tok2} = "let"; # register let variable
+    # don't register yet, recursive let is disallowed
     my ($typ3, $tok3) = &token(1);
     die "= expected in let, found $tok3 at $line"
       if $typ3 ne "key" || $tok3 ne "=";
     my $e1 = &parse_expr();
+    $var{$tok2} = "let"; # register let variable now
     my ($typ4, $tok4) = &token(1);
     die "'in' expected in let, found $tok4 at $line"
       if $typ4 ne "key" || $tok4 ne "in";
