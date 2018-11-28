@@ -31,6 +31,7 @@ where:
   -p: execute any_up(@contexts), i.e. signal the up fronts of all contexts
   -l lib: load operator library lib
   -f N: try forgetting old events every N virtual seconds (0=never, default=10K)
+  -i: print input events before processing them
   -t: print trace of events & timeouts
   -d: dump final & intermediate streams
   -g: pring debug info';
@@ -40,7 +41,7 @@ our %opts = ();
 my $forgot; # counter of forgot events
 my $tforgot; # memorize the time up to which we forgot the events
 
-getopts('q:s:r:pl:f:tdg', \%opts) or die $usage;
+getopts('q:s:r:pl:f:itdg', \%opts) or die $usage;
 
 die "f option must be a number N > 0"
   if defined($opts{'f'}) && $opts{'f'} !~ /^\d+$/;
@@ -371,6 +372,7 @@ for(my $i=0; $i<$#$rules; $i+=2) {
   my $f = $rules->[$i + 1];
   die "rule name expected, found $n" if ref $n ne "";
   die "duplicated rule name: $n" if exists($rules{'$n'});
+  die "$f named both $names{$f} and $n" if exists($names{$f});
   # $f may be a string (sensor name) or an ARRAY (operator application)
   # die "rule form expected, found $f" if ref $f ne "ARRAY";
   $names{$f} = $n;
@@ -384,13 +386,16 @@ if(defined($opts{'s'})) { # compute rules in sequence
     my $f = $forms[$i];
     warn "form $n ($i/$#rules)\n";
     print "# form $n ($i/$#rules)\n";
+    %names = ($f => $n); # restrict output form names to current form
     &interpret([$f]);
     seek IN, 0, 0;
   }
 } elsif(defined($opts{'r'})) { # compute only one rule
   my $n = $opts{'r'};
   die "no rule $n" if !exists($rules{$n});
-  &interpret([$rules{$n}]);
+  my $f = $rules{$n};
+  %names = ($f => $n); # restrict output form names to current form
+  &interpret([$f]);
 } elsif(defined($opts{'p'})) { # compute any_up of the rules
   my $form = &any_up(@forms);
   %names = ($form => "out"); # hide original forms
@@ -622,13 +627,14 @@ sub interpret() {
   my %outix; # map out streams back to their index in @out
   my @lexprs = &link(\@exprs, \@out, \%outix);
   my %iexpr = &ilink(\@exprs, \@out);
-  print STDERR "iexpr: " if (defined($opts{'g'}));
-  for my $k (sort {$outix{$a} <=> $outix{$b}} keys %iexpr) {
-    my $knm = &stream_name($k, \%outix);
-    print STDERR "$knm=>[" . (join ",", (map {&stream_name($_, \%outix)} @{$iexpr{$k}})) . "] "
-      if (defined($opts{'g'}));
-  };
-  print STDERR "\n" if (defined($opts{'g'}));
+  if (defined($opts{'g'})) {
+    print STDERR "iexpr: ";
+    for my $k (sort {$outix{$a} <=> $outix{$b}} keys %iexpr) {
+      my $knm = &stream_name($k, \%outix);
+      print STDERR "$knm=>[" . (join ",", (map {&stream_name($_, \%outix)} @{$iexpr{$k}})) . "] ";
+    };
+    print STDERR "\n";
+  }
   my %h = (map {&domain_h($_)} @$forms);
   &csp(\@lexprs, \%iexpr, \%h, \@out, \%outix);
   if(defined($opts{'d'})) {
@@ -759,6 +765,14 @@ sub process_pack() {
     &update($in{$s1}, $now, $val1);
     push @inputs, $in{$s1};
     print STDERR " $s1" if defined($opts{'t'});
+    # print input event if required
+    if (defined($opts{'i'})) {
+      &export_stream_line($ts1, "in:$s1", $val1, $lastts{$s1});
+    }
+    # print input event if it is a context
+    if (exists($names{$s1})) {
+      &export_stream_line($ts1, $names{$s1}, $val1, $lastts{$s1});
+    }
   }
   if(defined($opts{'t'})) {
     if(defined($tout) && $tout == $now) {
