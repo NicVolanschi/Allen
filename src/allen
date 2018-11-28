@@ -1337,7 +1337,7 @@ sub delay1_T() {
   }
 }
 
-# select intervals of p=1 shorter than T
+# select intervals of p=1 shorter or equal to T
 sub le() {
   my ($T) = @_;
   return sub(){ return &le1_T(@_, $T); }
@@ -1363,6 +1363,47 @@ sub le1_T() {
           return 0;
         } elsif(&soonereq($ref_p, $t, 0, $T)) {
           # p=>0 before or at t+T
+          &cancel_timeout($t + $T, $ref_res);
+          return 1;
+        } else {
+          &set_timeout($t + $T, $ref_res);
+          return undef;
+        }
+      } elsif(defined($valp) && $valp == 0) {# p=>0
+        return 0;
+      } else {# p=> ?
+        return undef;
+      }
+    }
+  }
+}
+
+# select intervals of p=1 shorter than T
+sub lt() {
+  my ($T) = @_;
+  return sub(){ return &lt1_T(@_, $T); }
+}
+
+sub lt1_T() {
+  my ($t, $ref_p, $ref_res, $resval, $T) = @_;
+  if ($t == 0) { # initially
+    return 0;
+  }
+  if (&timeout($t, $ref_res)) {
+   die "lt1: escaped timer";
+  }
+  my $p = &tsval($ref_p, $t);
+  my $valp = $p->[1];
+  if($p->[0] == $t) {
+    if(&sameval($valp, &lastval($ref_p, $t))) { return $resval; } # nothing
+    else {
+      if($valp == 1) {# p=>1
+        # p=1 until at least t+T
+        if(&latereq($ref_p, $t, 0, $T)) {
+          &cancel_timeout($t + $T, $ref_res);
+          return 0;
+        } elsif(&sooner($ref_p, $t, 0, $T)) {
+          # p=>0 before t+T
           &cancel_timeout($t + $T, $ref_res);
           return 1;
         } else {
@@ -1404,6 +1445,47 @@ sub gt1_T() {
           return 1;
         } elsif(&soonereq($ref_p, $t, 0, $T)) {
           # p=>0 before or at t+T
+          &cancel_timeout($t + $T, $ref_res);
+          return 0;
+        } else {
+          &set_timeout($t + $T, $ref_res);
+          return undef;
+        }
+      } elsif(defined($valp) && $valp == 0) {# p=>0
+        return 0;
+      } else {# p=> ?
+        return undef;
+      }
+    }
+  }
+}
+
+# select intervals of p=1 longer than T
+sub ge() {
+  my ($T) = @_;
+  return sub(){ return &ge1_T(@_, $T); }
+}
+
+sub ge1_T() {
+  my ($t, $ref_p, $ref_res, $resval, $T) = @_;
+  if ($t == 0) { # initially
+    return 0;
+  }
+  if (&timeout($t, $ref_res)) {
+   die "ge1: escaped timer";
+  }
+  my $p = &tsval($ref_p, $t);
+  my $valp = $p->[1];
+  if($p->[0] == $t) {
+    if(&sameval($valp, &lastval($ref_p, $t))) { return $resval; } # nothing
+    else {
+      if($valp == 1) {# p=>1
+        # p=1 until at least t+T
+        if(&latereq($ref_p, $t, 0, $T)) {
+          &cancel_timeout($t + $T, $ref_res);
+          return 1;
+        } elsif(&sooner($ref_p, $t, 0, $T)) {
+          # p=>0 before t+T
           &cancel_timeout($t + $T, $ref_res);
           return 0;
         } else {

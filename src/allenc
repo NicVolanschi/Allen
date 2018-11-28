@@ -36,7 +36,7 @@ my $syntax =
   Context -> "let" id "=" Expr "in" Context | Expr
   Expr -> Prod "|" Expr | Prod
   Prod -> Comp "&" Prod | Comp
-  Comp -> Expr1 (">=!"|"<="|">="|"<"|">") Int | Expr1
+  Comp -> Expr1 (">=!"|"<="|">="|">!"|"<"|">") Int | Expr1
   Expr1 -> "~" Expr1 | "(" Expr ")" | str
         | id ("[" Int+(",") "]")? ("(" Expr*(",") ")")?
   Int -> id | int ("hr" | "min" | "sec")?
@@ -273,7 +273,7 @@ sub parse_prod() {
 sub parse_comp() {
   my $e1 = &parse_expr1();
   my ($typ, $tok) = &token(0); # look ahead
-  if ($typ eq "key" && $tok =~ /^(>=!|<=|>=|<|>)$/) {
+  if ($typ eq "key" && $tok =~ /^(>=!|<=|>=|>!|<|>)$/) {
     &token(1); # consume binary operator
     my $e2 = &parse_int();
     return [$tok, $e1, $e2];
@@ -296,6 +296,8 @@ sub parse_int() {
     }
     return $i;
   } elsif ($typ eq "id") {
+    die "unbound parameter"
+      if !defined($var{$tok}) || $var{$tok} ne "par";
     return $tok;
   # } elsif ($typ eq "str") {
   #   return "\"$tok\"";
@@ -373,7 +375,8 @@ sub parse_expr1() {
       return [$tok, \@pars, @args];
     } else { # it's a var ref
       # variables cannot use forward reference
-      die "unbound variable $tok" if !defined($var{$tok});
+      die "unbound variable $tok"
+        if !defined($var{$tok}) || $var{$tok} !~ /^arg|let$/;
       return $tok;
     }
   } elsif ($typ eq "int") {
@@ -405,7 +408,7 @@ sub token() {
   my $tok;
   if ($line =~ /^(\d+)/) {
     ($typ, $tok) = ("int", $1);
-  } elsif ($line =~ /^([][&|~(),;:=]|>=!|<=|>=|<|>|(day|hr|min|sec|let|in|def)\b)/) {
+  } elsif ($line =~ /^([][&|~(),;:=]|>=!|<=|>=|>!|<|>|(day|hr|min|sec|let|in|def)\b)/) {
     ($typ, $tok) = ("key", $1);
   } elsif ($line =~ /^([a-zA-Z]\w*)/) {
     ($typ, $tok) = ("id", $1);
@@ -450,14 +453,16 @@ sub gen_expr() {
   if (ref $t eq "ARRAY") {
     die "gen_context([])" if $#$t < 0;
     my $op = $t->[0];
-    if ($op =~ /^(>=!|<=|>=|<|>|and|or|not)$/) {
+    if ($op =~ /^(>=!|<=|>=|>!|<|>|and|or|not)$/) {
       print OUT "[&";
-      if ($op =~ /^(>=!|<=|>=|<|>)$/) {
-        print OUT $op eq ">=!"? "geRT":
+      if ($op =~ /^(>=!|<=|>=|>!|<|>)$/) {
+        print OUT
           $op eq "<="? "le":
           $op eq ">="? "ge":
+          $op eq ">=!"? "geRT":
           $op eq "<"? "lt":
           $op eq ">"? "gt":
+          $op eq ">!"? "gtRT":
           die "unknown comparator $op";
         print OUT "(";
         &gen_expr($t->[2]);

@@ -102,4 +102,12 @@ t83: meets("p", between("p","q")); # before(p,q)
 t84: meets("q", between("q","p")); # before(q,p)
 t85: occ(~"p" >=! 1, ~("q" >=! 1)); # btw1st(p,q) = occ(p=>0,~(q=>1)) = occ((~p)>=!1, ~(q>=!1))
 t86: occ("p" >=! 1, ~("q" >=! 1)); # btw1st(~p,q)
-t87: occ("p" >=! 1, ~(~"q" >=! 1)) # btw1st(~p,~q)
+t87: occ("p" >=! 1, ~(~"q" >=! 1)); # btw1st(~p,~q)
+t88: "p" > 1;
+t89: "p" >! 1;
+t90: "p" < 1;
+t91: "p" < 2;
+t92: "p" >= 1;
+t93: "p" >= 2;
+t94: "q" > 4;
+t95: "q" >= 4
