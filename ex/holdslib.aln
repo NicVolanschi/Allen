@@ -63,9 +63,9 @@ def btw(p,q) = over(~q, ~p)
 #  meets(dp, uq) | meets(dp, b) | met(b, dp)
 def before(p,q) = meets(p, between(p, q))
 def after(p,q) = met(p, between(q, p))
-def btwin(p,q) =
-  let np = ~p in
-  let nq = ~q in
-  over(nq, np) | starts(nq, np) | ends(nq, np) | eq(nq, np)
+#def btwin(p,q) =
+#  let np = ~p in
+#  let nq = ~q in
+#  over(nq, np) | starts(nq, np) | ends(nq, np) | eq(nq, np)
 
 ctx: step[1]

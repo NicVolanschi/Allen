@@ -336,8 +336,8 @@ sub step() {
   return [&wave($T,0,0,0)];
 }
 
-# true only initially, at the beginning of time (t=0)
-sub init() {
+# true only initially, at the origin of time (t=0)
+sub orig() {
   return [&not, &step(1)];
 }
 
