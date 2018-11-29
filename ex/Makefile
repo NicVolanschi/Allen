@@ -4,7 +4,7 @@ TST=../test
 %.pm: %.aln
 	$(SRC)/allenc $<
 
-# Running and building examples
+# Building and running the examples
 
 ex: ex.pm
 	$(SRC)/allen -s $(TST)/log0.csv $<
@@ -13,4 +13,4 @@ monkey: planning/monkey.pm
 	cat planning/monkey.log | $(SRC)/allen $<
 
 clean:
-	rm -f *.pm */*.pm
+	rm -f *.pm planning/*.pm
