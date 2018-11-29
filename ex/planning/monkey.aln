@@ -1,0 +1,42 @@
+# McCarthy’s classic monkey/banana planning problem [1]
+
+# [1] Grigore Rosu and Saddek Bensalem, "Allen Linear (Interval) Temporal Logic
+# – Translation to LTL and Monitor Synthesis", CAV'06, LNCS 4144.
+
+# A monkey is at location “x”, the banana is hanging from the tree.
+# The monkey is at height “Low”, but if it climbs the tree then it will be at
+# height “High”, same as the banana. Available actions are: “Going” from a
+# place to another, “Climbing” (up) and “Climbing Down”, and “Grabbing” banana.
+
+# Compatibilities for the intervals:
+# - Have-banana (“Hb”) requires Grabbing-banana (“Gb”) which requires
+# Not-have-banana (“Nhb”). Grabbing-banana is performed while High and At(tree).
+# – At(tree)(“@(tree)”)requires going from the location “x” to the tree which
+# requires At(x) (“@(x)”). Going(x,tree) (“G(x, tree)”) is performed while Low.
+# – High (“H”) requires Climbing (“C”) which requires Low (“L”), and
+# Climbing-Down (“CD”) requires High. Climbing is performed while At(tree).
+
+c1a: ~"Hb" | met("Hb", "Gb"); # fails when a Hb does not have a Gb right before
+c1b: ~"Gb" | met("Gb", "Nhb"); # etc.
+c1c: ~"Gb" | during("Gb", "H") & during("Gb", "At(tree)");
+
+c2a: ~"At(tree)" | met("At(tree)", "G(x,tree)");
+c2b: ~"G(x,tree)" | met("G(x,tree)", "At(x)");
+c2c: ~"G(x,tree)" | during("G(x,tree)", "L");
+
+c3a: ~"H" | met("H", "C");
+c3b: ~"C" | met("C", "L");
+c3c: ~"CD" | met("CD", "H");
+c3d: ~"C" | during("C", "At(tree)");
+
+# Monkeys should grab and have bananas only if they are hungry and do not
+# already have bananas.
+
+c4a: ~"Gb" | during("Gb", "hungry");
+c4b: ~"Hb" | during("Hb", "hungry");
+
+# Monkeys always end up by being hungry when they have no bananas, and they are
+# still hungry while grabbing it.
+
+c5a: ~"Nhb" | ex("hungry", "Nhb");
+c5b: ~"Gb" | holds("hungry", "Gb")

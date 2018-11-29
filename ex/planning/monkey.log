@@ -1,0 +1,26 @@
+10;At(x);1
+10;Nhb;1
+10;L;1
+10;hungry;1
+20;At(x);0
+20;G(x,tree);1
+30;G(x,tree);0
+30;At(tree);1
+40;C;1
+40;L;0
+50;H;1
+50;C;0
+51;Gb;1
+# Commenting the following line violates c1b:
+51;Nhb;0
+# Commenting the following line violates c1a & c1c:
+60;Gb;0
+60;Hb;1
+70;Hb;0
+75;Nhb;1; no rule checks that met(Nhb,Hb)
+80;CD;1
+# Commenting the following line violates c3c:
+80;H;0
+89;CD;0
+90;L;1
+100;At(tree);0
