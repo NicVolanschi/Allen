@@ -679,11 +679,14 @@ sub csp() {
   }
 
   my ($val, $s, $ts) = &next_event($base);
+  die "illegal negative timestamp for event <$ts,$s,$val>" if $ts < 0;
   if(defined($val)) {
     push @pack, [$val, $s, $ts];
     while(1) {
       my ($val, $s, $ts) = &next_event($base);
       last if !defined($val);
+      die "anachronic event <$ts,$s,$val> at time $now, log must be sorted"
+        if $ts < $now;
       next if defined($lastval{$s}) && $val == $lastval{$s}; # skip repeated values
       if ($ts != $pack[$#pack]->[2]) { # pack is ready
         my $tspack = $pack[$#pack]->[2];
@@ -721,7 +724,8 @@ sub update() {
 sub next_event() {
   my ($base) = @_;
   while(<IN>) {
-    next if /^\s*#/; # skip comment lines
+    next if /^\s*#/ || /^\s*$/; # skip comment lines and black lines
+    chomp;
     my ($ts, $s, $val) = &parse_event($_);
     if($val != 1 && $val != 0) {
       print STDERR "skipping non-bool value ($val, $s, $ts)\n";
@@ -790,9 +794,6 @@ sub process_pack() {
 
 sub parse_event() {
   my ($line) = @_;
-  #my (undef, $val, $s, undef, $ts) =
-  #  ($line =~ /\{"date":"[^"]*"(,"id":"[^"]*")?,"value":([-?\d.]*(?:[eE]-?\d+)?),"device":\{"location":"[^"]*","id":"([^"]*)"(,"type":"[^"]*")?\},"timestamp":(\d*)\}/o);
-  #die "parse error:\n$_" if !defined($ts);
   my ($ts, $s, $val) = split /\s*;\s*/, $line;
   die "parse error:\n$_" if !defined($ts) ||!defined($s) || !defined($val);
   # quantify values of numeric sensors:
