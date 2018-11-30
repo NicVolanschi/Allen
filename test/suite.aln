@@ -110,4 +110,40 @@ t91: "p" < 2;
 t92: "p" >= 1;
 t93: "p" >= 2;
 t94: "q" > 4;
-t95: "q" >= 4
+t95: "q" >= 4;
+t96: contains("p","q");
+t97: contains("q","p");
+#t98: contains(~"q","p"); - fails initially b/c holds always starts with 0
+#t99: contains(~"q",~"p"); - fails initially b/c holds always starts with 0
+t100: contains("p","p");
+t101: contains("q",~"q");
+t102: contains("q","p"&"q");
+t103: ended("p","q");
+t104: ended("q","p");
+#t105: ended(~"q","p"); - fails initially b/c holds always starts with 0
+t106: ended("q","p"&"q");
+t107: overlaps("p","q");
+t108: overlaps("q","p");
+#t109: overlaps(~"q",~"p"); - fails initially b/c holds always starts with 0
+t110: overlaps(~"q","p");
+t111: overlaps("q","q");
+t112: overlaps("q","q"&"p");
+t113: overlaps("q","q"|"p");
+t114: overlapped("p","q");
+t115: overlapped("q","p");
+t116: overlapped("q","p"&"q");
+t117: overlapped("q","p"|"q");
+t118: started("p","q");
+t119: started("q","p");
+t120: started("q","p"&"q");
+t121: before("p","q");
+t122: before("q","p");
+t123: before("p",~"q");
+t124: before("q","p"&~"q");
+t125: after("p","q");
+t126: after("q","p");
+t127: after("p",~"q");
+t128: after("q",~"p");
+t129: btw("p","q");
+t130: btw("q","p");
+t131: btw("p",~"q")
