@@ -19,5 +19,8 @@ out/holdslib.diff: out/holdslib0 out/holdslib1
 monkey: planning/monkey.pm
 	cat planning/monkey.log | $(SRC)/allen $<
 
+packages: video/packages.pm
+	cat video/packages.log | $(SRC)/allen $<
+
 clean:
-	rm -f *.pm planning/*.pm out/*
+	rm -f *.pm out/* planning/*.pm video/*.pm

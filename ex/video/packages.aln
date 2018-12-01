@@ -1,0 +1,100 @@
+# Typical video surveillance scenarios involving different variants of package
+# exchanges and a potential car theft [1].
+
+# [1] Sven Helmer and Fabio Persia, "High-level Surveillance Event Detection
+# Using an Interval-based Query Language", 2016 IEEE Tenth International
+# Conference on Semantic Computing.
+
+# NB: we asssume here that only two persons appear in the video, named
+# Mr1 and Mrs2, and that the following software sensors have been implemented
+# by video analyses:
+# - "in(Mr1)", "in(Mrs2)", "in(BlackBox)": the person/object is on screen
+# - "hasPkg(Mr1,RedBag)", "hasPkg(Mrs2,RedBag)": the person holds the object
+# - "insideCar(Mr1,Mini)", "insideCar(Mrs2,Mini)": the person is in the car
+# Handling more persons and objects would require explicitly testing
+# more sensors. Quantifiers do not exist in Allen for now.
+
+# Preliminary definitions for the relational operators used in the paper.
+
+# Start Preceding (SP): the intervals overlap and r starts not later than s.
+# We do not care which of the intervals ends first.
+def SP(r, s) =
+  overlaps(r, s) | ended(r, s) | contains(r, s)
+
+# A. Direct Package Exchanges
+# 1) Basic Direct Package Exchange (BDPE): one person carries a package up to a
+# certain frame fi and then another person has the same package from frame
+# fi + 1 onwards.
+
+def BDPE(pers1_hasPkg_pkg1, pers2_hasPkg_pkg1) =
+  meets(pers1_hasPkg_pkg1, pers2_hasPkg_pkg1)
+
+# 2) Direct Package Exchange, Scenario 2 (DPE2): two persons exchange a
+# package directly, but the person entering the scene first gives the package
+# to a person entering later.
+
+def DPE2(pers1_hasPkg_pkg1, pers2_hasPkg_pkg1, pers1_in, pers2_in) =
+  during(BDPE(pers1_hasPkg_pkg1, pers2_hasPkg_pkg1),
+         SP(pers1_in, pers2_in))
+
+# B. Indirect Package Exchanges, meaning that a person leaves a package
+# somewhere and another person picks up the package later.
+
+# 1) Basic indirect package exchange (BIPE): one person carries a package
+# up to a certain frame fi, but this time another person has the same package
+# from frame fi + x onwards, where 1 < x, x ∈ N. If the elapsed time x is too
+# long, then we are probably not witnessing a package exchange but one person
+# losing an item and another person finding it. So we assume that the package
+# has to be picked up within d frames, with 1<d, d∈N.
+
+def BIPE[d](pers1_hasPkg_pkg1, pers2_hasPkg_pkg1) =
+  between(pers1_hasPkg_pkg1, pers2_hasPkg_pkg1) < d
+
+# Indirect Package Exchange, Scenario 2 (IPE2): We add a constraint to the
+# basic indirect package exchange stating that the two persons do not actually
+# see each other during the exchange, i.e., the person dropping off the package
+# has already left before the person picking it up arrives. Additionally,
+# the second person should show up within a certain time d1 after the first
+# person has left (1<d1<d, d1∈N)
+
+def IPE2[d,d1](pers1_hasPkg_pkg1, pers2_hasPkg_pkg1, pers1_in, pers2_in) =
+  contains(BIPE[d](pers1_hasPkg_pkg1, pers2_hasPkg_pkg1),
+           between(pers1_in, pers2_in) < d1)
+
+# C. Potential Car Theft (PCT): a person enters the scene inside a car,
+# gets out of the car, and then leaves. Another person appears,
+# gets into the car, and leaves with the car.
+# NB: as a person in the vehicle is not visible in the scene, he or she does
+# not appear in the predicate "in" while in the car.
+
+def PCT(pers1_insideCar_c1, pers2_insideCar_c1, pers1_in, pers2_in) =
+  before(met(pers1_in, pers1_insideCar_c1),
+         meets(pers2_in, pers2_insideCar_c1))
+
+# D. Unattended Package (UP): a package that is left
+# unattended in a public place can pose a serious threat. Compared to the other
+# events, this is the most complex one, we have to deal with a negation here.
+# Basically, we identify all packages that have been dropped off by someone
+# and subtract all packages that have been dropped off but picked up again
+# by anyone.
+
+def before_wide(p, q) = # covers p, q, and the interval in between
+  # NB: make most sense when instances of p and q may never overlap
+  # (e.g. pers1_hasPkg_pkg1 and pers2_hasPkg_pkg1)
+  before(p, q) | between(p, q) | after(q, p)
+
+def UP(pkg1_in, pers1_hasPkg_pkg1, pers2_hasPkg_pkg1) =
+  contains(pkg1_in, pers1_hasPkg_pkg1) &
+  (~contains(pkg1_in, before_wide(pers1_hasPkg_pkg1, pers2_hasPkg_pkg1)) |
+   ~contains(pkg1_in, pers2_hasPkg_pkg1))
+   # NB: last term in disjunction is needed b/c the before_wide can block
+   # indefinitely if the package is never taken by anyone
+
+# Contexts to compute
+
+A1: BDPE("hasPkg(Mr1,RedBag)", "hasPkg(Mrs2,RedBag)");
+A2: DPE2("hasPkg(Mr1,RedBag)", "hasPkg(Mrs2,RedBag)", "in(Mr1)", "in(Mrs2)");
+B1: BIPE[30]("hasPkg(Mr1,RedBag)", "hasPkg(Mrs2,RedBag)");
+B2: IPE2[30,10]("hasPkg(Mr1,RedBag)", "hasPkg(Mrs2,RedBag)", "in(Mr1)", "in(Mrs2)");
+C: PCT("insideCar(Mr1,Mini)", "insideCar(Mrs2,Mini)", "in(Mr1)", "in(Mrs2)");
+D: UP("in(BlackBox)", "hasPkg(Mr1,BlackBox)", "hasPkg(Mrs2,BlackBox)")

@@ -1,0 +1,91 @@
+#
+# Log of a video surveillance in a parking
+#
+
+# Scene 1: Mr1 & Mrs2 no package exchange => no context fires
+10;in(Mr1);1
+20;in(Mrs2);1
+30;hasPkg(Mr1,RedBag);1
+40;hasPkg(Mr1,RedBag);0
+50;in(Mr1);0
+55;hasPkg(Mrs2,RedBag);1
+60;hasPkg(Mrs2,RedBag);0
+65;in(Mrs2);0
+70;insideCar(Mr1,Mini);1
+80;insideCar(Mr1,Mini);0
+90;insideCar(Mrs2,Mini);1
+90;insideCar(Mrs2,Mini);0
+
+# Scene 2: Mr1 & Mrs2 exchange a package
+110;in(Mr1);1
+130;hasPkg(Mr1,RedBag);1
+140;in(Mrs2);1
+150;hasPkg(Mr1,RedBag);0
+150;hasPkg(Mrs2,RedBag);1
+160;in(Mr1);0
+170;hasPkg(Mrs2,RedBag);0
+180;in(Mrs2);0
+
+# Scene 3: Mr1 & Mrs2 exchange a package but Mrs2 enters first
+200;in(Mrs2);1
+210;in(Mr1);1
+230;hasPkg(Mr1,RedBag);1
+250;hasPkg(Mr1,RedBag);0
+250;in(Mr1);0
+250;hasPkg(Mrs2,RedBag);1
+260;hasPkg(Mrs2,RedBag);0
+265;in(Mrs2);0
+
+# Scene 4: Mr1 leaves a package, took later by Mrs2 => indirect exchange
+300;in(Mrs2);1
+310;in(Mr1);1
+330;hasPkg(Mr1,RedBag);1
+350;hasPkg(Mr1,RedBag);0
+350;in(Mr1);0
+360;hasPkg(Mrs2,RedBag);1
+370;hasPkg(Mrs2,RedBag);0
+365;in(Mrs2);0
+
+# Scene 4: indirect exchange with Mr1 leaving just before Mrs2 arrives
+410;in(Mr1);1
+430;hasPkg(Mr1,RedBag);1
+450;hasPkg(Mr1,RedBag);0
+455;in(Mr1);0
+460;in(Mrs2);1
+470;hasPkg(Mrs2,RedBag);1
+480;hasPkg(Mrs2,RedBag);0
+490;in(Mrs2);0
+
+# Scene 5: car stealing
+500;insideCar(Mr1,Mini);1
+510;insideCar(Mr1,Mini);0
+510;in(Mr1);1
+520;in(Mr1);0
+560;in(Mrs2);1
+570;in(Mrs2);0
+570;insideCar(Mrs2,Mini);1
+580;insideCar(Mrs2,Mini);0
+
+# Scene 6: package dropped by Mr1 took over by Mrs2 => no unattended package
+610;in(Mr1);1
+610;in(BlackBox);1
+620;hasPkg(Mr1,BlackBox);1
+650;hasPkg(Mr1,BlackBox);0
+655;in(Mr1);0
+660;in(Mrs2);1
+670;hasPkg(Mrs2,BlackBox);1
+680;hasPkg(Mrs2,BlackBox);0
+690;in(Mrs2);0
+690;in(BlackBox);0
+
+# Scene 7: package dropped by Mr1 not took by anyone => unattended!
+710;in(Mr1);1
+710;in(BlackBox);1
+720;hasPkg(Mr1,BlackBox);1
+750;hasPkg(Mr1,BlackBox);0
+755;in(Mr1);0
+760;in(Mrs2);1
+770;hasPkg(Mrs2,RedBag);1
+780;hasPkg(Mrs2,RedBag);0
+790;in(Mrs2);0
+790;in(BlackBox);0
