@@ -25,7 +25,9 @@ where:
 * standard input must be in CSV format with at least three columns:
   timestamp;sensor;value[;...]
 * options may be the following ones:
+  -T: timestamps are given in human-readable form (default: Epoch times, msecs)
   -q \'/regex/>=val,...\': threshold-quantify matching numeric sensors as boolean
+  -b: \'/regex/=val1/val0\': define symbolic binary values for matching sensors
   -s log: detect all contexts in sequence on file log rather than on stdin
   -r nm: execute only context named nm
   -p: execute any_up(@contexts), i.e. signal the up fronts of all contexts
@@ -41,7 +43,7 @@ our %opts = ();
 my $forgot; # counter of forgot events
 my $tforgot; # memorize the time up to which we forgot the events
 
-getopts('q:s:r:pl:f:itdg', \%opts) or die $usage;
+getopts('Tq:b:s:r:pl:f:itdg', \%opts) or die $usage;
 
 die "f option must be a number N > 0"
   if defined($opts{'f'}) && $opts{'f'} !~ /^\d+$/;
@@ -58,9 +60,20 @@ if (defined($opts{'q'})) {
     print STDERR "quant: /$regex/ >= '$val'\n";
   }
 }
+my %symbool = ();
+if (defined($opts{'b'})) {
+  for my $range (split /\s*,\s*/, $opts{'b'}) {
+    my ($regex, $val1, $val0) = ($range =~ q|/([^/]*)/\s*=\s*(\w+)/(\w+)|);
+    die "found not /regex/=val1/val0 in -b option: $range"
+      if !defined($regex) || !defined($val1) || !defined($val0);
+    $symbool{$regex} = [lc($val0), lc($val1)];
+    print STDERR "symbool: /$regex/ = $val0/$val1\n";
+  }
+}
 
 use FindBin;
 use lib $FindBin::Bin;
+use Time::Local;
 #use stdlib;
 
 sub load() {
@@ -727,11 +740,26 @@ sub next_event() {
     next if /^\s*#/ || /^\s*$/; # skip comment lines and black lines
     chomp;
     my ($ts, $s, $val) = &parse_event($_);
-    if($val != 1 && $val != 0) {
+    next if !exists($base->{$s}); # skip irrelevant values
+    # quantify values of numeric sensors:
+    while (my ($regex, $thr) = each %threshold) {
+      if ($s =~ /$regex/) {
+        if ($val >= $thr) { $val = 1; }
+        else { $val = 0; }
+      }
+    }
+    # encode symbolic binary values:
+    while (my ($regex, $vals) = each %symbool) {
+      if ($s =~ /$regex/) {
+        if (lc($val) eq $vals->[0]) { $val = 0; }
+        elsif (lc($val) eq $vals->[1]) { $val = 1; }
+        else { die "undeclared symbolic binary value $val for sensor $s"; }
+      }
+    }
+    if($val ne "1" && $val ne "0") {
       print STDERR "skipping non-bool value ($val, $s, $ts)\n";
       next;
     }
-    next if !exists($base->{$s}); # skip irrelevant values
     return ($val, $s, $ts);
   }
   return undef; # EOF
@@ -766,16 +794,17 @@ sub process_pack() {
   for my $event (@$ref_pack) {
     my ($val1, $s1, $ts1) = @$event;
     $in{$s1} = [] if !exists($in{$s1});
-    &update($in{$s1}, $now, $val1);
+    push @{in{$s1}}, [$now, $val1];
+    $update{$in{$s1}} = $now;
     push @inputs, $in{$s1};
     print STDERR " $s1" if defined($opts{'t'});
     # print input event if required
     if (defined($opts{'i'})) {
-      &export_stream_line($ts1, "in:$s1", $val1, $lastts{$s1});
+      &export_stream_line($ts1, "in:$s1", $val1);
     }
     # print input event if it is a context
     if (exists($names{$s1})) {
-      &export_stream_line($ts1, $names{$s1}, $val1, $lastts{$s1});
+      &export_stream_line($ts1, $names{$s1}, $val1);
     }
   }
   if(defined($opts{'t'})) {
@@ -796,12 +825,14 @@ sub parse_event() {
   my ($line) = @_;
   my ($ts, $s, $val) = split /\s*;\s*/, $line;
   die "parse error:\n$_" if !defined($ts) ||!defined($s) || !defined($val);
-  # quantify values of numeric sensors:
-  while (my ($regex, $thr) = each %threshold) {
-    if ($s =~ /$regex/) {
-      if ($val >= $thr) { $val = 1; }
-      else { $val = 0; }
-    }
+  if (defined($opts{'T'})) {
+    my ($year, $month, $day, $hh, $mm, $ss, $ms) =
+      ($ts =~ /(\d\d)-?(\d\d)-?(\d\d)[ T](\d\d):?(\d\d):?(\d\d)(?:[.,](\d\d\d))?/);
+    die "not standard timestamp: $ts" if !defined($ss);
+    $ms = 0 if !defined($ms);
+    $ts = timegm($ss, $mm, $hh, $day, $month - 1, $year) * 1000 + $ms;
+  } else {
+    die "not integer timestamp: $ts" if $ts !~ /^\d+$/;
   }
   return ($ts, $s, $val) ;
 }
@@ -995,7 +1026,7 @@ sub export_stream_line() {
   my ($ts, $name, $val, $lastoutts) = @_;
   use integer;
   print "$ts;$name;" . $val . ";" . localtime($ts / 1000) . ";" ;
-  if($val == 0) {
+  if($val == 0 && defined($lastoutts)) {
     print (($ts - $lastoutts) / 1000);
   }
   print "\n";
