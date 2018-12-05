@@ -68,10 +68,6 @@ sub after() {
   my ($p,$q) = @_;
   &met($p,&between($q,$p));
 }
-sub btwin() {
-  my ($p,$q) = @_;
-  my $np=[&not, $p]; my $nq=[&not, $q]; [&or, &over($nq,$np), [&or, &starts($nq,$np), [&or, &ends($nq,$np), &eq($nq,$np)]]];
-}
 
 # User-defined contexts
 [
