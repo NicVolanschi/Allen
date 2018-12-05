@@ -830,7 +830,7 @@ sub parse_event() {
       ($ts =~ /(\d\d)-?(\d\d)-?(\d\d)[ T](\d\d):?(\d\d):?(\d\d)(?:[.,](\d\d\d))?/);
     die "not standard timestamp: $ts" if !defined($ss);
     $ms = 0 if !defined($ms);
-    $ts = timegm($ss, $mm, $hh, $day, $month - 1, $year) * 1000 + $ms;
+    $ts = timelocal($ss, $mm, $hh, $day, $month - 1, $year) * 1000 + $ms;
   } else {
     die "not integer timestamp: $ts" if $ts !~ /^\d+$/;
   }
