@@ -1,5 +1,7 @@
 SRC=../src
 TST=../test
+AMIQOPTS=-b '/^tv_salon_real_status$$/=ON/OFF,/^C\d+$$/=OPEN/CLOSED' \
+	-q '/^Eau_.*_Instantanee$$/>=0.01,/^Intensite_/>=1,/^bed_pressure$$/>=300'
 
 %.pm: %.aln
 	$(SRC)/allenc $<
@@ -22,5 +24,8 @@ monkey: planning/monkey.pm
 packages: video/packages.pm
 	cat video/packages.log | $(SRC)/allen $<
 
+amiqual: smarthome/amiqual.pm
+	cat smarthome/July_All_Change.log | $(SRC)/allen $(AMIQOPTS) $<
+
 clean:
-	rm -f *.pm out/* planning/*.pm video/*.pm
+	rm -f *.pm out/* planning/*.pm video/*.pm smarthome/*.pm

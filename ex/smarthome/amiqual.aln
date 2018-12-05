@@ -1,0 +1,37 @@
+# Recognition of ADLs (Activities of Daily Living).
+
+# Reformulates in Allen the rules of the ContextAct@A4H experiment [1],
+# originally expressed in the MCL temporal logic.
+# They are executed on a subset of the ContextAct@A4H dataset, covering a log
+# of one week in a smart home equipped with over 200 sensors [2].
+
+# [1] Paula Lago, Frederic Lang, Claudia Roncancio, Claudia Jiménez-Guarín,
+# Radu Mateescu, et al.. "The ContextAct@A4H real-life dataset of daily-living
+# activities - Activity recognition using model checking."" 10th International
+# and Interdisciplinary Conference - CONTEXT 2017, Jun 2017, Paris, France.
+# LNCS 10257, pp.175-188, 2017, Springer Verlag.
+# https://hal.archives-ouvertes.fr/hal-01551418
+
+# [2] ContextAct@A4H Dataset.
+# https://amiqual4home.inria.fr/contextacta4h-dataset/
+
+# This is just to warm up
+tv: "tv_salon_real_status";
+
+# Activity annotation: Douche_Start
+shower:
+  between("C21", "Eau_Froide_Douche_Instantanee" | "Eau_Chaude_Douche_Instantanee") < 3min;
+
+# Activity annotations: Cuisine_Start/Stop
+cook:
+  occ(any_up("C3", "C14", "C15", "C16", "C17"),
+      any("Intensite_Four", "Intensite_Hote", "Intensite_Plaques"));
+
+# Activity annotations: Dormir_Start/End
+sleep: "bed_pressure" >= 1hr;
+
+# Activity annotation: Toilettes_Stop/End
+toilet: "Eau_Froide_WC_Instantanee";
+
+# Activity annotations: Vaisselle_Start/Stop/End
+dishes: "Eau_Chaude_Evier_Instantanee" #| "Eau_Froide_Evier_Instantanee"
