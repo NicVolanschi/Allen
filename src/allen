@@ -25,7 +25,8 @@ where:
 * standard input must be in CSV format with at least three columns:
   timestamp;sensor;value[;...]
 * options may be the following ones:
-  -T: timestamps are given in human-readable form (default: Epoch times, msecs)
+  -D \'regex\': CSV delimiter is given by the regex (default: \';\')
+  -E: Epoch timestamps are in seconds (default: milliseconds)
   -q \'/regex/>=val,...\': threshold-quantify matching numeric sensors as boolean
   -b: \'/regex/=val1/val0\': define symbolic binary values for matching sensors
   -s log: detect all contexts in sequence on file log rather than on stdin
@@ -43,10 +44,12 @@ our %opts = ();
 my $forgot; # counter of forgot events
 my $tforgot; # memorize the time up to which we forgot the events
 
-getopts('Tq:b:s:r:pl:f:itdg', \%opts) or die $usage;
+getopts('D:Eq:b:s:r:pl:f:itdg', \%opts) or die $usage;
+
+my $delim = defined($opts{'D'})? $opts{'D'}: '\s*;\s*';
 
 die "f option must be a number N > 0"
-  if defined($opts{'f'}) && $opts{'f'} !~ /^\d+$/;
+  if defined($opts{'f'}) && ($opts{'f'} !~ /^\d+$/ || $opts{'f'} <= 0);
 $opts{'f'} = 10000 if (!defined($opts{'f'}));
 
 my %threshold = ();
@@ -78,9 +81,9 @@ use Time::Local;
 
 sub load() {
   my ($name) = @_;
-  print STDERR "loading library $name...\n";
+  print STDERR "loading module $name...\n";
   my $res = do "$name";
-  die "error: $!\nwhen tryiny to load library \"$name\"\n$@" if !defined($res);
+  die "error: $!\nwhen tryiny to load module \"$name\"\n$@" if !defined($res);
   print STDERR "load result = $res\n" if defined($opts{'g'});
   #print STDERR "loaded $#$rules rules.\n";
   return $res;
@@ -739,6 +742,7 @@ sub next_event() {
   while(<IN>) {
     next if /^\s*#/ || /^\s*$/; # skip comment lines and black lines
     chomp;
+    s/\r$//; # eventually convert from that old CP/M format...
     my ($ts, $s, $val) = &parse_event($_);
     next if !exists($base->{$s}); # skip irrelevant values
     # quantify values of numeric sensors:
@@ -823,16 +827,22 @@ sub process_pack() {
 
 sub parse_event() {
   my ($line) = @_;
-  my ($ts, $s, $val) = split /\s*;\s*/, $line;
+  my ($ts, $s, $val) = split /$delim/o, $line;
   die "parse error:\n$_" if !defined($ts) ||!defined($s) || !defined($val);
-  if (defined($opts{'T'})) {
+  # unquote fields if needed
+  for my $f ($ts, $s, $val) {
+    if ($f =~ /^'(.*)'$/ || $f =~ /^"(.*)"$/) {
+      $f =~ s/^.(.*).$/$1/;
+    }
+  }
+  if ($ts =~ /^\d+$/) { # integer timestamp => scale if not in millisecs
+    $ts *= 1000 if defined($opts{'E'});
+  } else { # timestamp not a mere integer => interpret as a date
     my ($year, $month, $day, $hh, $mm, $ss, $ms) =
       ($ts =~ /(\d\d)-?(\d\d)-?(\d\d)[ T](\d\d):?(\d\d):?(\d\d)(?:[.,](\d\d\d))?/);
-    die "not standard timestamp: $ts" if !defined($ss);
+    die "invalid date-timestamp: $ts" if !defined($ss);
     $ms = 0 if !defined($ms);
     $ts = timelocal($ss, $mm, $hh, $day, $month - 1, $year) * 1000 + $ms;
-  } else {
-    die "not integer timestamp: $ts" if $ts !~ /^\d+$/;
   }
   return ($ts, $s, $val) ;
 }
