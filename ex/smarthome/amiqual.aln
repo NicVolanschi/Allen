@@ -25,7 +25,7 @@ shower:
 # Activity annotations: Cuisine_Start/Stop
 cook:
   occ(any_up("C3", "C14", "C15", "C16", "C17"),
-      any("Intensite_Four", "Intensite_Hote", "Intensite_Plaques"));
+      "Intensite_Four" | "Intensite_Hote" | "Intensite_Plaques");
 
 # Activity annotations: Dormir_Start/End
 sleep: "bed_pressure" >= 1hr;
