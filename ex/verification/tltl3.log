@@ -1,0 +1,56 @@
+10;alive;1; alive appears in principle every 20 ticks
+11;alive;0
+10;spawn;1; spawning thread 1 (KO)
+11;spawn;0
+15;other1;1
+16;other1;0
+20;spawn;1; spawning thread 2 (KO)
+21;spawn;0
+30;alive;1
+31;alive;0
+40;other2;1
+41;other2;0
+49;spawn;1; spawning thread 3 (KO)
+50;alive;1
+50;spawn;0
+50;init;1; INITIALIZATION (no thread should be spawned before)
+51;init;0
+51;alive;0; NB: alive is gone now for >20 ticks!
+55;other3;1
+56;other3;0
+60;spawn;1; spawning thread 4 (OK)
+61;spawn;0
+100;done;1; alive no more needed from now on
+100;alive;1; alive comes back (too late for alive_done)
+101;alive;0
+150;alive;1; missed > 20, but other_alive doesn't care, b/c no "others" in btw
+151;alive;0
+
+200;req;1;
+201;req;0
+203;ack;1; ack comes largely in time
+204;ack;0
+
+210;req;1
+211;req;0
+215;ack;1; ack comes at the very time limit
+216;ack;0
+
+220;req;1
+221;req;0
+226;ack;1; ack comes too late!
+227;ack;0
+
+230;req;1
+231;req;0
+232;req;1
+233;req;0
+237;ack;1; ack comes too late for the first pending req!
+238;ack;0;
+
+240;req;1
+241;req;0
+242;req;1
+242;req;0
+245;ack;1; ack comes at time for both pending req's
+246;ack;0

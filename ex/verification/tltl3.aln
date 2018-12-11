@@ -1,0 +1,42 @@
+# Examples from [1], originally expressed in the LTL3 or TLTL3 logics
+
+# [1] A. Bauer, M. Leucker, and C. Schallhart, "Runtime Verification for LTL
+# and TLTL", ACM Transactions on Software Engineering and Methodology, Vol. 20,
+# No. 4, Article 14, September 2011.
+
+# Utilities:
+
+def happens_before(p, q) =
+  p & ~occ(q, true)
+
+# ¬spawn U init
+# In other words, the monitor reports a violation once a thread is spawned
+# before the application under scrutiny has properly finished its initialization
+thread_init:
+  happens_before("spawn", "init");
+
+# G(¬alive → ✄alive ∈ [0, 20])
+# means that whenever some event different from alive occurs, then the event
+# alive must occur within 20 time units again.
+# Note that this does allow two adjacent occurrences of alive separated by an
+# arbitrary period of time.
+other_alive:
+  occ(any_up("other1", "other2", "other3"), ~"alive") > 20;
+
+#  G(✄alive ∈ [0, 20])
+# requires that from every given point in time, alive will occur within the
+# next 20 time units
+alive20:
+  ~"alive" >! 20;
+
+# G(req → ✄ack ∈ [0, 5])
+# means that if a request event req arrives, then it must be handled with an
+# acknowledge event ack within 5 time units.
+req_ack:
+  occ(up("req"), ~"ack") > 5;
+
+# ✄alive ∈ [0, 20] U done
+# states that the event done has to occur eventually and that until then,
+# the event alive must occur every 20 time units.
+alive_done:
+  happens_before(~"alive" >! 20, "done")
