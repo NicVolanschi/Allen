@@ -155,4 +155,9 @@ t136: true | false;
 t137: false | false;
 t138: occ("p",true);
 t139: during("p",true);
-t140: contains(true, "p")
+t140: contains(true, "p");
+t141: "p" >! 2;
+t142: "p" >! 3;
+t143: ~"p" >! 1;
+t144: ~"p" >! 2;
+t145: ~"p" >! 10
