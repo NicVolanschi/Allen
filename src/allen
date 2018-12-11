@@ -1633,6 +1633,24 @@ sub geRT_T() {
   }
 }
 
+sub false() {
+  return \&false0;
+}
+
+sub false0() {
+  my ($t, $ref_p, $ref_res, $resval) = @_;
+  return 0;
+}
+
+sub true() {
+  return \&true0;
+}
+
+sub true0() {
+  my ($t, $ref_p, $ref_res, $resval) = @_;
+  return 1;
+}
+
 sub not() {
   return \&not1;
 }

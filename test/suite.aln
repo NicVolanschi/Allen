@@ -146,4 +146,13 @@ t127: after("p",~"q");
 t128: after("q",~"p");
 t129: btw("p","q");
 t130: btw("q","p");
-t131: btw("p",~"q")
+t131: btw("p",~"q");
+t132: true;
+t133: false;
+t134: true & false;
+t135: true & true;
+t136: true | false;
+t137: false | false;
+t138: occ("p",true);
+t139: during("p",true);
+t140: contains(true, "p")

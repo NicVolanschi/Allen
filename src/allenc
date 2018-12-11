@@ -37,7 +37,7 @@ my $syntax =
   Expr -> Prod "|" Expr | Prod
   Prod -> Comp "&" Prod | Comp
   Comp -> Expr1 (">=!"|"<="|">="|">!"|"<"|">") Int | Expr1
-  Expr1 -> "~" Expr1 | "(" Expr ")" | str
+  Expr1 -> true | false | "~" Expr1 | "(" Expr ")" | str
         | id ("[" Int+(",") "]")? ("(" Expr*(",") ")")?
   Int -> id | int ("hr" | "min" | "sec")?
 * comments in the program start with a # and span to the end of line';
@@ -85,6 +85,7 @@ my %predef = ("during" => [0,2], "contains" => [0,2],
   "eq" => [0,2], "met" => [0,2], "meets" => [0,2],
   "before" => [0,2], "after" => [0,2], "between" => [0,2], "btwin" => [0,2], "btw" => [0,2],
   "holds" => [0,2], "occ" => [0,2], "ex" => [0,2],
+  "true" => [0,0], "false" => [0,0],
   "delay" => [1,1], "cut" => [1,1], "recent" => [1,1],
   "step" => [1,0], "orig" => [0,0], "wave" => [4,0], "slot" => [4,0], "slot_dst" => [2,0],
   "up" => [0,1], "dn" => [0,1], "sw" => [0,1],
@@ -314,12 +315,14 @@ sub parse_expr1() {
     if ($tok eq "~") {
       my $e = &parse_expr1();
       return ["not", $e];
-    } elsif ($tok = "(") {
+    } elsif ($tok eq "(") {
       my $e = &parse_expr();
       my ($typ2, $tok2) = &token(1);
       die "expected closing par, found: $tok2 at $line"
         if $typ2 ne "key" || $tok2 ne ")";
       return $e;
+    } elsif ($tok eq "true" || $tok eq "false") {
+      return $tok;
     } else {
       die "expr starts with invalid key: $key at $line";
     }
@@ -408,7 +411,7 @@ sub token() {
   my $tok;
   if ($line =~ /^(\d+)/) {
     ($typ, $tok) = ("int", $1);
-  } elsif ($line =~ /^([][&|~(),;:=]|>=!|<=|>=|>!|<|>|(day|hr|min|sec|let|in|def)\b)/) {
+  } elsif ($line =~ /^([][&|~(),;:=]|>=!|<=|>=|>!|<|>|(day|hr|min|sec|let|in|def|true|false)\b)/) {
     ($typ, $tok) = ("key", $1);
   } elsif ($line =~ /^([a-zA-Z]\w*)/) {
     ($typ, $tok) = ("id", $1);
@@ -513,6 +516,8 @@ sub gen_expr() {
       print OUT "$t";
     } elsif ($t =~ /^"/) {
       print OUT "$t";
+    } elsif ($t eq "true" || $t eq "false") {
+      print OUT "[&$t]"
     } else {
       print OUT "\$$t";
     }
