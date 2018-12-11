@@ -27,5 +27,8 @@ packages: video/packages.pm
 amiqual: smarthome/amiqual.pm
 	cat smarthome/July_All_Change.log | $(SRC)/allen $(AMIQOPTS) $<
 
+tltl3: verification/tltl3.pm
+	cat verification/tltl3.log | $(SRC)/allen $<
+
 clean:
-	rm -f *.pm out/* planning/*.pm video/*.pm smarthome/*.pm
+	rm -f *.pm out/* planning/*.pm video/*.pm smarthome/*.pm verification/*.pm
