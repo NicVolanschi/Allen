@@ -25,7 +25,7 @@ where:
 * standard input must be in CSV format with at least three columns:
   timestamp;sensor;value[;...]
 * options may be the following ones:
-  -D \'regex\': CSV delimiter is given by the regex (default: \';\')
+  -d \'regex\': CSV delimiter is given by the regex (default: \';\')
   -E: Epoch timestamps are in seconds (default: milliseconds)
   -q \'/regex/>=val,...\': threshold-quantify matching numeric sensors as boolean
   -b: \'/regex/=val1/val0\': define symbolic binary values for matching sensors
@@ -36,17 +36,17 @@ where:
   -f N: try forgetting old events every N virtual seconds (0=never, default=10K)
   -i: print input events before processing them
   -t: print trace of events & timeouts
-  -d: dump final & intermediate streams
-  -g: pring debug info';
+  -D: dump final & intermediate streams
+  -g: print debug info';
 
 use Getopt::Std;
 our %opts = ();
 my $forgot; # counter of forgot events
 my $tforgot; # memorize the time up to which we forgot the events
 
-getopts('D:Eq:b:s:r:pl:f:itdg', \%opts) or die $usage;
+getopts('d:Eq:b:s:r:pl:f:itDg', \%opts) or die $usage;
 
-my $delim = defined($opts{'D'})? $opts{'D'}: '\s*;\s*';
+my $delim = defined($opts{'d'})? $opts{'d'}: '\s*;\s*';
 
 die "f option must be a number N > 0"
   if defined($opts{'f'}) && ($opts{'f'} !~ /^\d+$/ || $opts{'f'} <= 0);
@@ -653,7 +653,7 @@ sub interpret() {
   }
   my %h = (map {&domain_h($_)} @$forms);
   &csp(\@lexprs, \%iexpr, \%h, \@out, \%outix);
-  if(defined($opts{'d'})) {
+  if(defined($opts{'D'})) {
     print "streams:\n" . &print_streams(\@out) . "\n";
   }
 }
