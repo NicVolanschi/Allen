@@ -297,7 +297,7 @@ sub parse_int() {
     }
     return $i;
   } elsif ($typ eq "id") {
-    die "unbound parameter"
+    die "unbound parameter $tok"
       if !defined($var{$tok}) || $var{$tok} ne "par";
     return $tok;
   # } elsif ($typ eq "str") {
