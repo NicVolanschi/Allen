@@ -25,7 +25,7 @@ def per[N](p) =
 def aper[N](p) =
   init[N] | equiv(p, ~delay[N](p))
 
-# p and q are equivalent between N and M-1
+# p and q are equivalent between 0 and N-1
 def initeq[N](p,q) =
   equiv(init[N] & p, init[N] & q)
 
@@ -33,7 +33,7 @@ def initeq[N](p,q) =
 def sin[N](p) =
   initeq[N](p, true) & aper[N](p)
 
-# p and q are equivalent between M and M-1
+# p and q are equivalent between M and N-1
 def equiv_from_to[M,N](p,q) =
   equiv(p & from_to[M,N], q & from_to[M,N])
 
