@@ -18,6 +18,9 @@ out/holdslib0: $(TST)/suite.pm
 out/holdslib.diff: out/holdslib0 out/holdslib1
 	diff $^ >$@
 
+regular: regular.pm
+	cat /dev/null | $(SRC)/allen $<
+
 monkey: planning/monkey.pm
 	cat planning/monkey.log | $(SRC)/allen $<
 

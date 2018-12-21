@@ -1,0 +1,61 @@
+# Defining regular languages in Allen
+# i.e. languages of regular expressions
+
+# p <-> q
+def equiv(p,q) = p&q | ~p&~q
+
+# recognizes (1 0)*
+def sin1(p) =
+  equiv(p, ~delay[1](p))
+
+# true for the N first tick (0 to N-1)
+def init[N] =
+  ~delay[N](true)
+
+# true from M to N-1
+def from_to[M,N] =
+  init[N] & ~init[M]
+
+# recognizes any signal with period N: (x1 x2 ... xN)*
+def per[N](p) =
+  init[N] | equiv(p, delay[N](p))
+
+# recognizes any signal with anti-period N: (x1 x2 ... xN  ~x1 ~x2 ... ~xN)*
+# (note that this implies a period of 2*N)
+def aper[N](p) =
+  init[N] | equiv(p, ~delay[N](p))
+
+# p and q are equivalent between N and M-1
+def initeq[N](p,q) =
+  equiv(init[N] & p, init[N] & q)
+
+# recognizes the signal (1{N} 0{N})*
+def sin[N](p) =
+  initeq[N](p, true) & aper[N](p)
+
+# p and q are equivalent between M and M-1
+def equiv_from_to[M,N](p,q) =
+  equiv(p & from_to[M,N], q & from_to[M,N])
+
+# recognizes a wave (0{T0} 1{T1})*
+# NB: T0_T1 must be T0+T1
+def wv[T0,T1,T0_T1](p) =
+  equiv_from_to[0,T0](p, false) & equiv_from_to[T0,T1](p, true) & per[T0_T1](p)
+
+s1: sin[1](~wave[1,1,0,10]);
+s2: sin[10](~wave[10,10,0,100]);
+s3: sin1(wave[1,1,0,10]);
+s4: sin1(wave[1,1,0,10] | delay[20](wave[1,1,0,10]));
+s5: sin1(false);
+s6: sin1(true);
+s7: aper[3](~wave[1,1,0,100]);
+s8: sin[2](~wave[1,1,0,100]); # ~G1
+s9: sin[2](~wave[2,2,0,100]); # G1
+
+p1: per[2](wave[1,1,0,100]);
+p2: per[3](wave[1,2,0,100]);
+p3: per[3](wave[2,1,0,100]);
+p4: per[1](true);
+p5: per[3](false);
+
+w1: wv[1,2,3](wave[1,2,0,100])
