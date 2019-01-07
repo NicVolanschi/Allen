@@ -196,6 +196,19 @@ sub btwin() {
 }
 
 # ------------------------------------------------------
+# Operators adapted from LTL logic
+
+sub wsince() {
+  my ($p, $q) = @_;
+  return [\&wsince2, $p, $q];
+}
+
+sub until() {
+  my ($p, $q) = @_;
+  return [\&until2, $p, $q];
+}
+
+# ------------------------------------------------------
 # Other derived operators
 
 # p goes up (p=>1)
@@ -1198,6 +1211,34 @@ sub next_val() {
     }
   }
   return undef;
+}
+
+# given a time t, get the time t'<=t of the latest earlier event p=val
+sub prev_val() {
+  my ($t, $ref_p, $val) = @_;
+  my $pi = &val_ix($ref_p, $t);
+  die "invalid time: $t" if !defined($pi);
+  # search for val in the stream from index on
+  while($pi >= 0) {
+    if(&sameval($$ref_p[$pi][1], $val)) {
+      return $$ref_p[$pi][0];
+    }
+    $pi--;
+  }
+  return undef;
+}
+
+# given a time t when p(t)=val, get the time t'<=t when p=>val (val = 0|1)
+sub became_ts() {
+  my ($t, $ref_p, $val) = @_;
+  die "became_ts: val must be defined" if !defined($val);
+  die "became_ts: current val is not $val" if &val($ref_p, $t) != $val;
+  my $notval = $val == 1? 0: 1;
+  my $t1 = &prev_val($t, $ref_p, $notval);
+  if (!defined($t1)) {
+    return 0;
+  }
+  return &next_val($t1, $ref_p, $val);
 }
 
 # TODO: factorize functions loopN()
@@ -3297,4 +3338,78 @@ sub meets2() {
     }
   }
   die "meets2: void return";
+}
+
+sub wsince2() {
+  my ($t, $ref_p, $ref_q, $ref_res, $resval) = @_;
+  my $valp = &val($ref_p, $t);
+  my $valq = &val($ref_q, $t);
+  if ($valq == 1) { # q=1 | q=>1
+    return 1;
+  } elsif (defined($valq) && $valq == 0) { # q=0 | q=>0
+    if (defined($valp) && $valp == 0) { # p=0 | p=>0
+      return 0;
+    } elsif (!defined($valp)) { # p=? | p=>?
+      if ($t > 0 && $resval == 0) { # at t=0, since=1
+        return 0;
+      } else {
+        return undef;
+      }
+    } else { # p=1 | p=>1
+      my $tp = &became_ts($t, $ref_p, 1);
+      my $tq = &became_ts($t, $ref_q, 0);
+      return $tp <= $tq;
+    }
+  } else { # q=? | q=>?
+    if ($valp == 1) {
+      if ($t == 0 || $resval == 1) {
+        return 1;
+      } else {
+        return undef;
+      }
+    } elsif (defined($valp) && $valp == 0) { # p=0 | p->0
+      return undef;
+    } else { # p=? | p=>?
+      return undef;
+    }
+  }
+
+}
+
+sub until2() {
+  my ($t, $ref_p, $ref_q, $ref_res, $resval) = @_;
+  if($t == 0) { return 0; } # TODO: suppress this wrong result
+  my $valp = &val($ref_p, $t);
+  my $valq = &val($ref_q, $t);
+  if ($valq == 1) { # q=1 | q=>1
+    return 1;
+  } elsif (defined($valq) && $valq == 0) {
+    if (defined($valp) && $valp == 0) {
+      return 0;
+    } elsif ($valp == 1) {
+      my $tp = &next_val($t, $ref_p, 0);
+      my $tq = &next_val($t, $ref_q, 1);
+      if (defined($tp) && defined($tq)) {
+        return $tq <= $tp;
+      } elsif (defined($tp)) { # !defined($tq)
+        if (defined(&val($ref_q, $tp))) {
+          return 0;
+        } else {
+          return undef;
+        }
+      } elsif (defined($tq)) { # !defined($tp)
+        if (defined(&val($ref_p, $tq)) || &tsval($ref_p, $tq)->[0] == $tq) {
+          return 1;
+        } else {
+          return undef;
+        }
+      } else { # !defined(tp) & !defined(tq)
+        return undef;
+      }
+    } else { # p=? | p=>?
+      return undef;
+    }
+  } else { # q=? | q=>?
+    return undef;
+  }
 }

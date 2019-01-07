@@ -91,6 +91,7 @@ my %predef = ("during" => [0,2], "contains" => [0,2],
   "up" => [0,1], "dn" => [0,1], "sw" => [0,1],
   "all" => [0], "any" => [0], "any_up" => [0], "any_dn" => [0], "any_sw" => [0],
   "first" => [0,2], "fill" => [0,2], "flat" => [0,2], "flat_right" => [0,2],
+  "wsince" => [0,2], "until" => [0,2],
   );
 
 my %def = (); # symbol table for def's (global scope)

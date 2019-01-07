@@ -160,4 +160,21 @@ t141: "p" >! 2;
 t142: "p" >! 3;
 t143: ~"p" >! 1;
 t144: ~"p" >! 2;
-t145: ~"p" >! 10
+t145: ~"p" >! 10;
+t146: wsince("p", "q");
+t147: wsince("p", ~"q");
+t148: wsince(~"p", "q");
+t149: wsince(~"p", ~"q");
+t150: wsince("q", "p");
+t151: wsince("q", ~"p");
+t152: wsince(~"q", "p");
+t153: wsince("p", "p" & "q");
+t154: wsince("q", "p" & "q");
+t155: until("p", "q");
+t156: until("p", ~"q");
+t157: until(~"p", "q");
+t158: until(~"p", ~"q");
+t159: until("q", "p");
+t160: until("q", ~"p");
+t161: until("p", "p" & "q");
+t162: until("q", "p" & "q")
