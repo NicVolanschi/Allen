@@ -11,11 +11,16 @@ AMIQOPTS=-b '/^tv_salon_real_status$$/=ON/OFF,/^C\d+$$/=OPEN/CLOSED' \
 ex: ex.pm
 	$(SRC)/allen -s $(TST)/log0.csv $<
 
-out/holdslib1: holdslib.pm $(TST)/suite.pm
-	$(SRC)/allen -s $(TST)/log0.csv -l $^ >$@
-out/holdslib0: $(TST)/suite.pm
+out/suite: $(TST)/suite.pm
 	$(SRC)/allen -s $(TST)/log0.csv $< >$@
-out/holdslib.diff: out/holdslib0 out/holdslib1
+out/holdslib: holdslib.pm $(TST)/suite.pm
+	$(SRC)/allen -s $(TST)/log0.csv -l $^ >$@
+out/holdslib.diff: out/suite out/holdslib
+	diff $^ >$@
+
+out/uslib: uslib.pm $(TST)/suite.pm
+	$(SRC)/allen -s $(TST)/log0.csv -l $^ >$@
+out/uslib.diff: out/suite out/uslib
 	diff $^ >$@
 
 regular: regular.pm

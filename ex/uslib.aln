@@ -1,0 +1,44 @@
+# Library of Allen operators derived from until & since
+# Overrides the default implementations
+
+def holds(p,q) = q & wsince(p,~q) & until(p,~q)
+
+# forward comparisons (require p&q)
+def frighteq(p,q) = until(p,~q)
+def flefteq(p,q) = frighteq(q,p)
+def feq(p,q) = flefteq(p,q) & frighteq(p,q)
+def fleft(p,q) = flefteq(p,q) & ~frighteq(p,q)
+def fright(p,q) = frighteq(p,q) & ~flefteq(p,q)
+
+# backward comparisons (require p&q)
+def brighteq(p,q) = since(p,~q)
+def blefteq(p,q) = brighteq(q,p)
+def beq(p,q) = blefteq(p,q) & brighteq(p,q)
+def bleft(p,q) = blefteq(p,q) & ~brighteq(p,q)
+def bright(p,q) = brighteq(p,q) & ~blefteq(p,q)
+
+# "short" Allen relations (intersections)
+def during(p,q) =  bleft(p,q) & p & q & fleft(p,q)
+def over(p,q) = bright(p,q) & p & q & fleft(p,q)
+def ends(p,q) = bleft(p,q) & p & q & feq(p,q)
+def starts(p,q) = beq(p,q) & p & q & fleft(p,q)
+def equals(p,q) = beq(p,q) & p & q & feq(p,q)
+def _x(p,q) = p & ~q & feq(p,~q)
+def x_(p,q) = beq(~p,q) & ~p & q
+def meeting(p,q) = _x(p,q) | x_(p,q)
+
+# "long" Allen relations (prolonged intersections)
+def overlaps(p,q) = until(p,over(p,q))
+def overlapped(p,q) = since(p,over(q,p))
+def started(p,q) = since(p,starts(q,p))
+def ended(p,q) = until(p,ends(q,p))
+def meets(p,q) = until(p,_x(p,q))
+def met(p,q) = since(p,x_(q,p))
+def contains(p,q) = until(p,during(q,p)) | since(p,during(q,p))
+
+# extended Allen relations
+def occ(p,q) = since(q,(p & q))
+def possible(p,q) = until(q,(p & q))
+def ex(p,q) = possible(p,q) | occ(p,q)
+
+ctx: step[1]

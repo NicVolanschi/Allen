@@ -203,6 +203,11 @@ sub wsince() {
   return [\&wsince2, $p, $q];
 }
 
+sub since() {
+  my ($p, $q) = @_;
+  return [\&ssince2, $p, $q];
+}
+
 sub until() {
   my ($p, $q) = @_;
   return [\&until2, $p, $q];
@@ -3341,7 +3346,15 @@ sub meets2() {
 }
 
 sub wsince2() {
-  my ($t, $ref_p, $ref_q, $ref_res, $resval) = @_;
+  return &since2(@_, 0);
+}
+
+sub ssince2() {
+  return &since2(@_, 1);
+}
+
+sub since2() {
+  my ($t, $ref_p, $ref_q, $ref_res, $resval, $strong) = @_;
   my $valp = &val($ref_p, $t);
   my $valq = &val($ref_q, $t);
   if ($valq == 1) { # q=1 | q=>1
@@ -3358,7 +3371,11 @@ sub wsince2() {
     } else { # p=1 | p=>1
       my $tp = &became_ts($t, $ref_p, 1);
       my $tq = &became_ts($t, $ref_q, 0);
-      return $tp <= $tq;
+      if ($strong) {
+        return $tq > 0 && $tp <= $tq;
+      } else {
+        return $tp <= $tq;
+      }
     }
   } else { # q=? | q=>?
     if ($valp == 1) {

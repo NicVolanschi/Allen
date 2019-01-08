@@ -177,4 +177,13 @@ t158: until(~"p", ~"q");
 t159: until("q", "p");
 t160: until("q", ~"p");
 t161: until("p", "p" & "q");
-t162: until("q", "p" & "q")
+t162: until("q", "p" & "q");
+t163: since("p", "q");
+t164: since("p", ~"q");
+t165: since(~"p", "q");
+t166: since(~"p", ~"q");
+t167: since("q", "p");
+t168: since("q", ~"p");
+t169: since(~"q", "p");
+t170: since("p", "p" & "q");
+t171: since("q", "p" & "q")
