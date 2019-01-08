@@ -29,12 +29,12 @@ def meeting(p,q) = _x(p,q) | x_(p,q)
 
 # "long" Allen relations (prolonged intersections)
 def overlaps(p,q) = until(p,over(p,q))
-def overlapped(p,q) = since(p,over(q,p))
-def started(p,q) = since(p,starts(q,p))
+def overlapped(p,q) = p & since(p,over(q,p))
+def started(p,q) = p & since(p,starts(q,p))
 def ended(p,q) = until(p,ends(q,p))
 def meets(p,q) = until(p,_x(p,q))
-def met(p,q) = since(p,x_(q,p))
-def contains(p,q) = until(p,during(q,p)) | since(p,during(q,p))
+def met(p,q) = p & since(p,x_(q,p))
+def contains(p,q) = until(p,during(q,p)) | p & since(p,during(q,p))
 
 # extended Allen relations
 def occ(p,q) = since(q,(p & q))
