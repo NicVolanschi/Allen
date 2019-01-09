@@ -48,8 +48,8 @@ getopts('d:Eq:b:s:r:pl:f:itDg', \%opts) or die $usage;
 
 my $delim = defined($opts{'d'})? $opts{'d'}: '\s*;\s*';
 
-die "f option must be a number N > 0"
-  if defined($opts{'f'}) && ($opts{'f'} !~ /^\d+$/ || $opts{'f'} <= 0);
+die "f option must be a number N >= 0"
+  if defined($opts{'f'}) && ($opts{'f'} !~ /^\d+$/ || $opts{'f'} < 0);
 $opts{'f'} = 10000 if (!defined($opts{'f'}));
 
 my %threshold = ();
