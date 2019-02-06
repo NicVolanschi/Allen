@@ -382,6 +382,12 @@ sub flat() {
   return [&or, $d=&during( $p, $q), &during( [&not, $d], $q)];
 }
 
+# s1, then s2 occur (for the 1st time) in the slot
+sub occ_before() {
+  my ($s1, $s2, $slot) = @_;
+  return [&and, &occ($s1, $slot), [&and, [&not, &occ($s2, $slot)], &ex($s2, $slot)]];
+}
+
 # ---------------------- Main program --------------------------------
 
 die $usage if @ARGV != 1;
