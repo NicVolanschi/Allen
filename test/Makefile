@@ -1,7 +1,10 @@
 SRC=../src
 TESTS=suite-s-Apt1
 
-all: $(TESTS:%=out/%.diff)
+all: out/ $(TESTS:%=out/%.diff)
+
+out/:
+	mkdir out
 
 suite.pm: suite.aln
 	$(SRC)/allenc $<
@@ -13,4 +16,5 @@ out/%.diff: out/%
 	diff $< ref/$(<:out/%=%) >$@
 
 clean:
-	rm -f suite.pm out/*
+	rm -f suite.pm
+	rm -fr out
