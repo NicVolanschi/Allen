@@ -18,11 +18,6 @@ out/holdslib: holdslib.pm $(TST)/suite.pm
 out/holdslib.diff: out/suite out/holdslib
 	diff $^ >$@
 
-out/uslib: uslib.pm $(TST)/suite.pm
-	$(SRC)/allen -s $(TST)/log0.csv -l $^ >$@
-out/uslib.diff: out/suite out/uslib
-	diff $^ >$@
-
 regular: regular.pm
 	cat /dev/null | $(SRC)/allen $<
 

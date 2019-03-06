@@ -33,7 +33,7 @@ where:
   -r nm: execute only context named nm
   -p: execute any_up(@contexts), i.e. signal the up fronts of all contexts
   -l lib: load operator library lib
-  -f N: try forgetting old events every N virtual seconds (0=never, default=10K)
+  -f N: forget obsolete events every N seconds (0=never, default=24hr)
   -i: print input events before processing them
   -t: print trace of events & timeouts
   -D: dump final & intermediate streams
@@ -50,7 +50,7 @@ my $delim = defined($opts{'d'})? $opts{'d'}: '\s*;\s*';
 
 die "f option must be a number N >= 0"
   if defined($opts{'f'}) && ($opts{'f'} !~ /^\d+$/ || $opts{'f'} < 0);
-$opts{'f'} = 10000 if (!defined($opts{'f'}));
+$opts{'f'} = 24*3600 if (!defined($opts{'f'}));
 
 my %threshold = ();
 if (defined($opts{'q'})) {
@@ -650,6 +650,7 @@ sub interpret() {
     print STDERR "\n";
   }
   @in = ();
+  %in = ();
   for my $s (&domain(@$forms)) {
     $in{$s} = [[0,0]];
   }
@@ -882,6 +883,7 @@ sub forget() {
   #   if $opts{'f'};
   # forget out streams but last = the result
   for(my $i = 0; $i < $#$out; $i++) {
+    #print STDERR "forget out[$i] up to $tforget\n";
     &forget_stream($$out[$i], $tforget);
   }
   # forget in streams
@@ -894,10 +896,13 @@ sub forget() {
 
 sub forget_stream() {
   my ($s, $t) = @_;
-  my $ix = &lastval_ix($s, $t);
-  return if !defined($ix) || $ix == 0;
-  #print STDERR "forget stream $s up to $ix\n";
-  for(my $i = 0; $i < $ix; $i++) {
+  my $val = &val($s, $t);
+  die "undefined val for $s when lastseen at $t" if !defined($val);
+  my $notval = $val == 1? 0: 1;
+  my $oldest = &prev_val($t, $s, $notval);
+  return if !defined($oldest);
+  #print STDERR "forget stream $s up to $oldest\n";
+  for(my $i = 0; $$s[$i][0] < $oldest; $i++) {
     shift @$s;
     $forgot++;
   }
@@ -1117,7 +1122,9 @@ sub sameval() {
   }
 }
 
-sub lastval() { # last value of p at time < t
+# last value of p at time < t
+# NB: p is supposed to be defined at least on [0,t).
+sub lastval() {
   my ($ref_p, $t) = @_;
   my $i = &lastval_ix($ref_p, $t);
   if(defined($i)) {
@@ -1129,7 +1136,8 @@ sub lastval() { # last value of p at time < t
   }
 }
 
-sub val() { # current value of p at time t
+# current value of p at time t
+sub val() {
   my ($ref_p, $t) = @_;
   my $i = &val_ix($ref_p, $t);
   if(defined($i)) {
@@ -1181,7 +1189,7 @@ sub lastseen() {
   my $t;
   if(defined($resval)) {
     #$t = $$ref_p[$#$ref_p][0];
-    return undef; # no last time = now
+    return $now;
   } else {
     die "botomless stream" if $#$ref_p - 1 < 0;
     $resval = $$ref_p[$#$ref_p - 1][1];
@@ -1252,10 +1260,13 @@ sub became_ts() {
   return &next_val($t1, $ref_p, $val);
 }
 
-# given p=>? at time t, return the last time t' < t when p ceased to be 0
+# given p=>? at time t, return the last time t' < t when p ceased to be $val 
+# where val = 0|1
 sub lastseen_as() {
   my ($t, $ref_p, $val) = @_;
-  # if p was 0 before p=>?, return the moment when p=>?
+  die "lastseen_as: val must be defined" if !defined($val);
+  die "lastseen_as: current val is not undef" if defined(&val($ref_p, $t));
+  # if p was $val before p=>?, return the moment when p=>?
   my $tsvalp = &tsval($ref_p, $t)->[0]; # time when p=>?
   my $lastvalixp = &lastval_ix($ref_p, $tsvalp);
   if (!defined($lastvalixp)) {
@@ -1263,10 +1274,17 @@ sub lastseen_as() {
   } else {
     die "found two consecutive undef values"
       if !defined($$ref_p[$lastvalixp][1]);
-    if ($$ref_p[$lastvalixp][1] == 0) { # p was 0 before p=>?
+    if ($$ref_p[$lastvalixp][1] == $val) { # p was $val before p=>?
       return $tsvalp;
-    } else { # p was 1 before p=>?
-      return &became_ts($$ref_p[$lastvalixp][0], $ref_p, 1); # when p became 1
+    } else { # p was !$val before p=>?
+      # conceptually, would call became_ts as follows:
+      # &became_ts($$ref_p[$lastvalixp][0], $ref_p, $$ref_p[$lastvalixp][1]);
+      # ...but must return undef if there was no $val before. So do like this:
+      my $t1 = &prev_val($$ref_p[$lastvalixp][0], $ref_p, $val);
+      if (!defined($t1)) {
+	return undef;
+      }
+      return &next_val($t1, $ref_p, $$ref_p[$lastvalixp][1]);
     }
   }
 }
