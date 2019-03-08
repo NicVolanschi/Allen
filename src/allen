@@ -1978,14 +1978,35 @@ sub sync() {
   return defined($tpv) && defined($tqv) && $tpv == $tqv;
 }
 
+sub holds_lookahead() {
+  my ($t, $ref_p, $ref_q) = @_;
+  if(&righteq($ref_p, $ref_q, $t, 0, 0)) {
+  # p=1 until q=>0 (may fall or become ? at same time)
+    return 1;
+  } elsif(&left($ref_p, $ref_q, $t, 0, 0)) {
+    # q=1 until after p=>0 (may NOT fall at same time)
+    return 0;
+  } else {
+    return undef;
+  }
+}
+
 sub holds2() {
   my ($t, $ref_p, $ref_q, $ref_res, $resval) = @_;
-  if($t == 0) { return 0; }
   my $p = &tsval($ref_p, $t);
   my $q = &tsval($ref_q, $t);
   my $valp = $p->[1];
   my $valq = $q->[1];
   #print STDERR "tsval(p,$t)=[$p->[0],$valp], val(q,$t)=[$q->[0],$valq]\n";
+  if($t == 0) {
+    if (defined($valp) && $valp == 0 || defined($valq) && $valq == 0) {
+      return 0;
+    } elsif ($valp == 1 && $valq == 1) {
+      return &holds_lookahead($t, $ref_p, $ref_q);
+    } else {
+      return undef;
+    }
+  }
   if($p->[0] == $t && $q->[0] < $t ||
      $p->[0] == $t && $q->[0] == $t && &sameval($valq, &lastval($ref_q, $t))) {
     # only p
@@ -2029,15 +2050,7 @@ sub holds2() {
         if(defined($valp) && $valp == 0) {# q=>1 & p=0
           return 0; # holds stays 0
         } elsif($valp == 1) {# q=>1 & p=1
-          if(&righteq($ref_p, $ref_q, $t, 0, 0)) {
-            # p=1 until q=>0 (may fall or become ? at same time)
-            return 1;
-          } elsif(&left($ref_p, $ref_q, $t, 0, 0)) {
-            # q=1 until after p=>0 (may NOT fall at same time)
-            return 0;
-          } else {
-            return undef;
-          }
+	  return &holds_lookahead($t, $ref_p, $ref_q);
         } else {# q=>1 & p=?
           return undef;
         }
@@ -2078,15 +2091,7 @@ sub holds2() {
       } elsif($valp == 1 && $valq == 1) {
         # p=>1 & q=>1
         # idem p=1 & q=>1:
-        if(&righteq($ref_p, $ref_q, $t, 0, 0)) {
-          # p=1 until q=>0 (may fall or become ? at same time)
-          return 1;
-        } elsif(&left($ref_p, $ref_q, $t, 0, 0)) {
-          # q=1 until after p=>0 (may NOT fall at same time)
-          return 0;
-        } else {
-          return undef;
-        }
+	return &holds_lookahead($t, $ref_p, $ref_q);
       } elsif(defined($valp) && $valp == 0 && !defined($valq)) {
         # p=>0 & q=>?
         die "assert(holds=0) as otherwise you'd know that q=>0 before/when p=>0"
@@ -2792,15 +2797,34 @@ sub over2() {
   die "over2: void return";
 }
 
+sub starts_lookahead() {
+  my ($t, $ref_p, $ref_q) = @_;
+  if(&left($ref_p, $ref_q, $t, 0, 0)) {
+    return 1;
+  } elsif(&righteq($ref_p, $ref_q, $t, 0, 0)) {
+    return 0;
+  } else {
+    return undef;
+  }
+}
+
 # true during the intervals of p which start an interval of q
 sub starts2() {
   my ($t, $ref_p, $ref_q, $ref_res, $resval) = @_;
-  if($t == 0) { return 0; }
   my $p = &tsval($ref_p, $t);
   my $q = &tsval($ref_q, $t);
   my $valp = $p->[1];
   my $valq = $q->[1];
   #print STDERR "tsval(p,$t)=[$p->[0],$valp], val(q,$t)=[$q->[0],$valq]\n";
+  if($t == 0) {
+    if (defined($valp) && $valp == 0 || defined($valq) && $valq == 0) {
+      return 0;
+    } elsif ($valp == 1 && $valq == 1) {
+      return &starts_lookahead($t, $ref_p, $ref_q);
+    } else {
+      return undef;
+    }
+  }
   if($p->[0] == $t && $q->[0] < $t ||
      $p->[0] == $t && $q->[0] == $t && &sameval($valq, &lastval($ref_q, $t))) {
     # only p
@@ -2882,13 +2906,7 @@ sub starts2() {
       } elsif($valp == 1 && $valq == 1) {
         # p=>1 & q=>1
         die "assert(starts=0) as p was 0" if $resval;
-        if(&left($ref_p, $ref_q, $t, 0, 0)) {
-          return 1;
-        } elsif(&righteq($ref_p, $ref_q, $t, 0, 0)) {
-          return 0;
-        } else {
-          return undef;
-        }
+	return &starts_lookahead($t, $ref_p, $ref_q);
       } elsif(defined($valp) && $valp == 0 && !defined($valq)) {
         # p=>0 & q=>?
         die "assert(starts=0) as q=>? would imped it to be 1" if $resval;
@@ -2922,15 +2940,37 @@ sub starts2() {
   die "starts2: void return";
 }
 
+sub eq_lookahead() {
+  my ($t, $ref_p, $ref_q) = @_;
+  # idem p=>1 & q=>1
+  if(&left($ref_p, $ref_q, $t, 0, 0)) {
+    return 0;
+  } elsif(&right($ref_p, $ref_q, $t, 0, 0)) {
+    return 0;
+  } elsif(&sync($ref_p, $ref_q, $t, 0, 0)) {
+    return 1;
+  } else {
+      return undef;
+  }
+}
+
 # true during the intervals of p which equal an interval of q
 sub eq2() {
   my ($t, $ref_p, $ref_q, $ref_res, $resval) = @_;
-  if($t == 0) { return 0; }
   my $p = &tsval($ref_p, $t);
   my $q = &tsval($ref_q, $t);
   my $valp = $p->[1];
   my $valq = $q->[1];
   #print STDERR "tsval(p,$t)=[$p->[0],$valp], val(q,$t)=[$q->[0],$valq]\n";
+  if($t == 0) {
+    if (defined($valp) && $valp == 0 || defined($valq) && $valq == 0) {
+      return 0;
+    } elsif ($valp == 1 && $valq == 1) {
+      return &eq_lookahead($t, $ref_p, $ref_q);
+    } else {
+      return undef;
+    }
+  }
   if($p->[0] == $t && $q->[0] < $t ||
      $p->[0] == $t && $q->[0] == $t && &sameval($valq, &lastval($ref_q, $t))) {
     # only p
@@ -3012,15 +3052,7 @@ sub eq2() {
       } elsif($valp == 1 && $valq == 1) {
         # p=>1 & q=>1
         die "assert(eq=0) as p was 0" if $resval;
-        if(&left($ref_p, $ref_q, $t, 0, 0)) {
-          return 0;
-        } elsif(&right($ref_p, $ref_q, $t, 0, 0)) {
-          return 0;
-        } elsif(&sync($ref_p, $ref_q, $t, 0, 0)) {
-          return 1;
-        } else {
-          return undef;
-        }
+	return &eq_lookahead($t, $ref_p, $ref_q);
       } elsif(defined($valp) && $valp == 0 && !defined($valq)) {
         # p=>0 & q=>?
         die "assert(eq=0) as q=>? would imped it to be 1" if $resval;
@@ -3315,15 +3347,48 @@ sub met2() {
   die "met2: void return";
 }
 
+sub meets_lookahead() {
+  my ($t, $ref_p, $ref_q) = @_;
+  my $tp0 = &next_val($t, $ref_p, 0);
+  if(!defined($tp0)) {
+    return undef;
+  }
+  my $tsq = &tsval($ref_q, $tp0);
+  my $oldq = &lastval($ref_q, $tp0);
+  # check q at tp0:
+  if($tsq->[0] == $tp0 && $tsq->[1] == 1 && $oldq == 0) {
+    # q=>1
+    return 1;
+  }
+  if($tsq->[0] == $tp0 && !defined($tsq->[1]) && $oldq == 1) {
+    # q=>? and was 1
+    return 0;
+  }
+  if(defined($tsq->[1])){
+    # q=0/1 or q=>0
+    return 0;
+  }
+  # q=? or q=>? and was 0
+  return undef;
+}
+
 # true during the intervals of p which meet an interval of q
 sub meets2() {
   my ($t, $ref_p, $ref_q, $ref_res, $resval) = @_;
-  if($t == 0) { return 0; }
   my $p = &tsval($ref_p, $t);
   my $q = &tsval($ref_q, $t);
   my $valp = $p->[1];
   my $valq = $q->[1];
   #print STDERR "tsval(p,$t)=[$p->[0],$valp], val(q,$t)=[$q->[0],$valq]\n";
+  if($t == 0) {
+    if (defined($valp) && $valp == 0) {
+      return 0;
+    } elsif ($valp == 1 && defined($valq)) {
+      return &meets_lookahead($t, $ref_p, $ref_q);
+    } else {
+      return undef;
+    }
+  }
   if($p->[0] == $t && $q->[0] < $t ||
      $p->[0] == $t && $q->[0] == $t && &sameval($valq, &lastval($ref_q, $t))) {
     # only p
@@ -3332,27 +3397,7 @@ sub meets2() {
       if($valp == 1) {# p=>1
         die "assert(meets=0) as p was 0" if $resval;
         if(defined($valq)) {# p=>1 & q=0/1
-          my $tp0 = &next_val($t, $ref_p, 0);
-          if(!defined($tp0)) {
-            return undef;
-          }
-          my $tsq = &tsval($ref_q, $tp0);
-          my $oldq = &lastval($ref_q, $tp0);
-          # check q at tp0:
-          if($tsq->[0] == $tp0 && $tsq->[1] == 1 && $oldq == 0) {
-            # q=>1
-            return 1;
-          }
-          if($tsq->[0] == $tp0 && !defined($tsq->[1]) && $oldq == 1) {
-            # q=>? and was 1
-            return 0;
-          }
-          if(defined($tsq->[1])){
-            # q=0/1 or q=>0
-            return 0;
-          }
-          # q=? or q=>? and was 0
-          return undef;
+	  return &meets_lookahead($t, $ref_p, $ref_q);
         } else {# p=>1 & q=?
           return undef;
         }
@@ -3428,27 +3473,7 @@ sub meets2() {
               $valp == 1 && $valq == 1) {
         # p=>1 & q=>0 | p=>1 & q=>1
         die "assert(meets=0) as p was 0" if $resval;
-        my $tp0 = &next_val($t, $ref_p, 0);
-        if(!defined($tp0)) {
-          return undef;
-        }
-        my $tsq = &tsval($ref_q, $tp0);
-        my $oldq = &lastval($ref_q, $tp0);
-        # check q at tp0:
-        if($tsq->[0] == $tp0 && $tsq->[1] == 1 && $oldq == 0) {
-          # q=>1
-          return 1;
-        }
-        if($tsq->[0] == $tp0 && !defined($tsq->[1]) && $oldq == 1) {
-          # q=>? and was 1
-          return 0;
-        }
-        if(defined($tsq->[1])){
-          # q=0/1 or q=>0
-          return 0;
-        }
-        # q=? or q=>? and was 0
-        return undef;
+	return &meets_lookahead($t, $ref_p, $ref_q);
       } elsif(defined($valp) && $valp == 0 && !defined($valq)) {
         # p=>0 & q=>?
         die "assert(meets=0)" if $resval;
