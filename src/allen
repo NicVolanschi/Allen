@@ -2248,6 +2248,19 @@ sub occ2() {
   die "occ2: void return";
 }
 
+sub during_lookahead() {
+  my ($t, $ref_p, $ref_q) = @_;
+  if(&left($ref_p, $ref_q, $t, 0, 0)) {
+    # q=1 until after p=>0 (may NOT fall at same time)
+    return 1;
+  } elsif(&righteq($ref_p, $ref_q, $t, 0, 0)) {
+    # p=1 until q=>0 (may fall or become ? at same time)
+    return 0;
+  } else {
+    return undef;
+  }
+}
+
 sub during2() {
   my ($t, $ref_p, $ref_q, $ref_res, $resval) = @_;
   if($t == 0) { return 0; }
@@ -2266,15 +2279,7 @@ sub during2() {
         if(defined($valq) && $valq == 0) {# p=>1 & q=0
           return 0; # during stays 0
         } elsif($valq == 1) {# p=>1 & q=1
-          if(&left($ref_p, $ref_q, $t, 0, 0)) {
-            # q=1 until after p=>0 (may NOT fall at same time)
-            return 1;
-          } elsif(&righteq($ref_p, $ref_q, $t, 0, 0)) {
-              # p=1 until q=>0 (may fall or become ? at same time)
-              return 0;
-          } else {
-            return undef;
-          }
+	    return &during_lookahead($t, $ref_p, $ref_q);
         } else {# p=>1 & q=?
           return undef;
         }
@@ -2385,6 +2390,17 @@ sub during2() {
   die "during2: void return";
 }
 
+sub btwin_lookahead() {
+  my ($t, $ref_p, $ref_q) = @_;
+  if(&righteq($ref_p, $ref_q, $t, 1, 1)) {
+    return 1;
+  } elsif(&left($ref_p, $ref_q, $t, 1, 1)) {
+    return 0;
+  } else {
+    return undef;
+  }
+}
+
 # true between p=>0 (at t1) and q=>1 (at t2),
 # if (t1,t2) nonempty and nothing happens to p and q in it
 sub btwin2() {
@@ -2412,13 +2428,7 @@ sub btwin2() {
       } elsif(defined($valp) && $valp == 0) {# p=>0 & q=0/1/?
         die "assert(between=0) as p was 1" if $resval;
         if(defined($valq) && $valq == 0) {# p=>0 & q=0
-          if(&righteq($ref_p, $ref_q, $t, 1, 1)) {
-            return 1;
-          } elsif(&left($ref_p, $ref_q, $t, 1, 1)) {
-            return 0;
-          } else {
-            return undef;
-          }
+	  return &btwin_lookahead($t, $ref_p, $ref_q);
         } elsif($valq == 1) {# p=>0 & q=1
           return 0; # stay 0
         } else {# p=>0 & q=?
@@ -2487,13 +2497,7 @@ sub btwin2() {
       if(defined($valp) && $valp == 0 && defined($valq) && $valq == 0) {
         # p=>0 & q=>0
         die "assert(between=0) as p and q were 1" if $resval;
-        if(&righteq($ref_p, $ref_q, $t, 1, 1)) {
-          return 1;
-        } elsif(&left($ref_p, $ref_q, $t, 1, 1)) {
-          return 0;
-        } else {
-          return undef;
-        }
+	return &btwin_lookahead($t, $ref_p, $ref_q);	
       } elsif(defined($valp) && $valp == 0 && $valq == 1) {
         # p=>0 & q=>1
         die "assert(between=0) as p was 1" if $resval;
@@ -2534,6 +2538,17 @@ sub btwin2() {
   die "between2: void return";
 }
 
+sub between_lookahead() {
+  my ($t, $ref_p, $ref_q) = @_;
+  if(&right($ref_p, $ref_q, $t, 0, 1)) {
+    return 1;
+  } elsif(&lefteq($ref_p, $ref_q, $t, 0, 1)) {
+    return 0;
+  } else {
+    return undef;
+  }
+}
+
 # true between p=>0 (at t1) and q=>1 (at t2),
 # if (t1,t2) nonempty and (t,q) contains no p=>0 or q=>1
 # and there is no q=>1 at t1 and no p=>0 at t2
@@ -2562,13 +2577,7 @@ sub between2() {
       } elsif(defined($valp) && $valp == 0) {# p=>0 & q=0/1/?
         die "assert(between=0) as p=>0 would be anticipated" if $resval;
         if(defined($valq)) {# p=>0 & q=0/1
-          if(&right($ref_p, $ref_q, $t, 0, 1)) {
-            return 1;
-          } elsif(&lefteq($ref_p, $ref_q, $t, 0, 1)) {
-            return 0;
-          } else {
-            return undef;
-          }
+	  return &between_lookahead($t, $ref_p, $ref_q);
         } else {# p=>0 & q=?
           return undef; # become undef
         }
@@ -2618,13 +2627,7 @@ sub between2() {
       if(defined($valp) && $valp == 0 && defined($valq) && $valq == 0) {
         # p=>0 & q=>0
         die "assert(between=0) as p=>0 would be anticipated" if $resval;
-        if(&right($ref_p, $ref_q, $t, 0, 1)) {
-          return 1;
-        } elsif(&lefteq($ref_p, $ref_q, $t, 0, 1)) {
-          return 0;
-        } else {
-          return undef;
-        }
+	return &between_lookahead($t, $ref_p, $ref_q);
       } elsif(defined($valp) && $valp == 0 && $valq == 1) {
         # p=>0 & q=>1
         die "assert(between=0) as p=>0 would be anticipated" if $resval;
@@ -2659,6 +2662,17 @@ sub between2() {
     }
   }
   die "between2: void return";
+}
+
+sub over_lookahead() {
+  my ($t, $ref_p, $ref_q) = @_;
+  if(&left($ref_p, $ref_q, $t, 0, 0)) {
+    return 1;
+  } elsif(&righteq($ref_p, $ref_q, $t, 0, 0)) {
+    return 0;
+  } else {
+    return undef;
+  }
 }
 
 # true during the overlapping of p with q (when both are true)
@@ -2710,13 +2724,7 @@ sub over2() {
       if($valq == 1) {# q=>1
         die "assert(over=0) as q was 0" if $resval;
         if($valp == 1) {# q=>1 & p=1
-          if(&left($ref_p, $ref_q, $t, 0, 0)) {
-            return 1;
-          } elsif(&righteq($ref_p, $ref_q, $t, 0, 0)) {
-            return 0;
-          } else {
-            return undef;
-          }
+	  return &over_lookahead($t, $ref_p, $ref_q);
         } elsif(defined($valp)) {# q=>1 & p=0
           return 0; # stay 0
         } else {# q=>1 & p=?
@@ -3086,6 +3094,19 @@ sub eq2() {
   die "eq2: void return";
 }
 
+sub ends_lookahead() {
+  my ($t, $ref_p, $ref_q) = @_;
+  if(&left($ref_p, $ref_q, $t, 0, 0)) {
+    return 0;
+  } elsif(&right($ref_p, $ref_q, $t, 0, 0)) {
+    return 0;
+  } elsif(&sync($ref_p, $ref_q, $t, 0, 0)) {
+    return 1;
+  } else {
+    return undef;
+  }
+}
+
 # true during the intervals of p which end an interval of q
 sub ends2() {
   my ($t, $ref_p, $ref_q, $ref_res, $resval) = @_;
@@ -3103,15 +3124,7 @@ sub ends2() {
       if($valp == 1) {# p=>1
         die "assert(ends=0) as p was 0" if $resval;
         if($valq == 1) {# p=>1 & q=1
-          if(&left($ref_p, $ref_q, $t, 0, 0)) {
-            return 0;
-          } elsif(&right($ref_p, $ref_q, $t, 0, 0)) {
-            return 0;
-          } elsif(&sync($ref_p, $ref_q, $t, 0, 0)) {
-            return 1;
-          } else {
-            return undef;
-          }
+	  return &ends_lookahead($t, $ref_p, $ref_q);
         } elsif(defined($valq)) {# p=>1 & q=0
           return 0; # stay 0
         } else {# p=>1 & q=?
