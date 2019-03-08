@@ -1,5 +1,5 @@
 SRC=../src
-TESTS=suite-s-Apt1
+TESTS=suite-s
 
 all: out/ $(TESTS:%=out/%.diff)
 
@@ -9,7 +9,7 @@ out/:
 suite.pm: suite.aln
 	$(SRC)/allenc $<
 
-out/suite-s-Apt1: suite.pm
+out/suite-s: suite.pm
 	$(SRC)/allen -s log0.csv -D suite.pm >$@
 
 out/%.diff: out/%
