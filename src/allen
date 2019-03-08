@@ -216,16 +216,31 @@ sub until() {
 # ------------------------------------------------------
 # Other derived operators
 
-# p goes up (p=>1)
-sub up() {
+# p goes up (p=>1); may include t=0
+sub up0() {
   my ($p) = @_;
-  return [&geRT(1), $p];
+  #return [&geRT(1), $p];
+  return [&and, $p, [&not, [&delay(1), $p]]];
 }
 
-# p goes down (p=>0)
+# p goes down (p=>0); may include t=0
+sub dn0() {
+  my ($p) = @_;
+  #return [&geRT(1), [&not, $p]];
+  return &up([&not, $p]);
+}
+
+# p goes up (p=>1); excludes t=0
+sub up() {
+  my ($p) = @_;
+  return [&and, &up0($p), &step(1)];
+}
+
+# p goes down (p=>0); excludes t=0
 sub dn() {
   my ($p) = @_;
-  return [&geRT(1), [&not, $p]];
+  #return &up([&not, $p]);
+  return [&and, &dn0($p), &step(1)];
 }
 
 # p switches value (p=>0/1)
@@ -243,7 +258,7 @@ sub cut() {
 # prolonges each interval of p by T
 sub recent() {
   my ($p, $T) = @_;
-  return [&or, $p, &cut([&not, $p], $T)];
+  return [&or, $p, &cut(&met([&not, $p], $p), $T)];
 }
 
 sub lreduce() { # associate left: (a+b)+c
@@ -368,6 +383,7 @@ sub flat_right() {
 sub step() {
   my ($T) = @_;
   return [&wave($T,0,0,0)];
+  #return [&delay($T), [&true]];
 }
 
 # true only initially, at the origin of time (t=0)
@@ -1640,6 +1656,8 @@ sub delay() {
 sub delay1_T() {
   my ($t, $ref_p, $ref_res, $resval, $T) = @_;
   if ($t == 0) { #initially
+    my $valp0 = &val($ref_p, $t);
+    if (!defined($valp0)) { return undef; }
     &set_timeout($T, $ref_res);
     # my $valp0 = $$ref_p[0][1];
     # die "initial value of p undefined" if !defined($valp0);
@@ -1664,9 +1682,12 @@ sub delay1_T() {
   if (&timeout($t, $ref_res)) {
     &cancel_timeout($t, $ref_res);
     if ($t == $T) {
-      my $valp0 = $$ref_p[0][1];
+      #my $valp0 = $$ref_p[0][1];
+      my $valp0 = &val($ref_p, 0);
       die "initial value of p undefined" if !defined($valp0);
       return $valp0;
+      #if (!defined($valp0)) { return undef; }
+      #else { return $valp0; }
       #return 0;
     } else {
       return $resval? 0: 1; # change value
@@ -1717,36 +1738,28 @@ sub le() {
 
 sub le1_T() {
   my ($t, $ref_p, $ref_res, $resval, $T) = @_;
-  if ($t == 0) { # initially
-    return 0;
-  }
   if (&timeout($t, $ref_res)) {
    die "le1: escaped timer";
   }
-  my $p = &tsval($ref_p, $t);
-  my $valp = $p->[1];
-  if($p->[0] == $t) {
-    if(&sameval($valp, &lastval($ref_p, $t))) { return $resval; } # nothing
-    else {
-      if($valp == 1) {# p=>1
-        # p=1 until after t+T
-        if(&later($ref_p, $t, 0, $T)) {
-          &cancel_timeout($t + $T, $ref_res);
-          return 0;
-        } elsif(&soonereq($ref_p, $t, 0, $T)) {
-          # p=>0 before or at t+T
-          &cancel_timeout($t + $T, $ref_res);
-          return 1;
-        } else {
-          &set_timeout($t + $T, $ref_res);
-          return undef;
-        }
-      } elsif(defined($valp) && $valp == 0) {# p=>0
-        return 0;
-      } else {# p=> ?
-        return undef;
-      }
+  my $valp = &val($ref_p, $t);
+  if ($t > 0 && &sameval($valp, &lastval($ref_p, $t))) { return $resval; } # nothing
+  if($valp == 1) {# p=>1
+    # p=1 until after t+T
+    if(&later($ref_p, $t, 0, $T)) {
+      &cancel_timeout($t + $T, $ref_res);
+      return 0;
+    } elsif(&soonereq($ref_p, $t, 0, $T)) {
+      # p=>0 before or at t+T
+      &cancel_timeout($t + $T, $ref_res);
+      return 1;
+    } else {
+      &set_timeout($t + $T, $ref_res);
+      return undef;
     }
+  } elsif(defined($valp) && $valp == 0) {# p=>0
+    return 0;
+  } else {# p=> ?
+    return undef;
   }
 }
 
@@ -1758,36 +1771,28 @@ sub lt() {
 
 sub lt1_T() {
   my ($t, $ref_p, $ref_res, $resval, $T) = @_;
-  if ($t == 0) { # initially
-    return 0;
-  }
   if (&timeout($t, $ref_res)) {
    die "lt1: escaped timer";
   }
-  my $p = &tsval($ref_p, $t);
-  my $valp = $p->[1];
-  if($p->[0] == $t) {
-    if(&sameval($valp, &lastval($ref_p, $t))) { return $resval; } # nothing
-    else {
-      if($valp == 1) {# p=>1
-        # p=1 until at least t+T
-        if(&latereq($ref_p, $t, 0, $T)) {
-          &cancel_timeout($t + $T, $ref_res);
-          return 0;
-        } elsif(&sooner($ref_p, $t, 0, $T)) {
-          # p=>0 before t+T
-          &cancel_timeout($t + $T, $ref_res);
-          return 1;
-        } else {
-          &set_timeout($t + $T, $ref_res);
-          return undef;
-        }
-      } elsif(defined($valp) && $valp == 0) {# p=>0
-        return 0;
-      } else {# p=> ?
-        return undef;
-      }
+  my $valp = &val($ref_p, $t);
+  if($t > 0 && &sameval($valp, &lastval($ref_p, $t))) { return $resval; } # nothing
+  if($valp == 1) {# p=>1
+  # p=1 until at least t+T
+    if(&latereq($ref_p, $t, 0, $T)) {
+      &cancel_timeout($t + $T, $ref_res);
+      return 0;
+    } elsif(&sooner($ref_p, $t, 0, $T)) {
+      # p=>0 before t+T
+	&cancel_timeout($t + $T, $ref_res);
+	return 1;
+    } else {
+      &set_timeout($t + $T, $ref_res);
+      return undef;
     }
+  } elsif(defined($valp) && $valp == 0) {# p=>0
+    return 0;
+  } else {# p=> ?
+    return undef;
   }
 }
 
@@ -1799,36 +1804,28 @@ sub gt() {
 
 sub gt1_T() {
   my ($t, $ref_p, $ref_res, $resval, $T) = @_;
-  if ($t == 0) { # initially
-    return 0;
-  }
   if (&timeout($t, $ref_res)) {
    die "gt1: escaped timer";
   }
-  my $p = &tsval($ref_p, $t);
-  my $valp = $p->[1];
-  if($p->[0] == $t) {
-    if(&sameval($valp, &lastval($ref_p, $t))) { return $resval; } # nothing
-    else {
-      if($valp == 1) {# p=>1
-        # p=1 until after t+T
-        if(&later($ref_p, $t, 0, $T)) {
-          &cancel_timeout($t + $T, $ref_res);
-          return 1;
-        } elsif(&soonereq($ref_p, $t, 0, $T)) {
-          # p=>0 before or at t+T
-          &cancel_timeout($t + $T, $ref_res);
-          return 0;
-        } else {
-          &set_timeout($t + $T, $ref_res);
-          return undef;
-        }
-      } elsif(defined($valp) && $valp == 0) {# p=>0
-        return 0;
-      } else {# p=> ?
-        return undef;
-      }
+  my $valp = &val($ref_p, $t);
+  if($t > 0 && &sameval($valp, &lastval($ref_p, $t))) { return $resval; } # nothing
+  if($valp == 1) {# p=>1
+    # p=1 until after t+T
+    if(&later($ref_p, $t, 0, $T)) {
+	&cancel_timeout($t + $T, $ref_res);
+	return 1;
+    } elsif(&soonereq($ref_p, $t, 0, $T)) {
+      # p=>0 before or at t+T
+	&cancel_timeout($t + $T, $ref_res);
+	return 0;
+    } else {
+      &set_timeout($t + $T, $ref_res);
+      return undef;
     }
+  } elsif(defined($valp) && $valp == 0) {# p=>0
+    return 0;
+  } else {# p=> ?
+    return undef;
   }
 }
 
@@ -1840,36 +1837,28 @@ sub ge() {
 
 sub ge1_T() {
   my ($t, $ref_p, $ref_res, $resval, $T) = @_;
-  if ($t == 0) { # initially
-    return 0;
-  }
   if (&timeout($t, $ref_res)) {
    die "ge1: escaped timer";
   }
-  my $p = &tsval($ref_p, $t);
-  my $valp = $p->[1];
-  if($p->[0] == $t) {
-    if(&sameval($valp, &lastval($ref_p, $t))) { return $resval; } # nothing
-    else {
-      if($valp == 1) {# p=>1
-        # p=1 until at least t+T
-        if(&latereq($ref_p, $t, 0, $T)) {
-          &cancel_timeout($t + $T, $ref_res);
-          return 1;
-        } elsif(&sooner($ref_p, $t, 0, $T)) {
-          # p=>0 before t+T
-          &cancel_timeout($t + $T, $ref_res);
-          return 0;
-        } else {
-          &set_timeout($t + $T, $ref_res);
-          return undef;
-        }
-      } elsif(defined($valp) && $valp == 0) {# p=>0
-        return 0;
-      } else {# p=> ?
-        return undef;
-      }
+  my $valp = &val($ref_p, $t);
+  if($t > 0 && &sameval($valp, &lastval($ref_p, $t))) { return $resval; } # nothing
+  if($valp == 1) {# p=>1
+    # p=1 until at least t+T
+    if(&latereq($ref_p, $t, 0, $T)) {
+      &cancel_timeout($t + $T, $ref_res);
+      return 1;
+    } elsif(&sooner($ref_p, $t, 0, $T)) {
+      # p=>0 before t+T
+      &cancel_timeout($t + $T, $ref_res);
+      return 0;
+    } else {
+      &set_timeout($t + $T, $ref_res);
+      return undef;
     }
+  } elsif(defined($valp) && $valp == 0) {# p=>0
+    return 0;
+  } else {# p=> ?
+    return undef;
   }
 }
 
@@ -1881,40 +1870,32 @@ sub gtRT() {
 
 sub gtRT1_T() {
   my ($t, $ref_p, $ref_res, $resval, $T) = @_;
-  if ($t == 0) { # initially
-    return 0;
-  }
   if (&timeout($t, $ref_res)) {
     # if here, we're in the middle of a p=1 interval longer than T, so end it
     &cancel_timeout($t, $ref_res);
     return 0;
   }
-  my $p = &tsval($ref_p, $t);
-  my $valp = $p->[1];
-  if($p->[0] == $t) {
-    if(&sameval($valp, &lastval($ref_p, $t))) { return $resval; } # nothing
-    else {
-      if($valp == 1) {# p=>1
-        # p=1 until after t+T
-        if(&later($ref_p, $t, 0, $T)) {
-          # timer may be already set (if previously res=undef for unsufficient
-          # lookahead) or not (if previously res=undef for p=>undef)
-          &set_timeout($t + $T, $ref_res);
-          return 1;
-        } elsif(&soonereq($ref_p, $t, 0, $T)) {
-          # p=>0 before or at t+T
-          &cancel_timeout($t + $T, $ref_res);
-          return 0;
-        } else {
-          &set_timeout($t + $T, $ref_res);
-          return undef;
-        }
-      } elsif(defined($valp) && $valp == 0) {# p=>0
-        return 0;
-      } else {# p=> ?
-        return undef;
-      }
+  my $valp = &val($ref_p, $t);
+  if($t > 0 && &sameval($valp, &lastval($ref_p, $t))) { return $resval; } # nothing
+  if($valp == 1) {# p=>1
+    # p=1 until after t+T
+    if(&later($ref_p, $t, 0, $T)) {
+      # timer may be already set (if previously res=undef for unsufficient
+      # lookahead) or not (if previously res=undef for p=>undef)
+      &set_timeout($t + $T, $ref_res);
+      return 1;
+    } elsif(&soonereq($ref_p, $t, 0, $T)) {
+      # p=>0 before or at t+T
+      &cancel_timeout($t + $T, $ref_res);
+      return 0;
+    } else {
+      &set_timeout($t + $T, $ref_res);
+      return undef;
     }
+  } elsif(defined($valp) && $valp == 0) {# p=>0
+    return 0;
+  } else {# p=> ?
+    return undef;
   }
 }
 
@@ -1926,40 +1907,32 @@ sub geRT() {
 
 sub geRT_T() {
   my ($t, $ref_p, $ref_res, $resval, $T) = @_;
-  if ($t == 0) { # initially
-    return 0;
-  }
   if (&timeout($t, $ref_res)) {
     # if here, we're in the middle of a p=1 interval longer than T, so end it
     &cancel_timeout($t, $ref_res);
     return 0;
   }
-  my $p = &tsval($ref_p, $t);
-  my $valp = $p->[1];
-  if($p->[0] == $t) {
-    if(&sameval($valp, &lastval($ref_p, $t))) { return $resval; } # nothing
-    else {
-      if($valp == 1) {# p=>1
-        # p=1 until at least t+T
-        if(&latereq($ref_p, $t, 0, $T)) {
-          # timer may be already set (if previously res=undef for unsufficient
-          # lookahead) or not (if previously res=undef for p=>undef)
-          &set_timeout($t + $T, $ref_res);
-          return 1;
-        } elsif(&sooner($ref_p, $t, 0, $T)) {
-          # p=>0 before t+T
-          &cancel_timeout($t + $T, $ref_res);
-          return 0;
-        } else {
-          &set_timeout($t + $T, $ref_res);
-          return undef;
-        }
-      } elsif(defined($valp) && $valp == 0) {# p=>0
-        return 0;
-      } else {# p=> ?
-        return undef;
-      }
+  my $valp = &val($ref_p, $t);
+  if($t > 0 && &sameval($valp, &lastval($ref_p, $t))) { return $resval; } # nothing
+  if($valp == 1) {# p=>1
+    # p=1 until at least t+T
+    if(&latereq($ref_p, $t, 0, $T)) {
+      # timer may be already set (if previously res=undef for unsufficient
+      # lookahead) or not (if previously res=undef for p=>undef)
+      &set_timeout($t + $T, $ref_res);
+      return 1;
+    } elsif(&sooner($ref_p, $t, 0, $T)) {
+      # p=>0 before t+T
+      &cancel_timeout($t + $T, $ref_res);
+      return 0;
+    } else {
+      &set_timeout($t + $T, $ref_res);
+      return undef;
     }
+  } elsif(defined($valp) && $valp == 0) {# p=>0
+    return 0;
+  } else {# p=> ?
+    return undef;
   }
 }
 
@@ -2144,9 +2117,10 @@ sub holds2() {
 
 sub occ2_init() {
   my ($ref_p, $ref_q) = @_;
-  die "initial value of p undefined" if $#$ref_p < 0;
-  die "initial value of q undefined" if $#$ref_q < 0;
-  return $$ref_p[0][1] && $$ref_q[0][1];
+  #die "initial value of p undefined" if $#$ref_p < 0;
+  #die "initial value of q undefined" if $#$ref_q < 0;
+  #return $$ref_p[0][1] && $$ref_q[0][1];
+  return &and2_pointwise(&val($ref_p, 0), &val($ref_q, 0));
 }
 
 sub occ2() {
