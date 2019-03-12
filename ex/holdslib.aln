@@ -7,24 +7,20 @@ def dn(p) = ~p & delay[1](p)
 def ex(p,q) = q & ~holds(~p, q)
 #def met(p,q) = ex(dn(q) & up(p), p)
 def met(p,q) = occ(dn(q) & up(p), p)
-#def init(p) = p & ~met(p, ~p)
+def init(p) = p & ~met(p, ~p)
 #def final(p) = ex(holds(p, delay[1](p)), p)
 def eq(p,q) = holds(p, q) & holds(q, p)
-#def overlapped(p,q) =
-#  let s = up(p) & q & ~up(q) in
-#  let p1 = ex(s, p) in
-#  ex(~q, p1)
 def over(p,q) =
     let s = up(q) & p & ~up(p) in
     let q1 = ex(s, q) in
     let q2 = ex(~p, q1) in # overlapped(q,p)
     let q3 = ex(s, p & q) in
     q2 & q3
-#def overlapped(p,q) = ex(over(q,p),p)
-def overlapped(p,q) =
-  let s = up(p) & q & ~up(q) in
-  let p1 = ex(s, p) in
-  ex(~q, p1)
+def overlapped(p,q) = ex(over(q,p),p)
+#def overlapped(p,q) =
+#  let s = up(p) & q & ~up(q) in
+#  let p1 = ex(s, p) in
+#  ex(~q, p1)
 def overlaps(p,q) = ex(over(p, q), p)
 #def starts(p,q) = over(~q|p,q) & ~over(p,q) | init(p) & init(q) & ex(~p,q)
 def starts(p,q) =
@@ -32,12 +28,12 @@ def starts(p,q) =
   let p1 = ex(s, p) in
   let q1 = ex(s, q) in
   let q2 = ex(~p, q1) in
-  p1 & q2 # | init(p) & init(q) & ex(~p, q)
-#def started(p,q) = ex(starts(q,p),p)
-def started(p,q) =
-    let s = up(p) & up(q) in
-    let q1 = ex(s, q) in
-    ex(~p, q1)
+  p1 & q2 | init(p) & init(q) & ex(~p, q)
+def started(p,q) = ex(starts(q,p),p)
+#def started(p,q) =
+#    let s = up(p) & up(q) in
+#    let p1 = ex(s, p) in
+#    ex(~q, p1)
 def ends(p,q) =
   over(q, p | ~q) & ~over(q, p) # | final(p) & final(q) & ex(~p,q)
 def ended(p,q) = ex(ends(q, p), p)
@@ -45,12 +41,12 @@ def meets(p,q) =
   let nq = ~q in
   ends(p, nq) | eq(p, nq) | ended(p, nq)
   # & ~final(p)
-#def during(p,q) =
-#  let s = up(p) & q & ~up(q) in
-#  let p1 = ex(s, p) in
-#  let p2 = ex(~q, p1) in #overlapped(p,q)
-#  let p3 = p1 & ~p2 in # during(p,q) or ends(p,q)
-#  p3 & ~ends(p,q)
+def during(p,q) =
+  let s = up(p) & q & ~up(q) in
+  let p1 = ex(s, p) in
+  let p2 = ex(~q, p1) in #overlapped(p,q)
+  let p3 = p1 & ~p2 in # during(p,q) or ends(p,q)
+  p3 & ~ends(p,q)
 def contains(p,q) =
   ex(during(q, p), p)
 # end-proven.
@@ -60,7 +56,7 @@ def btw(p,q) = over(~q, ~p)
 #  let dp = dn(p) in
 #  let uq = up(q) in
 #  let b = btw(dp, uq) in
-#  meets(dp, uq) | meets(dp, b) | met(b, dp)
+#  meets(dp, uq) | meets(dp, b) | b
 def before(p,q) = meets(p, between(p, q))
 def after(p,q) = met(p, between(q, p))
 #def btwin(p,q) =
