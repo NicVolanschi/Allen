@@ -1278,7 +1278,7 @@ sub became_ts() {
   return &next_val($t1, $ref_p, $val);
 }
 
-# given p=>? at time t, return the last time t' < t when p ceased to be $val 
+# given p=>? at time t, return the last time t' < t when p ceased to be $val
 # where val = 0|1
 sub lastseen_as() {
   my ($t, $ref_p, $val) = @_;
@@ -2497,7 +2497,7 @@ sub btwin2() {
       if(defined($valp) && $valp == 0 && defined($valq) && $valq == 0) {
         # p=>0 & q=>0
         die "assert(between=0) as p and q were 1" if $resval;
-	return &btwin_lookahead($t, $ref_p, $ref_q);	
+	return &btwin_lookahead($t, $ref_p, $ref_q);
       } elsif(defined($valp) && $valp == 0 && $valq == 1) {
         # p=>0 & q=>1
         die "assert(between=0) as p was 1" if $resval;
