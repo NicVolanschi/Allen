@@ -2,6 +2,7 @@ SRC=../src
 TST=../test
 AMIQOPTS=-b '/^tv_salon_real_status$$/=ON/OFF,/^C\d+$$/=OPEN/CLOSED' \
 	-q '/^Eau_.*_Instantanee$$/>=0.01,/^Intensite_/>=1,/^bed_pressure$$/>=300'
+TAREAALOPTS=-q '/^week_activity$$/>=80,/^day_steps$$/>=5000,/^breath$$/>=10,/^heart$$/>=50'
 
 %.pm: %.aln
 	$(SRC)/allenc $<
@@ -29,6 +30,9 @@ packages: video/packages.pm
 
 amiqual: smarthome/amiqual.pm
 	cat smarthome/July_All_Change.log | $(SRC)/allen $(AMIQOPTS) $<
+
+tare-aal: smarthome/tare-aal.pm
+	cat smarthome/tare-aal.log | $(SRC)/allen $(TAREAALOPTS) $<
 
 tltl3: verification/tltl3.pm
 	cat verification/tltl3.log | $(SRC)/allen $<

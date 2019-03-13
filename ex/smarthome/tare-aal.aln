@@ -1,0 +1,41 @@
+# Examples of Trigger-Action Programming (TAP) from a paper on applying
+# the TARE (Trigger-Action Rule Editor) platform to AAL [1]
+# [1] C. Chesta et al. "Enabling Personalisation of Remote Elderly Assistant
+# Applications", CHItaly 2017 (12th Biannual Conference on Italian SIGCHI
+# Chapter).
+
+# TODO: define comparison propositions, e.g. "day_steps<5000", "day_steps<1000"
+# "motivation=Social", "weather=Sunny", "breaths<10", "posture=laying",
+# "temperature>38" ...
+
+# IF <a friend of Luisa is available> AND <the level of social activity of Luisa
+# was low in the last week> DO <suggest Luisa having a walk with that friend>
+
+suggest_walk_friend:
+  any("Roger", "Cyndia", "Margaret") & ~"week_activity";
+
+# IF <Luisa has not achieved a daily goal of 5000 steps OR was not very active
+# in the last week> AND <there is sunny weather outside> DO <send Luisa a
+# message of encouragement to have a walk outside>
+
+suggest_walk_alone:
+  (~"day_steps" | ~"week_activity") & "sunny_weather";
+
+# IF Motivation is social AND Daily steps is less than 1000,
+# DO send a reminder to me
+
+send_reminder:
+  "social_motivation" & ~"day_steps"; # NB: should compare to 1000, not to 5000!
+
+# IF (Respiration Rate is less than 10 breaths per minute OR Heart Rate is less
+# than 50 bpm) AND (User position is laying down OR User position is still),
+# DO provide an alarm by sending a SMS to the caregiver.
+
+sms_caregiver:
+  (~"breath" | ~"heart") & ("laying" | "still");
+
+# IF Body Temperature is more than 38oC,
+# DO show an alarm AND DO send a SMS to <phone_number>
+
+alarm_and_sms:
+  "fever"

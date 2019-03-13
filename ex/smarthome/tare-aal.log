@@ -1,0 +1,60 @@
+# Luisa's friends: Roger, Cyndia, Margaret.
+
+0;social_motivation;1; constant, never changes
+
+10;day_steps;7500; excellent today! (daily goal is 5000 steps)
+10;breath;20; breaths per minute
+10;heart;60; bpm
+20;day_steps;3500
+30;day_steps;4500
+40;day_steps;5500
+50;day_steps;6000
+60;day_steps;8000
+70;day_steps;4750
+90;week_activity;120; excellent activity of 120% of the self-fixed objective!
+
+110;day_steps;4500
+120;fever;1; Luisa caught cold, so walks much less than usual
+120;day_steps;2000
+120;Roger;1
+125;breath;9; < 10 breaths per minute
+130;day_steps;1500
+130;laying;1; in bed now
+140;day_steps;2500
+140;breath;15
+140;sunny_weather;1
+150;day_steps;3500
+150;fever;0; Luisa getting better
+150;Roger;0
+155;laying;0; no more in bed
+155;breath;20
+160;day_steps;3000
+170;sunny_weather;0
+170;day_steps;4000
+190;week_activity;40; poor activity this week!
+# ... but no friend available
+
+210;day_steps;4500
+220;day_steps;5500
+230;day_steps;3500
+240;day_steps;4500
+250;day_steps;4000
+250;sunny_weather;1
+260;day_steps;3500
+270;day_steps;5000
+275;sunny_weather;0
+290;week_activity;60; still insufficient activity
+295;Cyndia;1
+
+310;day_steps;5500
+320;day_steps;5000
+330;day_steps;4500
+340;day_steps;5000
+340;Margaret;1
+350;day_steps;4000
+350;Cyndia;0
+360;day_steps;6000
+360;sunny_weather;1
+370;day_steps;5000
+370;sunny_weather;0
+390;Margaret;0
