@@ -82,7 +82,7 @@ use Time::Local;
 sub load() {
   my ($name) = @_;
   print STDERR "loading module $name...\n";
-  if ($name !~ /^[./]/) { $name = "./$name"; } # default to current directory
+  if ($name !~ /^[.\/]/) { $name = "./$name"; } # default to current directory
   my $res = do "$name";
   die "error: $!\nwhen tryiny to load module \"$name\"\n$@" if !defined($res);
   print STDERR "load result = $res\n" if defined($opts{'g'});
