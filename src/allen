@@ -82,6 +82,7 @@ use Time::Local;
 sub load() {
   my ($name) = @_;
   print STDERR "loading module $name...\n";
+  if ($name !~ /^[./]/) { $name = "./$name"; } # default to current directory
   my $res = do "$name";
   die "error: $!\nwhen tryiny to load module \"$name\"\n$@" if !defined($res);
   print STDERR "load result = $res\n" if defined($opts{'g'});
@@ -839,7 +840,7 @@ sub process_pack() {
   for my $event (@$ref_pack) {
     my ($val1, $s1, $ts1) = @$event;
     $in{$s1} = [] if !exists($in{$s1});
-    push @{in{$s1}}, [$now, $val1];
+    push @{$in{$s1}}, [$now, $val1];
     $update{$in{$s1}} = $now;
     push @inputs, $in{$s1};
     print STDERR " $s1" if defined($opts{'t'});
