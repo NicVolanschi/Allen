@@ -1576,7 +1576,7 @@ sub since2() {
       my $tq1 = &lastseen_as($t, $ref_q, 1);
       # if since=1 return 1
       # if ($t > 0 && $resval == 1 || $t == 0 && !$strong) { # at t=0: S=0, Z=1
-      if (defined($tq1) & ($tq1 > 0 || !$strong) && $tp < $tq1) {
+      if (defined($tq1) & ($tq1 > 0 || !$strong) && $tp <= $tq1) {
         return 1;
       } else {
         return undef;
