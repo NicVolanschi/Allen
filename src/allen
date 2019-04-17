@@ -772,7 +772,7 @@ sub update() {
   $update{$str} = $now;
   if (exists($names{$outform{$str}})) {
     if (defined($val) && $val != $lastoutval{$str}) {
-        &export_stream_line($t, $names{$outform{$str}}, $val, $lastoutts{$str});
+      &export_stream_line($t, $names{$outform{$str}}, $val, $lastoutts{$str});
       $lastoutval{$str} = $val;
       $lastoutts{$str} = $t;
     }
@@ -849,8 +849,10 @@ sub process_pack() {
       &export_stream_line($ts1, "in:$s1", $val1);
     }
     # print input event if it is a context
-    if (exists($names{$s1})) {
+    if (exists($names{$s1}) && $val1 != $lastoutval{$names{$s1}}) {
       &export_stream_line($ts1, $names{$s1}, $val1);
+      $lastoutval{$names{$s1}} = $val1;
+      $lastoutts{$names{$s1}} = $ts1;
     }
   }
   if(defined($opts{'t'})) {
