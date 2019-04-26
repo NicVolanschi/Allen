@@ -313,20 +313,37 @@ sub any_sw() {
 
 # wave signal which is 1 every day between daytimes from and to
 # NB: DST-safe! (daylight saving time)
-sub slot_dst() {
+sub slot_dst_2017() {
   my ($from, $to) = @_;
-  my $ts2 = 1490482800000; # 26/03/2017 (start summer time)
-  my $ts3 = 1509228000000; # 29/10/2017 (end summer time)
-  return &slot(($from, $to, $ts2, $ts3));
+  my $ts2 = 1490482800000; # 26/03/2017 00:00:00 (start summer time)
+  my $ts3 = 1509228000000; # 29/10/2017 00:00:00 (end summer time)
+  return &slot_2017($from, $to, $ts2, $ts3);
+}
+
+sub slot_dst_2018() {
+  my ($from, $to) = @_;
+  my $ts2 = 1521932400000; # 25/03/2018 00:00:00 (start summer time)
+  my $ts3 = 1540677600000; # 28/10/2018 00:00:00 (end summer time)
+  return &slot_2018($from, $to, $ts2, $ts3);
+}
+
+sub slot_2017() {
+  my ($from, $to, $tsummer, $twinter) = @_;
+  my $ts0 = 1483225200000; # 01/01/2017 00:00:00
+  my $ts1 = 1514761200000; # 01/01/2018 00:00:00
+  return &slot($from, $to, $ts0, $ts1, $tsummer, $twinter);
+}
+
+sub slot_2018() {
+  my ($from, $to, $tsummer, $twinter) = @_;
+  my $ts0 = 1514761200000; # 01/01/2018 00:00:00
+  my $ts1 = 1546297200000; # 01/01/2019 00:00:00
+  return &slot($from, $to, $ts0, $ts1, $tsummer, $twinter);
 }
 
 # NB: optionnally DST-safe (daylight saving time)
 sub slot() {
-  my ($from, $to, $tsummer, $twinter) = @_;
-  my $ts0 = 1483225200000; # 01/01/2017 00:00:00
-    # 1487631600000; # 21/02/2017 00:00:00
-  my $ts1 = 1514761200000; # 01/01/2018 00:00:00
-    # 1491775200000; # 10/04/2017 00:00:00
+  my ($from, $to, $ts0, $ts1, $tsummer, $twinter) = @_;
   my $t1 = $from < $to? $to - $from: 24*60*60*1000 + $to - $from;
   my $t0 = 24*60*60*1000 - $t1;
   #return [&delay($ts0 + $to), [&wave($t0, $t1, 0, $ts1 - $ts0)]];

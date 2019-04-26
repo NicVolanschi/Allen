@@ -2,7 +2,7 @@
 
 # {Cupboard becomes open and CoffeeMaker becomes on} occurred while BreakfastTime
 def breakfast[Ts,Te] =
-  let x = slot_dst[Ts, Te] in
+  let x = slot_dst_2017[Ts, Te] in
   occ(up("ContactS_Cupboard"), x) & occ(up("EMeter_Coffeemaker"), x)
 
 # Lunch reheat
@@ -12,22 +12,22 @@ def breakfast[Ts,Te] =
 # Stove is on ) } occurred while Lunch Time
 def lunch[Ts,Te,T] =
   occ(recent[T](up("ContactS_Fridge")) & "EMeter_Coffeemaker",
-      slot_dst[Ts, Te])
+      slot_dst_2017[Ts, Te])
 
 # {Fridge becomes open and Microwave becomes on} occurred while Dinner Time
 def dinner[Ts,Te] =
-  let x = slot_dst[Ts, Te] in
+  let x = slot_dst_2017[Ts, Te] in
   occ(up("ContactS_Fridge"), x) & occ(up("EMeter_Coffeemaker"), x)
 
 # ( Presence(Bathroom) becomes false precedes within 10 minutes Presence(Bedroom) becomes true )
 # occurred while Go-to-bed Time
 def gotobed[T](m1, m2) =
-  occ(recent[T](dn(m1)) & up(m2), slot_dst[21hr, 24hr])
+  occ(recent[T](dn(m1)) & up(m2), slot_dst_2017[21hr, 24hr])
 
 # ( Presence(Bedroom) becomes false precedes within 10 minutes Presence(Kitchen) becomes true )
 # occurred while Wake-up Time
 def wakeup[T](m1, m2) =
-  occ(recent[T](dn(m1)) & up(m2), slot_dst[7hr, 9hr])
+  occ(recent[T](dn(m1)) & up(m2), slot_dst_2017[7hr, 9hr])
 
 #bath.pl:
 def any_emeter_up =
@@ -43,7 +43,7 @@ def bath[T] =
 
 # departurealert.pl:
 def departurealert[T,Hs,He] =
-  during("ContactS_E" > T, slot_dst[Hs, He])
+  during("ContactS_E" > T, slot_dst_2017[Hs, He])
 
 # dooralert.pl (NB: resets alarm until new open & new leave):
 def dooralert[T] =
