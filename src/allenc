@@ -36,7 +36,7 @@ my $syntax =
   Context -> "let" id "=" Expr "in" Context | Expr
   Expr -> Prod "|" Expr | Prod
   Prod -> Comp "&" Prod | Comp
-  Comp -> Expr1 (">=!"|"<="|">="|">!"|"<"|">") Int | Expr1
+  Comp -> Expr1 ("!>"|">=!"|"<="|">="|">!"|"<"|">") Int | Expr1
   Expr1 -> true | false | "~" Expr1 | "(" Expr ")" | str
         | id ("[" Int+(",") "]")? ("(" Expr*(",") ")")?
   Int -> id | int ("hr" | "min" | "sec")?
@@ -93,7 +93,7 @@ my %predef = ("during" => [0,2], "contains" => [0,2],
   "all" => [0], "any" => [0], "any_up" => [0], "any_dn" => [0], "any_sw" => [0],
   "first" => [0,2], "fill" => [0,2], "flat" => [0,2], "flat_right" => [0,2],
   "occ_before" => [0,3],
-  "wsince" => [0,2], "since" => [0,2], "until" => [0,2],
+  "wsince" => [0,2], "since" => [0,2], "until" => [0,2]
   );
 
 my %def = (); # symbol table for def's (global scope)
@@ -277,7 +277,7 @@ sub parse_prod() {
 sub parse_comp() {
   my $e1 = &parse_expr1();
   my ($typ, $tok) = &token(0); # look ahead
-  if ($typ eq "key" && $tok =~ /^(>=!|<=|>=|>!|<|>)$/) {
+  if ($typ eq "key" && $tok =~ /^(>=!|<=|>=|>!|!>|<|>)$/) {
     &token(1); # consume binary operator
     my $e2 = &parse_int();
     return [$tok, $e1, $e2];
@@ -414,7 +414,7 @@ sub token() {
   my $tok;
   if ($line =~ /^(\d+)/) {
     ($typ, $tok) = ("int", $1);
-  } elsif ($line =~ /^([][&|~(),;:=]|>=!|<=|>=|>!|<|>|(day|hr|min|sec|let|in|def|true|false)\b)/) {
+  } elsif ($line =~ /^([][&|~(),;:=]|>=!|<=|>=|>!|!>|<|>|(day|hr|min|sec|let|in|def|true|false)\b)/) {
     ($typ, $tok) = ("key", $1);
   } elsif ($line =~ /^([a-zA-Z_]\w*)/) {
     ($typ, $tok) = ("id", $1);
@@ -459,9 +459,9 @@ sub gen_expr() {
   if (ref $t eq "ARRAY") {
     die "gen_context([])" if $#$t < 0;
     my $op = $t->[0];
-    if ($op =~ /^(>=!|<=|>=|>!|<|>|and|or|not)$/) {
+    if ($op =~ /^(>=!|<=|>=|>!|!>|<|>|and|or|not)$/) {
       print OUT "[&";
-      if ($op =~ /^(>=!|<=|>=|>!|<|>)$/) {
+      if ($op =~ /^(>=!|<=|>=|>!|!>|<|>)$/) {
         print OUT
           $op eq "<="? "le":
           $op eq ">="? "ge":
@@ -469,6 +469,7 @@ sub gen_expr() {
           $op eq "<"? "lt":
           $op eq ">"? "gt":
           $op eq ">!"? "gtRT":
+          $op eq "!>"? "H_le":
           die "unknown comparator $op";
         print OUT "(";
         &gen_expr($t->[2]);

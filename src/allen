@@ -1803,8 +1803,8 @@ sub lt1_T() {
       return 0;
     } elsif(&sooner($ref_p, $t, 0, $T)) {
       # p=>0 before t+T
-	&cancel_timeout($t + $T, $ref_res);
-	return 1;
+	    &cancel_timeout($t + $T, $ref_res);
+	    return 1;
     } else {
       &set_timeout($t + $T, $ref_res);
       return undef;
@@ -1832,12 +1832,12 @@ sub gt1_T() {
   if($valp == 1) {# p=>1
     # p=1 until after t+T
     if(&later($ref_p, $t, 0, $T)) {
-	&cancel_timeout($t + $T, $ref_res);
-	return 1;
+    	&cancel_timeout($t + $T, $ref_res);
+    	return 1;
     } elsif(&soonereq($ref_p, $t, 0, $T)) {
       # p=>0 before or at t+T
-	&cancel_timeout($t + $T, $ref_res);
-	return 0;
+    	&cancel_timeout($t + $T, $ref_res);
+    	return 0;
     } else {
       &set_timeout($t + $T, $ref_res);
       return undef;
@@ -1950,6 +1950,39 @@ sub geRT_T() {
       return undef;
     }
   } elsif(defined($valp) && $valp == 0) {# p=>0
+    return 0;
+  } else {# p=> ?
+    return undef;
+  }
+}
+
+# Complementary real-time version of geRT(): becomes 1 at T
+sub H_le() {
+  my ($T) = @_;
+  return sub(){ return &H_le_T(@_, $T); }
+}
+
+sub H_le_T() {
+  my ($t, $ref_p, $ref_res, $resval, $T) = @_;
+  my $valp = &val($ref_p, $t);
+  if (&timeout($t, $ref_res)) {
+    # if here, we're at (p=>1)+T
+    &cancel_timeout($t, $ref_res);
+    if ($valp == 1) {
+      return 1; # in the middle of an interval > T
+    } else {
+      return 0; # in the end of an interval = T
+    }
+  }
+  if($t > 0 && &sameval($valp, &lastval($ref_p, $t))) { return $resval; } # nothing
+  if($valp == 1) {# p=>1
+    &set_timeout($t + $T, $ref_res);
+    return 0;
+  } elsif(defined($valp) && $valp == 0) {# p=>0
+    my $t1 = &next_timeout($t, $ref_res);
+    if (defined($t1)) {
+      &cancel_timeout($t1, $ref_res);
+    }
     return 0;
   } else {# p=> ?
     return undef;
