@@ -1956,13 +1956,13 @@ sub geRT_T() {
   }
 }
 
-# Complementary real-time version of geRT(): becomes 1 at T
-sub H_le() {
+# Complementary real-time version of gtRT(): becomes 1 After T
+sub gtRTa() {
   my ($T) = @_;
-  return sub(){ return &H_le_T(@_, $T); }
+  return sub(){ return &gtRTa_T(@_, $T); }
 }
 
-sub H_le_T() {
+sub gtRTa_T() {
   my ($t, $ref_p, $ref_res, $resval, $T) = @_;
   my $valp = &val($ref_p, $t);
   if (&timeout($t, $ref_res)) {

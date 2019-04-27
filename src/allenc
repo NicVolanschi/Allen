@@ -469,7 +469,7 @@ sub gen_expr() {
           $op eq "<"? "lt":
           $op eq ">"? "gt":
           $op eq ">!"? "gtRT":
-          $op eq "!>"? "H_le":
+          $op eq "!>"? "gtRTa":
           die "unknown comparator $op";
         print OUT "(";
         &gen_expr($t->[2]);
