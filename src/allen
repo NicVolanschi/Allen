@@ -37,6 +37,7 @@ where:
   -i: print input events before processing them
   -t: print trace of events & timeouts
   -D: dump final & intermediate streams
+  -S: print statistics at the end
   -g: print debug info';
 
 use Getopt::Std;
@@ -44,7 +45,7 @@ our %opts = ();
 my $forgot; # counter of forgot events
 my $tforgot; # memorize the time up to which we forgot the events
 
-getopts('d:Eq:b:s:r:pl:f:itDg', \%opts) or die $usage;
+getopts('d:Eq:b:s:r:pl:f:itDSg', \%opts) or die $usage;
 
 my $delim = defined($opts{'d'})? $opts{'d'}: '\s*;\s*';
 
@@ -78,6 +79,11 @@ use FindBin;
 use lib $FindBin::Bin;
 use Time::Local;
 #use stdlib;
+use Time::HiRes qw(time);
+my $npacks = 0; # number of processed event packs
+my $totaltime = 0; # record the starting time
+my $maxtime = 0; # maximum time for handling an event
+my $mintime;  # minimum time for handling an event
 
 sub load() {
   my ($name) = @_;
@@ -780,7 +786,13 @@ sub csp() {
   }
   # process remaining timers
   &process_timers($lexprs, $iexpr, undef, $out, $outix);
-  print STDERR "forgot $forgot events\n" if (defined($opts{'g'}));
+  if (defined($opts{'S'})) {
+    print STDERR "forgot $forgot events\n" ;
+    printf STDERR sprintf("processed $npacks event packs in %.03f msec",
+                          $totaltime*1000);
+    print STDERR sprintf(" (avg=%.03f min=%.03f max=%.03f)\n",
+                         $totaltime*1000/$npacks, $mintime*1000, $maxtime*1000);
+  }
 }
 
 sub update() {
@@ -847,6 +859,7 @@ sub process_timers() {
 
 sub process_pack() {
   my ($lexprs, $iexpr, $ref_pack, $tspack, $out, $outix) = @_;
+  my $t0 = time;
   my $tout = &process_timers($lexprs, $iexpr, $tspack, $out, $outix);
 
   # process the pack {
@@ -884,6 +897,14 @@ sub process_pack() {
   my %todo_ixs = (map {($outix->{$_} => 1)} @todo_strs);
   &tick_set($lexprs, $iexpr, \%todo_ixs, $out, $outix);
   # } process the pack
+
+  if (defined($opts{'S'})) {
+    my $delta = time - $t0;
+    $totaltime += $delta;
+    $npacks++;
+    if ($delta > $maxtime) { $maxtime = $delta; }
+    if (!defined($mintime) || $delta < $mintime) { $mintime = $delta; }
+  }
 }
 
 sub parse_event() {
