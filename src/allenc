@@ -28,10 +28,11 @@ where:
 
 my $syntax =
 '* the syntax of an Allen program is:
-  Prog -> Lib Rules
+  Prog -> Lib LetRules
   Lib -> Def*
   Def -> "def" id ("[" id+(",") "]")? ("(" id*(",") ")")?
          "=" Context
+  LetRules -> "let" id "=" Expr "in" LetRules | Rules
   Rules -> id ":" Context (";" Rules)?
   Context -> "let" id "=" Expr "in" Context | Expr
   Expr -> Prod "|" Expr | Prod
@@ -97,28 +98,21 @@ my %predef = ("during" => [0,2], "contains" => [0,2],
   );
 
 my %def = (); # symbol table for def's (global scope)
+my %glb = (); # symbol table for global lets (global scope)
 my %var = (); # symbol table for variables (lexical scope)
 
 my $l = &parse_lib();
 #&print_ast($l);
 #print "\n";
-my $p = &parse_rules();
+my $p = &parse_let_rules();
 #&print_ast($p);
 #print "\n";
 
 print OUT "# User-defined operators\n\n";
 for my $d (@$l) {
-  gen_def($d);
+  &gen_def($d);
 }
-print OUT "\n# User-defined contexts\n[\n";
-for (my $i = 0; $i < $#$p; $i += 2) { # iterate over key/val pairs
-  my $k = $p->[$i];
-  print OUT "\"$k\",\n";
-  my $r = $p->[$i + 1];
-  gen_context($r);
-  print OUT ",\n";
-}
-print OUT "]\n";
+&gen_let_rules($p);
 exit;
 
 # ----------------- parsing ---------------------
@@ -192,6 +186,30 @@ sub parse_def() {
   return ["def", $tok2, \@pars, \@args, $e];
 }
 
+sub parse_let_rules() {
+  my ($typ, $tok) = &token(0); # look ahead
+  if ($typ eq "key" && $tok eq "let") {
+    &token(1); # consume "let"
+    my ($typ2, $tok2) = &token(1);
+    die "id expected in let, found $tok2 at $line"
+      if $typ2 ne "id";
+    die "duplicated variable $tok2" if defined($glb{$tok2});
+    # don't register yet, recursive let is disallowed
+    my ($typ3, $tok3) = &token(1);
+    die "= expected in let, found $tok3 at $line"
+      if $typ3 ne "key" || $tok3 ne "=";
+    %var = (); # reset let symbol table
+    my $e1 = &parse_expr();
+    $glb{$tok2} = "let"; # register let variable now
+    my ($typ4, $tok4) = &token(1);
+    die "'in' expected in let, found $tok4 at $line"
+      if $typ4 ne "key" || $tok4 ne "in";
+    my $e2 = &parse_let_rules();
+    return ["let", $tok2, $e1, $e2];
+  } else {
+    return &parse_rules();
+  }
+}
 
 sub parse_rules() {
   my ($typ1, $tok1) = &token(1);
@@ -382,7 +400,8 @@ sub parse_expr1() {
     } else { # it's a var ref
       # variables cannot use forward reference
       die "unbound variable $tok"
-        if !defined($var{$tok}) || $var{$tok} !~ /^arg|let$/;
+        if (!defined($var{$tok}) || $var{$tok} !~ /^arg|let$/) &&
+            !defined($glb{$tok});
       return $tok;
     }
   } elsif ($typ eq "int") {
@@ -561,6 +580,44 @@ sub gen_let() {
     &gen_let($body);
   } else {
     &gen_expr($t);
+  }
+}
+
+sub gen_rules() {
+  my ($p) = @_;
+  print OUT "\n# User-defined contexts\n[\n";
+  for (my $i = 0; $i < $#$p; $i += 2) { # iterate over key/val pairs
+    my $k = $p->[$i];
+    print OUT "\"$k\",\n";
+    my $r = $p->[$i + 1];
+    &gen_context($r);
+    print OUT ",\n";
+  }
+  print OUT "]\n";
+}
+
+sub gen_let_rules_rec() {
+  my ($t) = @_;
+  my ($var, $val, $body) = &match_let($t);
+  if (defined($var)) {
+    print OUT "my \$$var=";
+    &gen_expr($val);
+    print OUT "; ";
+    &gen_let_rules_rec($body);
+  } else {
+    &gen_rules($t);
+  }
+}
+
+sub gen_let_rules() {
+  my ($t) = @_;
+  my ($var, $val, $body) = &match_let($t);
+  if (defined($var)) {
+    print OUT "sub{";
+    &gen_let_rules_rec($t);
+    print OUT "}->()";
+  } else {
+    &gen_rules($t);
   }
 }
 
