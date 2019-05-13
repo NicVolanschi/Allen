@@ -205,17 +205,25 @@ sub btwin() {
 # ------------------------------------------------------
 # Operators adapted from LTL logic
 
-sub wsince() {
-  my ($p, $q) = @_;
-  return [\&wsince2, $p, $q];
-}
-
 sub since() {
   my ($p, $q) = @_;
   return [\&ssince2, $p, $q];
 }
 
+sub wsince() {
+  my ($p, $q) = @_;
+  return [\&wsince2, $p, $q];
+}
+
 sub until() {
+  my ($p, $q) = @_;
+  return [\&until2, $p, $q];
+}
+
+# Consider weak until equivalent to until, as in LTL3
+# TODO: implement differently when called at the "end of time", i.e. after
+# processing of a complete log file.
+sub wuntil() {
   my ($p, $q) = @_;
   return [\&until2, $p, $q];
 }
