@@ -414,8 +414,8 @@ sub flat_right() {
 # step function, becoming true at T
 sub step() {
   my ($T) = @_;
-  return [&wave($T,0,0,0)];
-  #return [&delay($T), [&true]];
+  #return [&wave($T,0,0,0)];
+  return [&delay($T), [&true]];
 }
 
 # true only initially, at the origin of time (t=0)
