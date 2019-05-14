@@ -376,23 +376,6 @@ sub far() {
   return &starts($p, &during( &recent($p, $T), [&not, &recent($q, $T)]));
 }
 
-# true when p and q occur or occured recently (at most $T ago)
-# (approximates `p and q within T')
-sub within() {
-  my ($p, $q, $T) = @_;
-  return [&and, &recent($p, $T), &recent($q, $T)];
-}
-
-sub between_first() {
-  my ($p, $q) = @_;
-  return &occ(&dn($p), [&not, &up($q)]);
-}
-
-sub between_first_e_e() {
-  my ($e1, $e2) = @_;
-  return &occ($e1, [&not, $e2]);
-}
-
 # the first interval of p starting or during q
 sub first() {
   my ($p, $q) = @_;
