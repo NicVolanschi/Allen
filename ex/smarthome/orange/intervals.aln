@@ -1,0 +1,54 @@
+# precision = true_positives / detected
+# recall = true_positives / annotated
+
+computing_tp: "Office|Computing" & "computing";
+computing_d: ~~"computing";
+computing_a: ~~"Office|Computing";
+
+office_tv_tp: "Office|Watching_TV" & "office_tv";
+office_tv_d: ~~"office_tv";
+office_tv_a: ~~"Office|Watching_TV";
+
+cooking_tp: "Kitchen|Cooking" & "cooking";
+cooking_d: ~~"cooking";
+cooking_a: ~~"Kitchen|Cooking";
+
+shower_tp: "Bathroom|Showering" & "shower_usage";
+shower_d: ~~"shower_usage";
+shower_a: ~~"Bathroom|Showering";
+
+dishes_tp: "Kitchen|Washing_the_dishes" & "washing_dishes";
+dishes_d: ~~"washing_dishes";
+dishes_a: ~~"Kitchen|Washing_the_dishes";
+
+living_tv_tp: "Living_room|Watching_TV" & "livingroom_tv";
+living_tv_d: ~~"livingroom_tv";
+living_tv_a: ~~"Living_room|Watching_TV";
+
+dressing_tp: "Bedroom|Dressing" & "dressing";
+dressing_d: ~~"dressing";
+dressing_a: ~~"Bedroom|Dressing";
+
+toilet_tp: "Bathroom|Using_the_toilet" & "toilet";
+toilet_d: ~~"toilet";
+toilet_a: ~~"Bathroom|Using_the_toilet";
+
+sink_tp: "Bathroom|Using_the_sink" & "sink_usage";
+sink_d: ~~"sink_usage";
+sink_a: ~~"Bathroom|Using_the_sink";
+
+eating_tp: "Living_room|Eating" & "eating";
+eating_d: ~~"eating";
+eating_a: ~~"Living_room|Eating";
+
+napping_tp: "Bedroom|Napping" & "napping";
+napping_d: ~~"napping";
+napping_a: ~~"Bedroom|Napping";
+
+preparing_tp: "Kitchen|Preparing" & "preparing";
+preparing_d: ~~"preparing";
+preparing_a: ~~"Kitchen|Preparing";
+
+reading_tp: "Bedroom|Reading" & "reading";
+reading_d: ~~"reading";
+reading_a: ~~"Bedroom|Reading"
