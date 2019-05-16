@@ -57,10 +57,14 @@ orange: $(ORANGE)/2017-01-31.log $(ORANGE)/2017-01-30.log \
 	make out/orange-adl-house
 	make out/orange-adl-inc
 	make out/orange-adl-all
+	make out/orange-adl-all-defs
 	make out/orange-precision
 	make out/orange-reactivity
 
 out/orange-adl-all: $(ORANGE)/adl-all.pm $(ORANGE)/2017-01-31.log
+	$(SRC)/allen $(OPTQ_ORG) <$(ORANGE)/2017-01-31.log $< >$@
+
+out/orange-adl-all-defs: $(ORANGE)/adl-all-defs.pm $(ORANGE)/2017-01-31.log
 	$(SRC)/allen $(OPTQ_ORG) <$(ORANGE)/2017-01-31.log $< >$@
 
 out/orange-adl-inc: $(ORANGE)/adl-inc.pm $(ORANGE)/2017-01-31.log

@@ -1,0 +1,143 @@
+# Orange4Home dataset
+# Rules from [1]
+# [1] Antoine El-Hokayem and Ylies Falcone, "Bringing Runtime Verification Home", RV'18
+
+# -------------------------------- Library
+def F(p) = until(true, p)
+
+def G(p) = ~F(~p)
+
+def init(p) = p & ~met(p, ~p)
+#def init(p) = p & since(p, ~delay[1](true))
+
+def H_le[T](p) =
+  p >!! T | init(p)
+
+def O_le[T](p) =
+  ~H_le[T](~p)
+  #recent[T](p)
+
+def implies(p,q) = ~p | q
+
+def sc_light(switch, light) = G(implies(delay[1sec](switch), until(light, ~switch)))
+
+# -------------------------------- Switches
+
+def sc_light0 = sc_light("entrance_switch", "entrance_light")
+
+def sc_light1 = sc_light("office_switch", "office_light")
+
+def sc_light2 = sc_light("toilet_switch", "toilet_light")
+
+# -------------------------------- ADLs
+
+def bathroom_sink_water = "bathroom_sink_hotwater" | "bathroom_sink_coldwater"
+
+def sink_usage = H_le[3sec](bathroom_sink_water())
+
+def bathroom_shower_water = "bathroom_shower_hotwater" | "bathroom_shower_coldwater"
+
+def shower_usage = H_le[2sec](bathroom_shower_water())
+
+def napping = H_le[25sec]("bedroom_bed_pressure")
+
+def bedroom_drawers = "bedroom_drawer_1" | "bedroom_drawer_2"
+
+def dressing = O_le[4sec]("bedroom_closet_door" | bedroom_drawers())
+
+def reading = "bedroom_luminosity" & O_le[4sec](~dressing() & ~napping())
+
+def office_tv = O_le[3sec]("office_tv")
+
+def computing = O_le[3sec]("office_deskplug")
+
+def cooking = O_le[5sec]("kitchen_cooktop" | "kitchen_oven")
+
+def kitchen_sink_water = "kitchen_sink_hotwater" | "kitchen_sink_coldwater"
+
+def washing_dishes = O_le[3sec]("kitchen_dishwasher" | kitchen_sink_water())
+
+def kitchen_cupboard = "kitchen_c1" | "kitchen_c2" | "kitchen_c3" | "kitchen_c4" | "kitchen_c5"
+
+def kitchen_activity = "kitchen_presence" &
+            O_le[3sec](kitchen_sink_water() | "kitchen_fridge_door" | kitchen_cupboard())
+
+def preparing = kitchen_activity() & ~cooking()
+
+def livingroom_tv = O_le[3sec]("livingroom_tv" & "livingroom_couch")
+
+def eating = ~"kitchen_presence" & H_le[6sec]("livingroom_table")
+
+# -------------------------------- Meta
+
+def actfloor0 = cooking() | preparing() | eating() | washing_dishes() | livingroom_tv() | "toilet"
+
+def actfloor1 = computing() | dressing() | napping() | office_tv() | reading() | shower_usage() | sink_usage()
+
+def acthouse = actfloor0() | actfloor1()
+
+def notwopeople = ~(actfloor0() & actfloor1())
+
+def restricttv_office = ~("office_tv" >= 10sec)
+
+def restricttv_living = ~("livingroom_tv" >= 10sec)
+
+# -------------------------------- Contexts
+
+sc_light0: sc_light0();
+
+sc_light1: sc_light1();
+
+sc_light2: sc_light2();
+
+sc_ok: all(sc_light0(), sc_light1(), sc_light2());
+
+# ----
+
+toilet: "toilet";
+
+sink_usage: sink_usage();
+
+bathroom_sink_water: bathroom_sink_water();
+
+shower_usage: shower_usage();
+
+napping: napping();
+
+dressing: dressing();
+
+reading: reading();
+
+office_tv: office_tv();
+
+computing: computing();
+
+cooking: cooking();
+
+washing_dishes: washing_dishes();
+
+kitchen_activity: kitchen_activity();
+
+preparing: preparing();
+
+livingroom_tv: livingroom_tv();
+
+eating: eating();
+
+# ----
+
+actfloor0: actfloor0();
+
+actfloor1: actfloor1();
+
+acthouse: acthouse();
+
+notwopeople: notwopeople();
+
+restricttv_office: restricttv_office();
+
+restricttv_living: restricttv_living();
+
+restricttv: restricttv_living() & restricttv_office();
+
+firehazard: implies(napping(), ~cooking())
