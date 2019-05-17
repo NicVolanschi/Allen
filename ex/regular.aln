@@ -8,26 +8,22 @@ def equiv(p,q) = p&q | ~p&~q
 def sin1(p) =
   equiv(p, ~delay[1](p))
 
-# true for the N first tick (0 to N-1)
-def init[N] =
-  ~delay[N](true)
-
 # true from M to N-1
 def from_to[M,N] =
-  init[N] & ~init[M]
+  step[N] & ~step[M]
 
 # recognizes any signal with period N: (x1 x2 ... xN)*
 def per[N](p) =
-  init[N] | equiv(p, delay[N](p))
+  step[N] | equiv(p, delay[N](p))
 
 # recognizes any signal with anti-period N: (x1 x2 ... xN  ~x1 ~x2 ... ~xN)*
 # (note that this implies a period of 2*N)
 def aper[N](p) =
-  init[N] | equiv(p, ~delay[N](p))
+  step[N] | equiv(p, ~delay[N](p))
 
 # p and q are equivalent between 0 and N-1
 def initeq[N](p,q) =
-  equiv(init[N] & p, init[N] & q)
+  equiv(step[N] & p, step[N] & q)
 
 # recognizes the signal (1{N} 0{N})*
 def sin[N](p) =
