@@ -1,7 +1,7 @@
 # Allen
 A domain-specific language for context detection over binary sensors.
 
-Allen [1] is a domain-specific language (DSL) for programming context-aware applications. More precisely, for programming very concisely the detection logic of contexts (or situations) for such applications, over a set of binary sensors. (A binary sensor always produces two possible values, e.g. 0 and 1.)
+Allen [1, 2] is a domain-specific language (DSL) for programming context-aware applications. More precisely, for programming very concisely the detection logic of contexts (or situations) for such applications, over a set of binary sensors. (A binary sensor always produces two possible values, e.g. 0 and 1.)
 Allen aims at simplifying the development of context recognition logic and making it more reliable.
 
 Main concepts and features:
@@ -13,16 +13,22 @@ Main concepts and features:
 * Online context detection: the computation in real time of contexts based on incoming streams of events produces by sensors.
 
 ## WARNING
-**Allen is a highly experimental research prototype.** It is mainly intended to exemplify the implementation techniques described in the paper [1]. Its maintenance and roadmap are uncertain, subject to research objectives that are continuously being redefined. Therefore, use it at your own risks. However, feel free to contact us if you are open to collaboration.
+Allen is a research prototype. Its maintenance and roadmap may vary depending on research objectives that are continuously being redefined. Use it at your own risks. However, feel free to contact us if you are open to collaboration.
 
 ## Getting started
 
 Allen consists of two executables, implemented as Perl scripts, available under directory src/:
-* allenc: the Allen compiler. It compiles a source Allen file (extension ".aln") into a Perl module (extension ".pm"). For help on the compiler command, invoke it with no options and arguments.
-* allen: the Allen virtual machine. It executes a set of contexts compiled from an Allen program on a log of events. For help on the VM command, and also on the format of the log file, invoke it with no options and arguments.
+* allenc: the Allen compiler. It compiles a source Allen file (extension ".aln") into a Perl module (extension ".pm"). For help on the compiler command and on the language, invoke it with no arguments.
+* allen: the Allen virtual machine. It executes a set of contexts compiled from an Allen program on a log of events. For help on the VM command, and also on the format of the log file, invoke it with no arguments.
+
+A quick start could be to run and inspect the examples under the ex/ subdirectory. Some of the most elaborated are in ex/smarthome/ and work on logs collected in real homes. Use the Makefile for reproducing the examples (e.g. cd ex/; make orange).
 
 ## References
 
 [1] Nic Volanschi, Bernard Serpette, and Charles Consel.
 "Implementing a Semi-causal Domain-Specific Language for Context Detection over Binary Sensors".
 In GPCE 2018 - 17th ACM SIGPLAN International Conference on Generative Programming: Concepts & Experiences.
+
+[2] Nic Volanschi, Bernard Serpette, Adrien Carteron, and Charles Consel.
+"A Language for Online State Processing of Binary Sensors, Applied to Ambient Assisted Living".
+In Proceedings of the ACM on Interactive, Mobile, Wearable and Ubiquitous Technologies, 2:4, 2018.

@@ -1,4 +1,4 @@
-# Library of Allen operators derived from holds & delay(1)
+# Library of Allen-logic operators derived from holds & delay(1)
 # Overrides the default implementations
 
 # proven:
