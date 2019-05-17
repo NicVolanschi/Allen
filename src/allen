@@ -911,10 +911,11 @@ sub parse_event() {
   if ($ts =~ /^\d+$/) { # integer timestamp => scale if not in millisecs
     $ts *= 1000 if defined($opts{'E'});
   } else { # timestamp not a mere integer => interpret as a date
-    my ($year, $month, $day, $hh, $mm, $ss, $ms) =
-      ($ts =~ /(\d\d)-?(\d\d)-?(\d\d)[ T](\d\d):?(\d\d):?(\d\d)(?:[.,](\d\d\d))?/);
+    my ($year, $month, $day, $hh, $mm, $ss, $ms, $ns) =
+      ($ts =~ /(\d\d)-?(\d\d)-?(\d\d)[ T](\d\d):?(\d\d):?(\d\d)(?:[.,](\d\d\d)(\d\d\d)?)?/);
     die "invalid date-timestamp: $ts" if !defined($ss);
     $ms = 0 if !defined($ms);
+    # TODO: take nanoseconds into account (simply dropped for now)
     $ts = timelocal($ss, $mm, $hh, $day, $month - 1, $year) * 1000 + $ms;
   }
   return ($ts, $s, $val) ;
