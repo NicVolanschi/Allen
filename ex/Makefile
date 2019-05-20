@@ -12,9 +12,15 @@ OPTQ_ORG=-q'/^toilet$$/>=0.0001,/bathroom_shower_(hot|cold)water/>=0.0001,/bedro
 	/office_tv/=ON/OFF,/kitchen_presence/=ON/OFF,/kitchen_fridge_door/=OPEN/CLOSED,\
 	/kitchen_c[12345]/=OPEN/CLOSED,/livingroom_tv/=ON/OFF,/livingroom_couch/=ON/OFF,\
 	/livingroom_table/=ON/OFF, /(entrance|office|toilet)_switch/=ON/OFF'
+ALLENRV=$(SRC)/allen -l uslib.pm
 
 %.pm: %.aln
 	$(SRC)/allenc $<
+
+default: ex
+
+uslib.pm: ../my/uslib.aln
+	$(SRC)/allenc -o $@ $<
 
 $(ORANGE)/%.log:
 	grep '$(@:$(ORANGE)/%.log=%)' $(ORANGE)/orange4home.log >$@
@@ -51,35 +57,35 @@ tare-aal: smarthome/tare-aal.pm
 
 orange: $(ORANGE)/2017-01-31.log $(ORANGE)/2017-01-30.log \
 		$(ORANGE)/annotations.log
-	make out/orange-adl-nap
-	make out/orange-switch
-	make out/orange-adl-only
-	make out/orange-adl-house
-	make out/orange-adl-inc
-	make out/orange-adl-all
-	make out/orange-adl-all-defs
+	eval time make out/orange-adl-nap
+	eval time make out/orange-switch
+	eval time make out/orange-adl-only
+	eval time make out/orange-adl-house
+	eval time make out/orange-adl-inc
+	eval time make out/orange-adl-all
+	eval time make out/orange-adl-all-defs
 	make out/orange-precision
 	make out/orange-reactivity
 
-out/orange-adl-all: $(ORANGE)/adl-all.pm $(ORANGE)/2017-01-31.log
-	$(SRC)/allen $(OPTQ_ORG) <$(ORANGE)/2017-01-31.log $< >$@
+out/orange-adl-all: $(ORANGE)/adl-all.pm $(ORANGE)/2017-01-31.log uslib.pm
+	$(ALLENRV) $(OPTQ_ORG) <$(ORANGE)/2017-01-31.log $< >$@
 
-out/orange-adl-all-defs: $(ORANGE)/adl-all-defs.pm $(ORANGE)/2017-01-31.log
-	$(SRC)/allen $(OPTQ_ORG) <$(ORANGE)/2017-01-31.log $< >$@
+out/orange-adl-all-defs: $(ORANGE)/adl-all-defs.pm $(ORANGE)/2017-01-31.log uslib.pm
+	$(ALLENRV) $(OPTQ_ORG) <$(ORANGE)/2017-01-31.log $< >$@
 
-out/orange-adl-inc: $(ORANGE)/adl-inc.pm $(ORANGE)/2017-01-31.log
-	$(SRC)/allen $(OPTQ_ORG) <$(ORANGE)/2017-01-31.log $< >$@
+out/orange-adl-inc: $(ORANGE)/adl-inc.pm $(ORANGE)/2017-01-31.log uslib.pm
+	$(ALLENRV) $(OPTQ_ORG) <$(ORANGE)/2017-01-31.log $< >$@
 
-out/orange-adl-house: $(ORANGE)/adl-house.pm $(ORANGE)/2017-01-31.log
-	$(SRC)/allen $(OPTQ_ORG) <$(ORANGE)/2017-01-31.log $< >$@
+out/orange-adl-house: $(ORANGE)/adl-house.pm $(ORANGE)/2017-01-31.log uslib.pm
+	$(ALLENRV) $(OPTQ_ORG) <$(ORANGE)/2017-01-31.log $< >$@
 
-out/orange-adl-only: $(ORANGE)/adl-only.pm $(ORANGE)/2017-01-31.log
-	$(SRC)/allen $(OPTQ_ORG) <$(ORANGE)/2017-01-31.log $< >$@
+out/orange-adl-only: $(ORANGE)/adl-only.pm $(ORANGE)/2017-01-31.log uslib.pm
+	$(ALLENRV) $(OPTQ_ORG) <$(ORANGE)/2017-01-31.log $< >$@
 
-out/orange-switch: $(ORANGE)/switch.pm $(ORANGE)/2017-01-30.log
-	$(SRC)/allen $(OPTQ_ORG) <$(ORANGE)/2017-01-30.log $< >$@
+out/orange-switch: $(ORANGE)/switch.pm $(ORANGE)/2017-01-30.log uslib.pm
+	$(ALLENRV) $(OPTQ_ORG) <$(ORANGE)/2017-01-30.log $< >$@
 
-out/orange-adl-nap: $(ORANGE)/adl-nap.pm $(ORANGE)/2017-01-31.log
+out/orange-adl-nap: $(ORANGE)/adl-nap.pm $(ORANGE)/2017-01-31.log uslib.pm
 	$(SRC)/allen $(OPTQ_ORG) <$(ORANGE)/2017-01-31.log $< >$@
 
 out/orange-intervals: $(ORANGE)/intervals.pm out/orange-adl-all $(ORANGE)/annotations.log
@@ -89,8 +95,8 @@ out/orange-intervals: $(ORANGE)/intervals.pm out/orange-adl-all $(ORANGE)/annota
 out/orange-precision: out/orange-intervals
 	$(ORANGE)/precision.pl $< >$@
 
-out/orange-reactivity: $(ORANGE)/adl-all.pm $(ORANGE)/2017-01-31.log
-	$(SRC)/allen $(OPTQ_ORG) -S <$(ORANGE)/2017-01-31.log $< >$@
+out/orange-reactivity: $(ORANGE)/adl-all.pm $(ORANGE)/2017-01-31.log uslib.pm
+	$(ALLENRV) $(OPTQ_ORG) -S <$(ORANGE)/2017-01-31.log $< >$@
 
 tltl3: verification/tltl3.pm
 	cat verification/tltl3.log | $(SRC)/allen $<

@@ -7,7 +7,7 @@ def F(p) = until(true, p)
 
 def G(p) = ~F(~p)
 
-def init(p) = p & ~met(p, ~p)
+def init(s) = occ(orig(), s) # selects the initial state of s, starting at t=0
 
 def H_le[T](p) =
   p >!! T | init(p)
