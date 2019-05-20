@@ -228,6 +228,41 @@ sub wuntil() {
   return [\&until2, $p, $q];
 }
 
+sub O() {
+  my ($p) = @_;
+  return &since([&true], $p);
+}
+
+sub H() {
+  my ($p) = @_;
+  return [&not, &O([&not, $p])];
+}
+
+sub F() {
+  my ($p) = @_;
+  return &until([&true], $p);
+}
+
+sub G() {
+  my ($p) = @_;
+  return [&not, &F([&not, $p])];
+}
+
+sub init() {
+  my ($p) = @_;
+  return &occ(&orig, $p);
+}
+
+sub H_le() {
+  my ($p, $T) = @_;
+  return [&or, [&gtRTa($T), $p], &init($p)];
+}
+
+sub O_le() {
+  my ($p, $T) = @_;
+  return [&not, &H_le($p, $T)];
+}
+
 # ------------------------------------------------------
 # Other derived operators
 

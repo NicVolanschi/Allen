@@ -219,10 +219,10 @@ t199: "p" >!! 1;
 t200: "p" >!! 2;
 t201: ~"q" >!! 3;
 t202: ~"q" >!! 4;
-t203: until(true, "p"); # F(p)
-t204: ~until(true, ~"p"); # G(p)
-t205: ~until(true, "p"); # G(~p)
-t206: until(true, ~"p"); # ~G(p)
-t207: until(true, "p"); # ~G(~p)
-t208: until(true, false); # ~G(true)
+t203: F("p");
+t204: G("p");
+t205: G(~"p");
+t206: ~G("p");
+t207: ~G(~"p");
+t208: ~G(true);
 t209: let p = orig() in p | delay[10](p) | delay[20](p) | delay[30](p)

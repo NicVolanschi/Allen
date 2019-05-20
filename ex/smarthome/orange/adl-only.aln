@@ -3,18 +3,6 @@
 # [1] Antoine El-Hokayem and Ylies Falcone, "Bringing Runtime Verification Home", RV'18
 
 # -------------------------------- Library
-def F(p) = until(true, p)
-
-def G(p) = ~F(~p)
-
-def init(s) = occ(orig(), s) # selects the initial state of s, starting at t=0
-
-def H_le[T](p) =
-  p >!! T | init(p)
-
-def O_le[T](p) =
-  ~H_le[T](~p)
-  #recent[T](p)
 
 def implies(p,q) = ~p | q
 
