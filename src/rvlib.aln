@@ -1,0 +1,160 @@
+#
+# The AllenRV library.
+# Library of operators defined in subset of LTL (section 1) or MLTL (section 2).
+# Most operators override native operators in Allen with the same names.
+#
+
+
+### 1. Operators derived only from Until & Since
+
+
+## Unbounded temporal logic quantifiers
+
+def O(s) = since(true, s)  # Once in LTL
+def H(s) = ~O(~s)          # Historically in LTL
+def F(s) = until(true, s)  # Finally in LTL
+def G(s) = ~F(~s)          # Globally in LTL
+# NB: use F & G with care, e.g., (F false) prevents forgetting the history
+
+
+## Weak versions of Since and Until
+
+def wsince(p,q) = since(p,q) | H(p)
+def wuntil(p,q) = until(p,q) | G(p)
+
+
+## Allen-logic operators
+
+# Each operator r is named after the relation of the same name R in the Allen
+# logic, and selects the states in p that are in relation R with some state in q
+# r(p,q) = {[t,t') in p | Exists [t'',t''') in q . [t,t') R [t'',t''')}
+
+def during(p,q) = p & q & ~wsince(p, ~q) & ~wuntil(p, ~q)
+def ends(p,q) = p & q & ~wsince(p, ~q) & wuntil(p, ~q) & wuntil(q, ~p)
+def starts(p,q) = p & q & wsince(p, ~q) & wsince(q, ~p) & ~wuntil(p, ~q)
+def eq(p,q) = p & q & wsince(p, ~q) & wsince(q, ~p) & wuntil(p, ~q) & wuntil(q, ~p)
+def over(p,q) = p & q & ~wsince(q, ~p) & ~wuntil(p, ~q)
+def overlaps(p,q) = until(p, over(p,q))
+def overlapped(p,q) = since(p, over(q,p))
+def started(p,q) = since(p, starts(q,p))
+def ended(p,q) = until(p, ends(q,p))
+def meets(p,q) = until(p, p & ~q & until(p, q) & until(~q, ~p))
+def met(p,q) = p & since(p, ~q & p & since(p,q) & since(~q,~p)) # p is redundant but for online processing
+def contains(p,q) = let d = during(q,p) in until(p, d) | since(p, d)
+
+# Allen-logic quantifiers
+def occ(p,q) = since(q, p&q) # p has already occurred in this state of q
+def possible(p,q) = until(q, p&q) # p is still possible in this state of q
+def ex(p,q) = occ(p,q) | possible(p,q) # there is p at least once in this state of q
+def holds(p,q) = p & q & wsince(p, ~q) & wuntil(p, ~q)
+
+
+
+### 2. Other operators using, besides Until and Since: delay[T], >!!.
+
+# NB: delay[1] is equivalent to a strong Previous in LTL (i.e. false at t=0).
+# NB: delay[T] is equivalent to Once[T,T] in MTL.
+# NB: >!! is equivalent to a strong Historically[0,T] in MTL (see def of H_le).
+# That is, s >!! T selects the states of s longer than T, omitting from each the
+# beginning of length T.
+
+
+## Useful basic operators
+
+def step[T] = delay[T](true) # step function, 0 on [0,T) and 1 afterwards
+def orig = ~step[1] # true only at the origin of time, when t=0
+def init(s) = occ(orig(), s) # selects the initial state of s, starting at t=0
+def up0(s) = s & ~delay[1](s) # selects first tick of any state, including at t=0
+def dn0(s) = up0(~s) # selects first tick of any non-state, including at t=0
+def up(s) = up0(s) & step[1] # the rising edges of a signal (t=0 is not an edge)
+def dn(s) = dn0(s) & step[1] # the falling edges of a signal (t=0 is not a fall)
+def sw(s) = up(s) | dn(s) # the switches of a signal from 0 to 1 and vice versa
+
+
+## Allen-logic operators immediately before & after (experimental)
+
+# NB: immediately before & after are based on a common 'between' operator
+
+# Strictest version of 'between' requiring p=q=0 between the state of p and the
+# next state of q
+def btw(p,q) = over(~q,~p)
+def bef(p,q) = meets(p, btw(p,q))
+def aft(p,q) = met(p, btw(p,q))
+
+# Full version of 'between' allowing most freedom between the two successive
+# states of p and q
+def between(p,q) =
+  let dp = dn(p) in
+  let uq = up(q) in
+  let b = btw(dp, uq) in
+  meets(dp, uq) | meets(dp, b) | b
+def before(p,q) = meets(p, between(p, q))
+def after(p,q) = met(p, between(q, p))
+
+# Intermediate version of 'between' requiring p=q=0 between the state of p and
+# the next state of q, except on the borders (i.e., p and q may have become 0
+# and/or become 1 simultaneously)
+def btwin(p,q) = since(~q,p) & ~p & ~q & until(~p,q)
+def bfor(p,q) = meets(p, btwin(p,q))
+def aftr(p,q) = met(p, btwin(q,p))
+
+
+## Bounded temporal logic quantifiers (past only)
+
+def H_le[T](s) = s >!! T | init(s)  # Historically_<=T in MTL
+def O_le[T](s) = ~H_le[T](~s)       # Once_<=T in MTL
+
+# NB: H_le[T] in LTL has a weak sense, as it selects an initial state of s
+# (starting at t=0) if it exists, even when shorter than T. In contrast,
+# s >!! T is equivalent to a strong Historically, which only selects the initial
+# state of s if it is longer than T.
+
+
+## Duration operators
+
+# NB: Native duration operators use infix syntax, but there is currently no
+# syntax for (re)defining infix operators in Allen. Hence, we define
+# below named version of the duration operators. The native counterpart
+# is given in comments.
+# For instance, the native counterpart of LE[T](s) is s <= T.
+
+def LE[T](s) = s & ~ex(s >!! T, s) # s <= T selects states lasting at most T
+def GT[T](s) = s & ex(s >!! T, s) # s > T selects states longer than T
+#def LT[T](s) = LE[T-1](s) # (T >= 2) s < T selects states shorter than T
+# NB: (s<1) == false
+#def GE[T](s) = GT[T-1](s) # (T >= 2) s >= T selects states lasting at least T
+# NB: (s>=1) == s
+#def GTrt[T](s) = GT[T](s) & ~(s >!! T) # s >! T is like s>T but falls after T
+#def GErt[T](s) = GE[T](s) & ~(s >!! T) # s >=! T is like s>=T but falls after T
+
+# NB: a few operators above are commented out because computing parameters
+# (e.g. LE[T-1]) is not yet implemented. Use native operators instead, for now.
+
+
+## Miscelaneous operators
+
+# selects all states of s, cut at T if longer
+def cut[T](s) = s & ~(s >!! T)
+
+# s is 1 or has recently been 1 (up to T ago)
+def recent[T](s) = O_le[T](s)
+
+# select the first state of p completely in a state of q (starting or during q)
+def first(p,q) = starts(p, occ(p,q))
+
+# fill holes between p's within q
+def fill(p,q) = (p & q) | during(~p, q)
+
+# collapse all p's during q
+def flat(p,q) = let d = during(p,q) in d | during(~d, q)
+
+# extends flat rightwards to end of slot q if p reaches the end of slot
+def flat_right(p,q) = occ(up(p),q) & fill(p,q)
+
+# p, then q occur (for the 1st time) in the slot
+def occ_before(p,q,slot) = occ(p,slot) & ~occ(q,slot) & possible(q,slot)
+
+# select states of p that are further (> T) away from any state in q
+def far[T](p,q) = p & during(recent[T](p), ~recent[T](q))
+
+ctx: true # dummy context, required by the syntax

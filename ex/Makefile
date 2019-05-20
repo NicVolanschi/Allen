@@ -12,15 +12,17 @@ OPTQ_ORG=-q'/^toilet$$/>=0.0001,/bathroom_shower_(hot|cold)water/>=0.0001,/bedro
 	/office_tv/=ON/OFF,/kitchen_presence/=ON/OFF,/kitchen_fridge_door/=OPEN/CLOSED,\
 	/kitchen_c[12345]/=OPEN/CLOSED,/livingroom_tv/=ON/OFF,/livingroom_couch/=ON/OFF,\
 	/livingroom_table/=ON/OFF, /(entrance|office|toilet)_switch/=ON/OFF'
-ALLENRV=$(SRC)/allen -l uslib.pm
+ALLENRV=$(SRC)/allen -l rvlib.pm
 
 %.pm: %.aln
 	$(SRC)/allenc $<
 
 default: ex
 
-uslib.pm: ../my/uslib.aln
+rvlib.pm: $(SRC)/rvlib.aln
 	$(SRC)/allenc -o $@ $<
+
+default: ex
 
 $(ORANGE)/%.log:
 	grep '$(@:$(ORANGE)/%.log=%)' $(ORANGE)/orange4home.log >$@
@@ -67,25 +69,25 @@ orange: $(ORANGE)/2017-01-31.log $(ORANGE)/2017-01-30.log \
 	make out/orange-precision
 	make out/orange-reactivity
 
-out/orange-adl-all: $(ORANGE)/adl-all.pm $(ORANGE)/2017-01-31.log uslib.pm
+out/orange-adl-all: $(ORANGE)/adl-all.pm $(ORANGE)/2017-01-31.log rvlib.pm
 	$(ALLENRV) $(OPTQ_ORG) <$(ORANGE)/2017-01-31.log $< >$@
 
-out/orange-adl-all-defs: $(ORANGE)/adl-all-defs.pm $(ORANGE)/2017-01-31.log uslib.pm
+out/orange-adl-all-defs: $(ORANGE)/adl-all-defs.pm $(ORANGE)/2017-01-31.log rvlib.pm
 	$(ALLENRV) $(OPTQ_ORG) <$(ORANGE)/2017-01-31.log $< >$@
 
-out/orange-adl-inc: $(ORANGE)/adl-inc.pm $(ORANGE)/2017-01-31.log uslib.pm
+out/orange-adl-inc: $(ORANGE)/adl-inc.pm $(ORANGE)/2017-01-31.log rvlib.pm
 	$(ALLENRV) $(OPTQ_ORG) <$(ORANGE)/2017-01-31.log $< >$@
 
-out/orange-adl-house: $(ORANGE)/adl-house.pm $(ORANGE)/2017-01-31.log uslib.pm
+out/orange-adl-house: $(ORANGE)/adl-house.pm $(ORANGE)/2017-01-31.log rvlib.pm
 	$(ALLENRV) $(OPTQ_ORG) <$(ORANGE)/2017-01-31.log $< >$@
 
-out/orange-adl-only: $(ORANGE)/adl-only.pm $(ORANGE)/2017-01-31.log uslib.pm
+out/orange-adl-only: $(ORANGE)/adl-only.pm $(ORANGE)/2017-01-31.log rvlib.pm
 	$(ALLENRV) $(OPTQ_ORG) <$(ORANGE)/2017-01-31.log $< >$@
 
-out/orange-switch: $(ORANGE)/switch.pm $(ORANGE)/2017-01-30.log uslib.pm
+out/orange-switch: $(ORANGE)/switch.pm $(ORANGE)/2017-01-30.log rvlib.pm
 	$(ALLENRV) $(OPTQ_ORG) <$(ORANGE)/2017-01-30.log $< >$@
 
-out/orange-adl-nap: $(ORANGE)/adl-nap.pm $(ORANGE)/2017-01-31.log uslib.pm
+out/orange-adl-nap: $(ORANGE)/adl-nap.pm $(ORANGE)/2017-01-31.log rvlib.pm
 	$(SRC)/allen $(OPTQ_ORG) <$(ORANGE)/2017-01-31.log $< >$@
 
 out/orange-intervals: $(ORANGE)/intervals.pm out/orange-adl-all $(ORANGE)/annotations.log
@@ -95,7 +97,7 @@ out/orange-intervals: $(ORANGE)/intervals.pm out/orange-adl-all $(ORANGE)/annota
 out/orange-precision: out/orange-intervals
 	$(ORANGE)/precision.pl $< >$@
 
-out/orange-reactivity: $(ORANGE)/adl-all.pm $(ORANGE)/2017-01-31.log uslib.pm
+out/orange-reactivity: $(ORANGE)/adl-all.pm $(ORANGE)/2017-01-31.log rvlib.pm
 	$(ALLENRV) $(OPTQ_ORG) -S <$(ORANGE)/2017-01-31.log $< >$@
 
 tltl3: verification/tltl3.pm
