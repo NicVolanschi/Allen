@@ -35,6 +35,7 @@ where:
   -l lib: load operator library lib
   -f N: forget obsolete events every N seconds (0=never, default=24hr)
   -i: print input events before processing them
+  -T: output integer timestamps (default=string timestamps)
   -t: print trace of events & timeouts
   -D: dump final & intermediate streams
   -S: print statistics at the end
@@ -45,7 +46,7 @@ our %opts = ();
 my $forgot; # counter of forgot events
 my $tforgot; # memorize the time up to which we forgot the events
 
-getopts('d:Eq:b:s:r:pl:f:itDSg', \%opts) or die $usage;
+getopts('d:Eq:b:s:r:pl:f:iTtDSg', \%opts) or die $usage;
 
 my $delim = defined($opts{'d'})? $opts{'d'}: '\s*;\s*';
 
@@ -80,6 +81,7 @@ use lib $FindBin::Bin;
 use Time::Local;
 #use stdlib;
 use Time::HiRes qw(time);
+use POSIX (strftime);
 my $npacks = 0; # number of processed event packs
 my $totaltime = 0; # record the starting time
 my $maxtime = 0; # maximum time for handling an event
@@ -1145,10 +1147,21 @@ sub print_streams() {
   return &print_array_array_array($ref_l);
 }
 
+sub ux_ts() {
+  my ($ts) = @_;
+  my $ms = $ts % 1000;
+  my $uts = strftime("%Y-%m-%dT%H:%M:%S", localtime($ts / 1000));
+  return sprintf "%s.%03d", $uts, $ms;
+}
+
 sub export_stream_line() {
   my ($ts, $name, $val, $lastoutts) = @_;
   use integer;
-  print "$ts;$name;" . $val . ";" . localtime($ts / 1000) . ";" ;
+  if (defined($opts{'T'})) {
+    print "$ts;$name;" . $val . ";" . localtime($ts / 1000) . ";" ;
+  } else {
+    print &ux_ts($ts) . ";$name;" . $val . ";";
+  }
   if($val == 0 && defined($lastoutts)) {
     print (($ts - $lastoutts) / 1000);
   }

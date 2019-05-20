@@ -10,7 +10,7 @@ suite.pm: suite.aln
 	$(SRC)/allenc $<
 
 out/suite-s: suite.pm
-	$(SRC)/allen -s log0.csv -D suite.pm >$@
+	$(SRC)/allen -s log0.csv -D -T suite.pm >$@
 
 out/%.diff: out/%
 	diff $< ref/$(<:out/%=%) >$@
