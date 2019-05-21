@@ -4,6 +4,10 @@ A domain-specific language for context detection over binary sensors.
 Allen [1, 2] is a domain-specific language (DSL) for programming context-aware applications. More precisely, for programming very concisely the detection logic of contexts (or situations) for such applications, over a set of binary sensors. (A binary sensor always produces two possible values, e.g. 0 and 1.)
 Allen aims at simplifying the development of context recognition logic and making it more reliable.
 
+NB: AllenRV is a reimplementation of Allen on Runtime Verification foundations.
+Simply calling `allen -l rvlib.pm` instead of `allen` will override all native
+operators with operators defined on top of LTL/MTL operators (see "rvlib.aln").
+
 Main concepts and features:
 * Signal: a boolean function of (discrete) time. A signal models either the current state of a physical sensor or a higher-level context depending on such sensors. The "states" of a signal are the time intervals where the signal is 1.
 * Semantics of an Allen program: based on the above model. Allows checking domain properties.
@@ -14,6 +18,12 @@ Main concepts and features:
 
 ## WARNING
 Allen is a research prototype. Its maintenance and roadmap may vary depending on research objectives that are continuously being redefined. Use it at your own risks. However, feel free to contact us if you are open to collaboration.
+
+## Installation
+
+No installation is required. You only need Perl with its core modules installed.
+Allen has been tested on Perl versions 5.18-5.28 on Linux and MacOS X, but
+should work on other configurations as well.
 
 ## Getting started
 

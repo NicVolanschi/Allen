@@ -1,11 +1,14 @@
 # Proofs of equivalences between Allen operators
 
 These files contain proofs about some equivalences between Allen formulas.
-They allow to express the main Allen operators in terms of a minimal core set of operators,
-consisting in: `holds(p,q)` and `delay[1](p)`.
+They allow to express the Allen-logic operators in terms of a minimal core
+set of operators, consisting in: either:
+- `since(p,q)` and `until(p,q)` (proofs in equiv_until.v)
+- `holds(p,q)` and `delay[1](p)` (proofs in equiv_holds.v)
 
-The proofs are formalized in first order intuitionisting logic with the Coq proof assistant.
-You can therefore use the Coq tool to mechanically check them.
+The proofs are formalized in first order intuitionistic logic with the Coq proof
+assistant. You can therefore use the Coq tool to mechanically check them. For
+that, you need to have Coq installed (https://coq.inria.fr).
 
 ## Definitions
 
@@ -18,7 +21,7 @@ The time domain is the set of natural numbers, starting with 0.
 Signals can be also viewed as sets of disjoint, non-adjacent intervals,
 also called *states*: the time intervals where the value of the signal is 1.
 
-A few Allen operators are defined in the function notation, as follows.
+Boolean operators are defined as functions:
 
     All t . (p & q)(t) = p(t) & q(t)
     All t . (p | q)(t) = p(t) | q(t)
@@ -47,7 +50,92 @@ Other Allen operators are defined in the set-theoretic notation, as follows.
 
     over(p,q) = {[t’’,t’) | [t,t’) in p & Ex [t’',t’'') in q . t < t’’ < t’ < t’''}
 
-## Equivalences
+Temporal logic operators from future/past LTL are also defined as functions:
+
+* until: (NB: [x,x) is considered empty)
+    (p U q)(t) <-> E t’>=t . q(t') & A t’’ in [t, t’) . p(t'’)
+* since:
+    (p S q)(t) <-> E t’<=t . q(t’) & A t’’ in (t’,t] . p(t’')
+* weak until:
+    (p W q)(t) <-> (p U q)(t) | A t’>=t . p(t’)
+* weak since:
+    (p Z q)(t) <-> (p S q) | A t’<=t . p(t’)
+
+Finally, some comparison operators are defined on top of LTL operators,
+to explicit their goal. Assuming that, at time t, p=q=1, all these operators compare
+which of p and q has started or will finish first. Conditions about the
+past are prefixed with 'b' (for backward), conditions about the future
+are prefixed with 'f' (for forward). Right means that the second argument
+starts/finishes first; left means that the first argument starts/finishes
+first. Eq indicates a non-strict comparison (e.g. flefteq). Finally,
+lowercase operators use weak versions of Since/Until; capitalized operators
+use strong versions of Since/Until.
+
+    frighteq(p,q) = p W ~q   # forward right
+    flefteq(p,q) = frighteq(q,p)
+    feq(p,q) = flefteq(p,q) & frighteq(p,q)
+    fleft(p,q) = flefteq(p,q) & ~frighteq(p,q)
+    fright(p,q) = frighteq(p,q) & ~flefteq(p,q)
+
+    Frighteq(p,q) = p U ~q
+    Flefteq(p,q) = Frighteq(q,p)
+    Feq(p,q) = Flefteq(p,q) & Frighteq(p,q)
+
+    brighteq(p,q) = p Z ~q
+    blefteq(p,q) = brighteq(q,p)
+    beq(p,q) = blefteq(p,q) & brighteq(p,q)
+    bleft(p,q) = blefteq(p,q) & ~brighteq(p,q)
+    bright(p,q) = brighteq(p,q) & ~blefteq(p,q)
+
+    Brighteq(p,q) = p S ~q
+    Blefteq(p,q) = Brighteq(q,p)
+    Beq(p,q) = Blefteq(p,q) & Brighteq(p,q)
+
+    occurred(p,q) = q S (p & q)
+    possible(p,q) = q U (p & q)
+
+## Equivalences with Since & Until.
+NB: These definitions exactly correspond to the proofs in equiv_until.v:
+
+    during(p,q) =  bleft(p,q) & p & q & fleft(p,q)
+    ends(p,q) = bleft(p,q) & p & q & feq(p,q)
+    starts(p,q) = beq(p,q) & p & q & fleft(p,q)
+    eq(p,q) = beq(p,q) & p & q & feq(p,q)
+    over(p,q) = bright(p,q) & p & q & fleft(p,q)
+    overlaps(p,q) = p U over(p,q)
+    overlapped(p,q) = p S over(q,p)
+    started(p,q) = p S starts(q,p)
+    ended(p,q) = p U ends(q,p)
+    _x(p,q) = p & ~q & Feq(p,~q)
+    x_(p,q) = Beq(~p,q) & ~p & q
+    meets(p,q) = p U _x(p,q)
+    met(p,q) = p S x_(q,p)
+    contains(p,q) = p U during(q,p) | p S during(q,p)
+    holds(p,q) = brighteq(p,q) & p & q & frighteq(p,q)
+    occurs(p,q) = possible(p,q) | occurred(p,q)
+
+NB: The definitions above of the Allen operators can be simplified
+by inlining the comparison operators (f|b)(left|right)(eq)?, leading
+to a more compact (but arguably less readable) library, which exactly
+corresponds to the version presented in the paper
+"Scaling up RV-based Activity Detection":
+
+    during(p,q) = p & q & ~wsince(p, ~q) & ~wuntil(p, ~q)
+    ends(p,q) = p & q & ~wsince(p, ~q) & wuntil(p, ~q) & wuntil(q, ~p)
+    starts(p,q) = p & q & wsince(p, ~q) & wsince(q, ~p) & ~wuntil(p, ~q)
+    eq(p,q) = p & q & wsince(p, ~q) & wsince(q, ~p) & wuntil(p, ~q) & wuntil(q, ~p)
+    over(p,q) = p & q & ~wsince(q, ~p) & ~wuntil(p, ~q)
+    overlaps(p,q) = until(p, over(p,q))
+    overlapped(p,q) = since(p, over(q,p))
+    started(p,q) = since(p, starts(q,p))
+    ended(p,q) = until(p, ends(q,p))
+    meets(p,q) = until(p, p & ~q & until(p, q) & until(~q, ~p))
+    met(p,q) = since(p, ~q & p & since(p,q) & since(~q,~p))
+    contains(p,q) = let d = during(q,p) in until(p, d) | since(p, d)
+    holds(p,q) = p & q & wsince(p, ~q) & wuntil(p, ~q)
+    occurs(p,q) = q & ~holds(~p, q)
+
+## Equivalences with holds & delay
 
 The following equivalences express the main Allen operators in terms of `holds` and `delay[1]`.
 The corresponding proofs can be found in the Coq files (extension .v) in this directory.

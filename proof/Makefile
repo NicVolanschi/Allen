@@ -1,9 +1,9 @@
 #
 
-all: equiv_holds.vo
+all: equiv_holds.vo equiv_until.vo
 
 clean:
-	rm *.vo *.glob
+	rm -f *.vo *.glob .*.aux
 
 basics.vo: basics.v
 	coqc basics.v
@@ -37,3 +37,6 @@ allenfuns.vo: extend.vo reactives.vo allenfuns.v
 
 equiv_holds.vo: allenfuns.vo equiv_holds.v
 	coqc equiv_holds.v
+
+equiv_until.vo: allenfuns.vo equiv_until.v
+	coqc equiv_until.v
