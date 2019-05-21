@@ -3,11 +3,11 @@
 my %total = ();
 
 while (<>) {
-    my ($ts, $s, $v, $d, $n) = /^(\d+);([^;]*);([01]);([^;]*)(?:;(\d+)?)/;
-    die "line error" if !defined($d);
+    my ($ts, $s, $v, $n) = /^([^;]*);([^;]*);([01]);(?:(\d+)?)/;
+    die "line error" if !defined($v);
     if ($v == 0) {
-	die "no delta" if !defined($n);
-	$total{$s} += $n;
+	     die "no delta" if !defined($n);
+	      $total{$s} += $n;
     }
 }
 

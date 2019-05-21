@@ -1,0 +1,13 @@
+computing: precision=0.980546593281458, recall=0.991175059952038
+office_tv: precision=1, recall=0.796610169491525
+cooking: precision=0.86996336996337, recall=0.871559633027523
+shower: precision=1, recall=0.5
+dishes: precision=1, recall=0.474489795918367
+living_tv: precision=1, recall=0.425454545454545
+dressing: precision=1, recall=0.412280701754386
+toilet: precision=1, recall=0.176470588235294
+sink: precision=1, recall=0.128358208955224
+eating: precision=0.607142857142857, recall=0.346938775510204
+napping: precision=0.424453595185303, recall=0.938375350140056
+preparing: precision=0.225903614457831, recall=0.78125
+reading: precision=0.384615384615385, recall=0.0376141859215476

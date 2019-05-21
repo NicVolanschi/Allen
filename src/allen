@@ -1162,7 +1162,7 @@ sub export_stream_line() {
   my ($ts, $name, $val, $lastoutts) = @_;
   use integer;
   if (defined($opts{'T'})) {
-    print "$ts;$name;" . $val . ";" . localtime($ts / 1000) . ";" ;
+    print "$ts;$name;" . $val . ";";# . localtime($ts / 1000) . ";";
   } else {
     print &ux_ts($ts) . ";$name;" . $val . ";";
   }

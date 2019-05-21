@@ -12,7 +12,7 @@ OPTQ_ORG=-q'/^toilet$$/>=0.0001,/bathroom_shower_(hot|cold)water/>=0.0001,/bedro
 	/office_tv/=ON/OFF,/kitchen_presence/=ON/OFF,/kitchen_fridge_door/=OPEN/CLOSED,\
 	/kitchen_c[12345]/=OPEN/CLOSED,/livingroom_tv/=ON/OFF,/livingroom_couch/=ON/OFF,\
 	/livingroom_table/=ON/OFF, /(entrance|office|toilet)_switch/=ON/OFF'
-ALLENRV=$(SRC)/allen -l rvlib.pm -T
+ALLENRV=$(SRC)/allen -l rvlib.pm
 
 %.pm: %.aln
 	$(SRC)/allenc $<
@@ -92,8 +92,8 @@ out/orange-adl-nap: $(ORANGE)/adl-nap.pm $(ORANGE)/2017-01-31.log rvlib.pm
 	$(SRC)/allen $(OPTQ_ORG) <$(ORANGE)/2017-01-31.log $< >$@
 
 out/orange-intervals: $(ORANGE)/intervals.pm out/orange-adl-all $(ORANGE)/annotations.log
-	grep -h ';Tue Jan 31 ' out/orange-adl-all $(ORANGE)/annotations.log |\
-		sort | $(SRC)/allen -T -b'/[|]/=START/STOP' $< >$@
+	grep -h '^2017-01-31T' out/orange-adl-all $(ORANGE)/annotations.log |\
+		sort | $(SRC)/allen -b'/[|]/=START/STOP' $< >$@
 
 out/orange-precision: out/orange-intervals
 	$(ORANGE)/precision.pl $< >$@
