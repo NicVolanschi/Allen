@@ -19,10 +19,11 @@ ALLENRV=$(SRC)/allen -l rvlib.pm -T
 
 default: ex
 
+out/:
+	mkdir out
+
 rvlib.pm: $(SRC)/rvlib.aln
 	$(SRC)/allenc -o $@ $<
-
-default: ex
 
 $(ORANGE)/%.log:
 	grep '$(@:$(ORANGE)/%.log=%)' $(ORANGE)/orange4home.log >$@
@@ -58,7 +59,7 @@ tare-aal: smarthome/tare-aal.pm
 	cat smarthome/tare-aal.log | $(SRC)/allen $(TAREAALOPTS) $<
 
 orange: $(ORANGE)/2017-01-31.log $(ORANGE)/2017-01-30.log \
-		$(ORANGE)/annotations.log
+		$(ORANGE)/annotations.log out/
 	eval time make out/orange-adl-nap
 	eval time make out/orange-switch
 	eval time make out/orange-adl-only
