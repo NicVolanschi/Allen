@@ -23,9 +23,9 @@ also called *states*: the time intervals where the value of the signal is 1.
 
 Boolean operators are defined as functions:
 
-    All t . (p & q)(t) = p(t) & q(t)
-    All t . (p | q)(t) = p(t) | q(t)
-    All t . (~p)(t) = ~(p(t))
+    All t . (p & q)(t) <-> p(t) & q(t)
+    All t . (p | q)(t) <-> p(t) | q(t)
+    All t . (~p)(t) <-> ~(p(t))
 
 Other Allen operators are defined in the set-theoretic notation, as follows.
 
@@ -53,13 +53,20 @@ Other Allen operators are defined in the set-theoretic notation, as follows.
 Temporal logic operators from future/past LTL are also defined as functions:
 
 * until: (NB: [x,x) is considered empty)
-    (p U q)(t) <-> E t’>=t . q(t') & A t’’ in [t, t’) . p(t'’)
+
+    All t . (p U q)(t) <-> Ex t’>=t . q(t') & All t’’ in [t, t’) . p(t'’)
+
 * since:
-    (p S q)(t) <-> E t’<=t . q(t’) & A t’’ in (t’,t] . p(t’')
+
+    All t . (p S q)(t) <-> Ex t’<=t . q(t’) & All t’’ in (t’,t] . p(t’')
+
 * weak until:
-    (p W q)(t) <-> (p U q)(t) | A t’>=t . p(t’)
+
+    All t . (p W q)(t) <-> (p U q)(t) | All t’>=t . p(t’)
+
 * weak since:
-    (p Z q)(t) <-> (p S q) | A t’<=t . p(t’)
+
+    All t . (p Z q)(t) <-> (p S q) | All t’<=t . p(t’)
 
 Finally, some comparison operators are defined on top of LTL operators,
 to explicit their goal. Assuming that, at time t, p=q=1, all these operators compare
