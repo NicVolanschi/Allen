@@ -24,18 +24,22 @@ where:
   is usually produced by the Allen compiler starting from an ".aln" file.
 * standard input must be in CSV format with at least three columns:
   timestamp;sensor;value[;...]
+  where timestamp is either an integer counting the milliseconds since the Epoch
+  or a standard timestamp string: yyyy-mm-ddThh:mm:ss[.mmm]
+* the output signals are produced in the same three-columns format on standard
+  output
 * options may be the following ones:
   -d \'regex\': CSV delimiter is given by the regex (default: \';\')
   -E: Epoch timestamps are in seconds (default: milliseconds)
   -q \'/regex/>=val,...\': threshold-quantify matching numeric sensors as boolean
   -b: \'/regex/=val1/val0\': define symbolic binary values for matching sensors
-  -s log: detect all contexts in sequence on file log rather than on stdin
+  -s log: detect contexts in sequence on file log, not in parallel on stdin
   -r nm: execute only context named nm
   -p: execute any_up(@contexts), i.e. signal the up fronts of all contexts
   -l lib: load operator library lib
   -f N: forget obsolete events every N seconds (0=never, default=24hr)
   -i: print input events before processing them
-  -T: output integer timestamps (default=string timestamps)
+  -T: output integer timestamps (default: string timestamps)
   -t: print trace of events & timeouts
   -D: dump final & intermediate streams
   -S: print statistics at the end
