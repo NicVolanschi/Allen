@@ -25,7 +25,7 @@ where:
 * standard input must be in CSV format with at least three columns:
   timestamp;sensor;value[;...]
   where timestamp is either an integer counting the milliseconds since the Epoch
-  or a standard timestamp string: yyyy-mm-ddThh:mm:ss[.mmm]
+  or a standard timestamp string: yyyy-mm-ddThh:mm:ss[.mmm][Z]
 * the output signals are produced in the same three-columns format on standard
   output
 * options may be the following ones:
@@ -40,6 +40,7 @@ where:
   -f N: forget obsolete events every N seconds (0=never, default=24hr)
   -i: print input events before processing them
   -T: output integer timestamps (default: string timestamps)
+  -Z: output Zulu (aka UTC or GMT) string timestamps (default: local timestamps)
   -t: print trace of events & timeouts
   -D: dump final & intermediate streams
   -S: print statistics at the end
@@ -50,7 +51,7 @@ our %opts = ();
 my $forgot; # counter of forgot events
 my $tforgot; # memorize the time up to which we forgot the events
 
-getopts('d:Eq:b:s:r:pl:f:iTtDSg', \%opts) or die $usage;
+getopts('d:Eq:b:s:r:pl:f:iTZtDSg', \%opts) or die $usage;
 
 my $delim = defined($opts{'d'})? $opts{'d'}: '\s*;\s*';
 
@@ -952,12 +953,16 @@ sub parse_event() {
   if ($ts =~ /^\d+$/) { # integer timestamp => scale if not in millisecs
     $ts *= 1000 if defined($opts{'E'});
   } else { # timestamp not a mere integer => interpret as a date
-    my ($year, $month, $day, $hh, $mm, $ss, $ms, $ns) =
-      ($ts =~ /(\d\d)-?(\d\d)-?(\d\d)[ T](\d\d):?(\d\d):?(\d\d)(?:[.,](\d\d\d)(\d\d\d)?)?/);
+    my ($year, $month, $day, $hh, $mm, $ss, $ms, $ns, $tz) =
+      ($ts =~ /(\d\d)-?(\d\d)-?(\d\d)[ T](\d\d):?(\d\d):?(\d\d)(?:[.,](\d\d\d)(\d\d\d)?)?(Z)?$/);
     die "invalid date-timestamp: $ts" if !defined($ss);
     $ms = 0 if !defined($ms);
     # TODO: take nanoseconds into account (simply dropped for now)
-    $ts = timelocal($ss, $mm, $hh, $day, $month - 1, $year) * 1000 + $ms;
+    if (defined($tz)) {
+      $ts = timegm($ss, $mm, $hh, $day, $month - 1, $year) * 1000 + $ms;
+    } else {
+      $ts = timelocal($ss, $mm, $hh, $day, $month - 1, $year) * 1000 + $ms;
+    }
   }
   return ($ts, $s, $val) ;
 }
@@ -1154,8 +1159,13 @@ sub print_streams() {
 sub ux_ts() {
   my ($ts) = @_;
   my $ms = $ts % 1000;
-  my $uts = strftime("%Y-%m-%dT%H:%M:%S", localtime($ts / 1000));
-  return sprintf "%s.%03d", $uts, $ms;
+  if (defined($opts{'Z'})) {
+    my $uts = strftime("%Y-%m-%dT%H:%M:%S", gmtime($ts / 1000));
+    return sprintf "%s.%03dZ", $uts, $ms;
+  } else {
+    my $uts = strftime("%Y-%m-%dT%H:%M:%S", localtime($ts / 1000));
+    return sprintf "%s.%03d", $uts, $ms;
+  }
 }
 
 sub export_stream_line() {
