@@ -954,7 +954,7 @@ sub parse_event() {
     $ts *= 1000 if defined($opts{'E'});
   } else { # timestamp not a mere integer => interpret as a date
     my ($year, $month, $day, $hh, $mm, $ss, $ms, $ns, $tz) =
-      ($ts =~ /(\d\d)-?(\d\d)-?(\d\d)[ T](\d\d):?(\d\d):?(\d\d)(?:[.,](\d\d\d)(\d\d\d)?)?(Z)?$/);
+      ($ts =~ /^(\d\d\d\d)-?(\d\d)-?(\d\d)[ T](\d\d):?(\d\d):?(\d\d)(?:[.,](\d\d\d)(\d\d\d)?)?(Z)?$/);
     die "invalid date-timestamp: $ts" if !defined($ss);
     $ms = 0 if !defined($ms);
     # TODO: take nanoseconds into account (simply dropped for now)
