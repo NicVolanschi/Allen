@@ -26,8 +26,14 @@ where:
   timestamp;sensor;value[;...]
   where timestamp is either an integer counting the milliseconds since the Epoch
   or a standard timestamp string: yyyy-mm-ddThh:mm:ss[.mmm][Z]
+  The value of each input signal at t=0 is 0.
+  NB: input lines in the log have to be ordered by timestamps.
 * the output signals are produced in the same three-columns format on standard
   output
+  The value of each output signal at t=0 is 0, unless printed otherwise.
+  The values of output signals may be 0, 1, or \'?\' (unknown). However, unknown
+  values are only printed at the end of the log, when they become permanent.
+  NB: output lines are not necessarily ordered by timestamps.
 * options may be the following ones:
   -d \'regex\': CSV delimiter is given by the regex (default: \';\')
   -E: Epoch timestamps are in seconds (default: milliseconds)
@@ -751,6 +757,16 @@ sub interpret() {
   }
   my %h = (map {&domain_h($_)} @$forms);
   &csp(\@lexprs, \%iexpr, \%h, \@out, \%outix);
+  # print output streams which remain '?'
+  for my $str (@out) {
+    if (exists($names{$outform{$str}})) {
+      my $topval = $str->[$#$str][1];
+      if (!defined($topval)) {
+        my $topts = $str->[$#$str][0];
+        &export_stream_line($topts, $names{$outform{$str}}, '?', undef);
+      }
+    }
+  }
   if(defined($opts{'D'})) {
     print "streams:\n" . &print_streams(\@out) . "\n";
   }
@@ -953,11 +969,11 @@ sub parse_event() {
   if ($ts =~ /^\d+$/) { # integer timestamp => scale if not in millisecs
     $ts *= 1000 if defined($opts{'E'});
   } else { # timestamp not a mere integer => interpret as a date
-    my ($year, $month, $day, $hh, $mm, $ss, $ms, $ns, $tz) =
+    my ($year, $month, $day, $hh, $mm, $ss, $ms, $mus, $tz) =
       ($ts =~ /^(\d\d\d\d)-?(\d\d)-?(\d\d)[ T](\d\d):?(\d\d):?(\d\d)(?:[.,](\d\d\d)(\d\d\d)?)?(Z)?$/);
     die "invalid date-timestamp: $ts" if !defined($ss);
     $ms = 0 if !defined($ms);
-    # TODO: take nanoseconds into account (simply dropped for now)
+    # TODO: take microseconds into account (simply dropped for now)
     if (defined($tz)) {
       $ts = timegm($ss, $mm, $hh, $day, $month - 1, $year) * 1000 + $ms;
     } else {
