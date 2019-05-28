@@ -118,8 +118,8 @@ def O_le[T](s) = ~H_le[T](~s)       # Once_<=T in MTL
 # is given in comments.
 # For instance, the native counterpart of LE[T](s) is s <= T.
 
-def LE[T](s) = s & ~ex(s >!! T, s) # s <= T selects states lasting at most T
-def GT[T](s) = s & ex(s >!! T, s) # s > T selects states longer than T
+def GT[T](s) = until(s, s >!! T) # s > T selects states longer than T
+def LE[T](s) = s & ~GT[T](s) # s <= T selects states lasting at most T
 #def LT[T](s) = LE[T-1](s) # (T >= 2) s < T selects states shorter than T
 # NB: (s<1) == false
 #def GE[T](s) = GT[T-1](s) # (T >= 2) s >= T selects states lasting at least T

@@ -1,5 +1,8 @@
 # Test suite for Allen DSL
 
+def GT[T](s) = until(s, s >!! T) # s > T selects states longer than T
+def LE[T](s) = s & ~GT[T](s) # s <= T selects states lasting at most T
+
 t1:
 let d = during("p","q") in
 ~holds(~d,"q") & (d | during(~"p","q"));
@@ -225,4 +228,10 @@ t205: G(~"p");
 t206: ~G("p");
 t207: ~G(~"p");
 t208: ~G(true);
-t209: let p = orig() in p | delay[10](p) | delay[20](p) | delay[30](p)
+t209: let p = orig() in p | delay[10](p) | delay[20](p) | delay[30](p);
+t210: LE[10](~"p"); # ~"p" <= 10
+t211: LE[11](~"p"); # ~"p" <= 11
+t212: LE[9](~"p"); # ~"p" <= 9
+t213: GT[1](~"q"); # ~"q" > 1
+t214: GT[10](~"q"); # ~"q" > 10
+t215: GT[11](~"q") # ~"q" > 11
