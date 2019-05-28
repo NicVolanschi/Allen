@@ -1252,34 +1252,21 @@ sub sameval() {
 sub lastval() {
   my ($ref_p, $t) = @_;
   my $i = &lastval_ix($ref_p, $t);
-  if(defined($i)) {
-    die "assert(lastval($ref_p,$t))" if !defined($$ref_p[$i][1]);
-    return $$ref_p[$i][1];
-  } else {
-    #return undef;
-    die "assert(lastval($ref_p,$t)).2";
-  }
+  die "assert(lastval($ref_p,$t))" if !defined($$ref_p[$i][1]);
+  return $$ref_p[$i][1];
 }
 
 # current value of p at time t
 sub val() {
   my ($ref_p, $t) = @_;
   my $i = &val_ix($ref_p, $t);
-  if(defined($i)) {
-    return $$ref_p[$i][1];
-  } else {
-    return undef;
-  }
+  return $$ref_p[$i][1];
 }
 
 sub tsval() { # current value of p at time t, timestamped
     my ($ref_p, $t) = @_;
     my $i = &val_ix($ref_p, $t);
-    if(defined($i)) {
-      return $$ref_p[$i];
-    } else {
-      return undef;
-    }
+    return $$ref_p[$i];
 }
 
 sub val_ix() { # index of current value of p at time t in stream p
@@ -1292,7 +1279,6 @@ sub val_ix() { # index of current value of p at time t in stream p
     $i--;
   }
   die "val_ix: invalid time";
-  #return undef;
 }
 
 sub lastval_ix() { # index of current value of p at time < t in stream p
@@ -1334,7 +1320,6 @@ sub next() {
   my $t1;
   for my $s (@streams) {
     my $i = &val_ix($s, $t);
-    die "invalid time: $t" if !defined($i);
     # advance index and check if still in the streams
     $i++;
     if($i <= $#$s && (!defined($t1) || $$s[$i][0] < $t1)) {
@@ -1350,7 +1335,6 @@ sub next() {
 sub next_val() {
   my ($t, $ref_p, $val) = @_;
   my $pi = &val_ix($ref_p, $t);
-  die "invalid time: $t" if !defined($pi);
   # search for val in the stream from index on
   while(++$pi <= $#$ref_p) {
     if(&sameval($$ref_p[$pi][1], $val)) {
@@ -1364,7 +1348,6 @@ sub next_val() {
 sub prev_val() {
   my ($t, $ref_p, $val) = @_;
   my $pi = &val_ix($ref_p, $t);
-  die "invalid time: $t" if !defined($pi);
   # search for val in the stream from index on
   while($pi >= 0) {
     if(&sameval($$ref_p[$pi][1], $val)) {
