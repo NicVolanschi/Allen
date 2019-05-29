@@ -318,15 +318,15 @@ sub O_le() {
 # p goes up (p=>1); may include t=0
 sub up0() {
   my ($p) = @_;
-  #return [&geRT(1), $p];
-  return [&and, $p, [&not, [&delay(1), $p]]];
+  return [&geRT(1), $p];
+  #return [&and, $p, [&not, [&delay(1), $p]]];
 }
 
 # p goes down (p=>0); may include t=0
 sub dn0() {
   my ($p) = @_;
   #return [&geRT(1), [&not, $p]];
-  return &up([&not, $p]);
+  return &up0([&not, $p]);
 }
 
 # p goes up (p=>1); excludes t=0
@@ -338,8 +338,8 @@ sub up() {
 # p goes down (p=>0); excludes t=0
 sub dn() {
   my ($p) = @_;
-  #return &up([&not, $p]);
-  return [&and, &dn0($p), &step(1)];
+  return &up([&not, $p]);
+  #return [&and, &dn0($p), &step(1)];
 }
 
 # p switches value (p=>0/1)

@@ -69,6 +69,7 @@ orange: $(ORANGE)/2017-01-31.log $(ORANGE)/2017-01-30.log \
 	eval time make out/orange-adl-all-defs
 	make out/orange-precision
 	make out/orange-reactivity
+	diff out/orange-precision ref/
 
 out/orange-adl-all: $(ORANGE)/adl-all.pm $(ORANGE)/2017-01-31.log rvlib.pm
 	$(ALLENRV) $(OPTQ_ORG) <$(ORANGE)/2017-01-31.log $< >$@
