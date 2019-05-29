@@ -44,7 +44,8 @@ my $syntax =
   Comp -> Expr1 (">=!"|"<="|">="|">!"|">!!"|"<"|">") Int | Expr1
   Expr1 -> true | false | "~" Expr1 | "(" Expr ")" | str
         | id ("[" Int+(",") "]")? ("(" Expr*(",") ")")?
-  Int -> id | int ("hr" | "min" | "sec")?
+  Int -> Int1 ("+"|"-") Int | Int1
+  Int1 -> id | int ("hr" | "min" | "sec")?
 
 Notes:
 * Comments in the program start with a "#" and span to the end of line.';
@@ -76,8 +77,13 @@ my %fix = (
 );
 
 my %predef = (
+"id" => [0,1, "id(p) is the identity function for signals"],
+"LT" => [1,1, "LT[T](p) is the prefix notation for p < T"],
 "LE" => [1,1, "LE[T](p) is the prefix notation for p <= T"],
 "GT" => [1,1, "GT[T](p) is the prefix notation for p > T"],
+"GE" => [1,1, "GE[T](p) is the prefix notation for p >= T"],
+"GTrt" => [1,1, "GTrt[T](p) is the prefix notation for p >! T"],
+"GErt" => [1,1, "GErt[T](p) is the prefix notation for p >=! T"],
 "since" => [0,2,
 "since(p,q) is the strong Since operator in LTL,
 since(p,q)(t) <-> exists t'<=t . q(t') & p is 1 on (t',t]"],
@@ -520,6 +526,18 @@ sub parse_comp() {
 }
 
 sub parse_int() {
+  my $e1 = &parse_int1();
+  my ($typ, $tok) = &token(0); # look ahead
+  if ($typ eq "key" && $tok =~ /^[+-]$/) {
+    &token(1); # consume binary operator
+    my $e2 = &parse_int();
+    return [$tok, $e1, $e2];
+  } else {
+    return $e1;
+  }
+}
+
+sub parse_int1() {
   my ($typ, $tok) = &token(1);
   if($typ eq "int") {
     my $i = $tok;
@@ -649,7 +667,7 @@ sub token() {
   my $tok;
   if ($line =~ /^(\d+)/) {
     ($typ, $tok) = ("int", $1);
-  } elsif ($line =~ /^([][&|~(),;:=]|>=!|<=|>=|>!!|>!|<|>|(day|hr|min|sec|let|in|def|true|false)\b)/) {
+  } elsif ($line =~ /^([][&|~(),;:=+-]|>=!|<=|>=|>!!|>!|<|>|(day|hr|min|sec|let|in|def|true|false)\b)/) {
     ($typ, $tok) = ("key", $1);
   } elsif ($line =~ /^([a-zA-Z_]\w*)/) {
     ($typ, $tok) = ("id", $1);
@@ -718,6 +736,10 @@ sub gen_expr() {
         }
       }
       print OUT "]";
+    } elsif ($op =~ /^[+-]$/) {
+      &gen_expr($t->[1]);
+      print OUT $op;
+      &gen_expr($t->[2]);
     } else { # named op call
       my $pars = $t->[1];
       my @args = (@$t[2..$#$t]);

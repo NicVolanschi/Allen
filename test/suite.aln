@@ -16,9 +16,9 @@ t4: LE[1]("p"); # "p" <= 1
 t5: LE[2]("p"); # "p" <= 2
 t6: LE[1](~"p"); # ~"p" <= 1
 t7: (during("p","q") | during(~"p","q")) <= 2;
-t8: "p" >=! 1;
+t8: GErt[1]("p"); # "p" >=! 1;
 t9: (during("p","q") | during(~"p","q")) >=! 2;
-t10: "q" >=! 4;
+t10: GErt[4]("q"); # "q" >=! 4
 t11: wave[1,0,0,0];
 t12: wave[1,0,0,0];
 t13: ~wave[1,0,0,0];
@@ -101,17 +101,17 @@ t81: meets("p",~"p");
 t82: meets("q",~"q");
 t83: meets("p", between("p","q")); # before(p,q)
 t84: meets("q", between("q","p")); # before(q,p)
-t85: occ(~"p" >=! 1, ~("q" >=! 1)); # btw1st(p,q) = occ(p=>0,~(q=>1)) = occ((~p)>=!1, ~(q>=!1))
-t86: occ("p" >=! 1, ~("q" >=! 1)); # btw1st(~p,q)
-t87: occ("p" >=! 1, ~(~"q" >=! 1)); # btw1st(~p,~q)
+t85: occ(GErt[1](~"p"), ~GErt[1]("q")); # btw1st(p,q) = occ(p=>0,~(q=>1)) = occ((~p)>=!1, ~(q>=!1))
+t86: occ(GErt[1]("p"), ~GErt[1]("q")); # btw1st(~p,q)
+t87: occ(GErt[1]("p"), ~GErt[1](~"q")); # btw1st(~p,~q)
 t88: GT[1]("p"); # "p" > 1
-t89: "p" >! 1;
-t90: "p" < 1;
-t91: "p" < 2;
-t92: "p" >= 1;
-t93: "p" >= 2;
+t89: GTrt[1]("p"); # "p" >! 1
+t90: LT[1]("p"); # "p" < 1
+t91: LT[2]("p"); # "p" < 2
+t92: GE[1]("p"); # "p" >= 1
+t93: GE[2]("p"); # "p" >= 2
 t94: GT[4]("q"); # "q" > 4
-t95: "q" >= 4;
+t95: GE[4]("q"); # "q" >= 4
 t96: contains("p","q");
 t97: contains("q","p");
 t98: contains(~"q","p");
@@ -157,11 +157,11 @@ t137: false | false;
 t138: occ("p",true);
 t139: during("p",true);
 t140: contains(true, "p");
-t141: "p" >! 2;
-t142: "p" >! 3;
-t143: ~"p" >! 1;
-t144: ~"p" >! 2;
-t145: ~"p" >! 10;
+t141: GTrt[2]("p"); # "p" >! 2
+t142: GTrt[3]("p"); # "p" >! 3
+t143: GTrt[1](~"p"); # ~"p" >! 1
+t144: GTrt[2](~"p"); # ~"p" >! 2
+t145: GTrt[10](~"p"); # ~"p" >! 10
 t146: wsince("p", "q");
 t147: wsince("p", ~"q");
 t148: wsince(~"p", "q");
@@ -205,16 +205,16 @@ t185: meets(~"q", "q");
 t186: meets(~"q", ~"q");
 t187: meets(~"q", "p"&"q");
 t188: meets(~"q", over("p","q"));
-t189: ~"p" >! 11;
+t189: GTrt[11](~"p"); # ~"p" >! 11
 t190: LE[10](~"p"); # ~"p" <= 10
 t191: LE[11](~"p"); # ~"p" <= 11
 t192: GT[1](~"q"); # ~"q" > 1;
 t193: GT[10](~"q"); # ~"q" > 10
 t194: GT[11](~"q"); # ~"q" > 11
-t195: ~"q" < 11;
-t196: ~"q" < 12;
-t197: ~"q" >= 11;
-t198: ~"q" >= 12;
+t195: LT[11](~"q"); # ~"q" < 11
+t196: LT[12](~"q"); # ~"q" < 12
+t197: GE[11](~"q"); # ~"q" >= 11
+t198: GE[12](~"q"); # ~"q" >= 12;
 t199: "p" >!! 1;
 t200: "p" >!! 2;
 t201: ~"q" >!! 3;
@@ -225,4 +225,20 @@ t205: G(~"p");
 t206: ~G("p");
 t207: ~G(~"p");
 t208: ~G(true);
-t209: let p = orig() in p | delay[10](p) | delay[20](p) | delay[30](p)
+t209: let p = orig() in p | delay[10](p) | delay[20](p) | delay[30](p);
+t210: LE[0]("p"); # == false
+t211: LE[0-1]("p"); # == false
+t212: LT[1]("p"); # == false
+t213: LT[0]("p"); # == false
+t214: LT[0-1]("p"); # == false
+t215: GT[0]("p"); # == p
+t216: GT[0-1]("p"); # == p
+t217: GE[1]("p"); # == p
+t218: GE[0]("p"); # == p
+t219: GE[0-1]("p"); # == p
+t220: GErt[0]("p"); # == false
+t221: GErt[0-1]("p"); # == false
+t222: GTrt[0]("p"); # == false
+t223: GTrt[0-1]("p"); # == false
+t224: "p" >!! 0; # == p
+t225: "p" >!! 0-1 # == p

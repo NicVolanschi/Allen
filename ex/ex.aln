@@ -1,10 +1,10 @@
 # Simple examples of Allen programming
 
 def foo[T](x,y) =
-  let o = over(x, y) in
-  o >=! T
+  let d = during(x, y) in
+  d >=! T + 1
 
 # Rules to check:
 
-c1: foo[1]("p", "q");
+c1: foo[1](~"p", "q");
 c2: foo[1]("q", "p")

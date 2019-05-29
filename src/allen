@@ -253,6 +253,30 @@ sub LE() {
   return [&le($T), $p];
 }
 
+# prefix notation for p >= T`
+sub GE() {
+  my ($p, $T) = @_;
+  return [&ge($T), $p];
+}
+
+# prefix notation for p < T
+sub LT() {
+  my ($p, $T) = @_;
+  return [&lt($T), $p];
+}
+
+# prefix notation for p >! T`
+sub GTrt() {
+  my ($p, $T) = @_;
+  return [&gtRT($T), $p];
+}
+
+# prefix notation for p >=! T`
+sub GErt() {
+  my ($p, $T) = @_;
+  return [&geRT($T), $p];
+}
+
 sub O() {
   my ($p) = @_;
   return &since([&true], $p);
@@ -1545,7 +1569,7 @@ sub false() {
 }
 
 sub false0() {
-  my ($t, $ref_p, $ref_res, $resval) = @_;
+  my ($t, $ref_res, $resval) = @_;
   return 0;
 }
 
@@ -1554,8 +1578,19 @@ sub true() {
 }
 
 sub true0() {
-  my ($t, $ref_p, $ref_res, $resval) = @_;
+  my ($t, $ref_res, $resval) = @_;
   return 1;
+}
+
+# identity: id(s) == s
+sub id() {
+  return \&id1;
+}
+
+sub id1() {
+  my ($t, $ref_p, $ref_res, $resval) = @_;
+  my $valp = &val($ref_p, $t);
+  return $valp;
 }
 
 sub not() {
@@ -1842,6 +1877,7 @@ sub latereq() {
 # select intervals of p=1 shorter or equal to T
 sub le() {
   my ($T) = @_;
+  return \&false0 if $T <= 0;
   return sub(){ return &le1_T(@_, $T); }
 }
 
@@ -1875,6 +1911,7 @@ sub le1_T() {
 # select intervals of p=1 shorter than T
 sub lt() {
   my ($T) = @_;
+  return \&false0 if $T <= 1;
   return sub(){ return &lt1_T(@_, $T); }
 }
 
@@ -1908,6 +1945,7 @@ sub lt1_T() {
 # select intervals of p=1 longer than T
 sub gt() {
   my ($T) = @_;
+  return \&id1 if $T <= 0;
   return sub(){ return &gt1_T(@_, $T); }
 }
 
@@ -1941,6 +1979,7 @@ sub gt1_T() {
 # select intervals of p=1 longer than T
 sub ge() {
   my ($T) = @_;
+  return \&id1 if $T <= 1;
   return sub(){ return &ge1_T(@_, $T); }
 }
 
@@ -1974,6 +2013,7 @@ sub ge1_T() {
 # Real-time version of gt1(): falls back to 0 at T
 sub gtRT() {
   my ($T) = @_;
+  return \&false0 if $T <= 0;
   return sub(){ return &gtRT1_T(@_, $T); }
 }
 
@@ -2011,6 +2051,7 @@ sub gtRT1_T() {
 # Real-time version of geRT(): falls back to 0 at T
 sub geRT() {
   my ($T) = @_;
+  return \&false0 if $T <= 0;
   return sub(){ return &geRT_T(@_, $T); }
 }
 
@@ -2048,6 +2089,7 @@ sub geRT_T() {
 # Complementary real-time version of gtRT(): becomes 1 After T
 sub gtRTa() {
   my ($T) = @_;
+  return \&id1 if $T <= 0;
   return sub(){ return &gtRTa_T(@_, $T); }
 }
 

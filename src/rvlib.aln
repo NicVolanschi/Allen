@@ -119,17 +119,17 @@ def O_le[T](s) = ~H_le[T](~s)       # Once_<=T in MTL
 # For instance, the native counterpart of LE[T](s) is s <= T.
 
 def GT[T](s) = until(s, s >!! T) # s > T selects states longer than T
+# NB: s > 0 == s
 def LE[T](s) = s & ~GT[T](s) # s <= T selects states lasting at most T
-#def LT[T](s) = LE[T-1](s) # (T >= 2) s < T selects states shorter than T
-# NB: (s<1) == false
-#def GE[T](s) = GT[T-1](s) # (T >= 2) s >= T selects states lasting at least T
-# NB: (s>=1) == s
-#def GTrt[T](s) = GT[T](s) & ~(s >!! T) # s >! T is like s>T but falls after T
-#def GErt[T](s) = GE[T](s) & ~(s >!! T) # s >=! T is like s>=T but falls after T
-
-# NB: a few operators above are commented out because computing parameters
-# (e.g. LE[T-1]) is not yet implemented. Use native operators instead, for now.
-
+# NB: s <= 0 == false
+def LT[T](s) = LE[T-1](s) # s < T selects states shorter than T
+# NB: s < 1 == s < 0 == false
+def GE[T](s) = GT[T-1](s) # (T > 1) s >= T selects states lasting at least T
+# NB: s >= 1 == s >= 0 == s
+def GTrt[T](s) = GT[T](s) & ~(s >!! T) # s >! T is like s>T but falls after T
+# NB: s >! 0 == false
+def GErt[T](s) = GE[T](s) & ~(s >!! T) # s >=! T is like s>=T but falls after T
+# NB: s >=! 0 == false
 
 ## Miscelaneous operators
 
