@@ -76,6 +76,8 @@ my %fix = (
 );
 
 my %predef = (
+"LE" => [1,1, "LE[T](p) is the prefix notation for p <= T"],
+"GT" => [1,1, "GT[T](p) is the prefix notation for p > T"],
 "since" => [0,2,
 "since(p,q) is the strong Since operator in LTL,
 since(p,q)(t) <-> exists t'<=t . q(t') & p is 1 on (t',t]"],

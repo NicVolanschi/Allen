@@ -241,6 +241,18 @@ sub wuntil() {
   return [\&until2, $p, $q];
 }
 
+# prefix notation for p > T`
+sub GT() {
+  my ($p, $T) = @_;
+  return [&gt($T), $p];
+}
+
+# prefix notation for p <= T
+sub LE() {
+  my ($p, $T) = @_;
+  return [&le($T), $p];
+}
+
 sub O() {
   my ($p) = @_;
   return &since([&true], $p);

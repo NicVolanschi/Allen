@@ -1,8 +1,5 @@
 # Test suite for Allen DSL
 
-def GT[T](s) = until(s, s >!! T) # s > T selects states longer than T
-def LE[T](s) = s & ~GT[T](s) # s <= T selects states lasting at most T
-
 t1:
 let d = during("p","q") in
 ~holds(~d,"q") & (d | during(~"p","q"));
@@ -15,9 +12,9 @@ t3:
 let d = during("p","q") in
 d & during(~d,"q");
 
-t4: "p" <= 1;
-t5: "p" <= 2;
-t6: ~"p" <= 1;
+t4: LE[1]("p"); # "p" <= 1
+t5: LE[2]("p"); # "p" <= 2
+t6: LE[1](~"p"); # ~"p" <= 1
 t7: (during("p","q") | during(~"p","q")) <= 2;
 t8: "p" >=! 1;
 t9: (during("p","q") | during(~"p","q")) >=! 2;
@@ -107,13 +104,13 @@ t84: meets("q", between("q","p")); # before(q,p)
 t85: occ(~"p" >=! 1, ~("q" >=! 1)); # btw1st(p,q) = occ(p=>0,~(q=>1)) = occ((~p)>=!1, ~(q>=!1))
 t86: occ("p" >=! 1, ~("q" >=! 1)); # btw1st(~p,q)
 t87: occ("p" >=! 1, ~(~"q" >=! 1)); # btw1st(~p,~q)
-t88: "p" > 1;
+t88: GT[1]("p"); # "p" > 1
 t89: "p" >! 1;
 t90: "p" < 1;
 t91: "p" < 2;
 t92: "p" >= 1;
 t93: "p" >= 2;
-t94: "q" > 4;
+t94: GT[4]("q"); # "q" > 4
 t95: "q" >= 4;
 t96: contains("p","q");
 t97: contains("q","p");
@@ -209,11 +206,11 @@ t186: meets(~"q", ~"q");
 t187: meets(~"q", "p"&"q");
 t188: meets(~"q", over("p","q"));
 t189: ~"p" >! 11;
-t190: ~"p" <= 10;
-t191: ~"p" <= 11;
-t192: ~"q" > 1;
-t193: ~"q" > 10;
-t194: ~"q" > 11;
+t190: LE[10](~"p"); # ~"p" <= 10
+t191: LE[11](~"p"); # ~"p" <= 11
+t192: GT[1](~"q"); # ~"q" > 1;
+t193: GT[10](~"q"); # ~"q" > 10
+t194: GT[11](~"q"); # ~"q" > 11
 t195: ~"q" < 11;
 t196: ~"q" < 12;
 t197: ~"q" >= 11;
@@ -228,10 +225,4 @@ t205: G(~"p");
 t206: ~G("p");
 t207: ~G(~"p");
 t208: ~G(true);
-t209: let p = orig() in p | delay[10](p) | delay[20](p) | delay[30](p);
-t210: LE[10](~"p"); # ~"p" <= 10
-t211: LE[11](~"p"); # ~"p" <= 11
-t212: LE[9](~"p"); # ~"p" <= 9
-t213: GT[1](~"q"); # ~"q" > 1
-t214: GT[10](~"q"); # ~"q" > 10
-t215: GT[11](~"q") # ~"q" > 11
+t209: let p = orig() in p | delay[10](p) | delay[20](p) | delay[30](p)
