@@ -560,7 +560,7 @@ sub parse_expr1() {
     } elsif ($tok eq "true" || $tok eq "false") {
       return $tok;
     } else {
-      die "expr starts with invalid key: $key at $line";
+      die "expr starts with invalid key: $tok at $line";
     }
   } elsif ($typ eq "id") {
     my @pars = ();
@@ -632,6 +632,7 @@ sub parse_expr1() {
 sub token() {
   my ($consume) = @_;
   #print "called token($consume) on $line\n";
+  return ("eof", undef) if !defined($line); # already at end of file
   while (1) {
     $line =~ s/^\s*//o; # whitespace
     $line =~ s/^#.*//o; # comments
