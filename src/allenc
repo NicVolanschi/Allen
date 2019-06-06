@@ -35,7 +35,7 @@ my $syntax =
   Prog -> Use* Lib LetRules
   Use -> "use" id ("[" int "]")? ("(" int ")")?
   Lib -> Def*
-  Def -> "def" id ("[" id+(",") "]")? ("(" id*(",") ")")?
+  Def -> "def" id ("[" id+(",") "]")? ("(" id*(",") ")")? str*
          "=" Context
   LetRules -> "let" id "=" Expr "in" LetRules | Rules
   Rules -> id ":" Context (";" Rules)?
@@ -389,7 +389,8 @@ sub parse_lib() {
     die "duplicated def: $nm" if defined($def{$nm});
     my $npar = @{$d->[2]};
     my $narg = @{$d->[3]};
-    $def{$nm} = [$npar, $narg]; # put name in def symbol table
+    my $strs = @{$d->[4]};
+    $def{$nm} = [$npar, $narg, $strs]; # put name in def symbol table
     ($typ, $tok) = &token(0); # look ahead
   }
   return \@defs;
@@ -441,11 +442,18 @@ sub parse_def() {
         if $typ3 ne "key" || $tok3 ne ")";
     }
   }
+  my @strs = ();
+  ($typ3, $tok3) = &token(0); # lookahead
+  while ($typ3 eq "str") { # optional comment string
+    &token(1); # consume it
+    push @strs, $tok3;
+    ($typ3, $tok3) = &token(0); # lookahead
+  }
   my ($typ6, $tok6) = &token(1);
   die "= expected in def, found $tok6 at $line"
     if $typ6 ne "key" || $tok6 ne "=";
   my $e = &parse_context();
-  return ["def", $tok2, \@pars, \@args, $e];
+  return ["def", $tok2, \@pars, \@args, \@strs, $e];
 }
 
 sub parse_let_rules() {
@@ -893,9 +901,8 @@ sub gen_let_rules() {
   my ($t) = @_;
   my ($var, $val, $body) = &match_let($t);
   if (defined($var)) {
-    print OUT "sub{";
+    print OUT "# Global lets\n";
     &gen_let_rules_rec($t);
-    print OUT "}->()";
   } else {
     &gen_rules($t);
   }
@@ -904,8 +911,12 @@ sub gen_let_rules() {
 sub gen_def() {
   my ($def) = @_;
   die "invalid def"
-    if ref $def ne "ARRAY" || $#$def != 4;
-  my (undef, $nm, $pars, $args, $body) = @$def;
+    if ref $def ne "ARRAY" || $#$def != 5;
+  my (undef, $nm, $pars, $args, $strs, $body) = @$def;
+  for my $str (@$strs) {
+    $str =~ s/^"//; $str =~ s/"$//; # unquote
+    print OUT "# $str\n";
+  }
   print OUT "sub $nm() {\n";
   print OUT "  my (";
   my @vars = (@$args, @$pars);
