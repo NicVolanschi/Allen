@@ -32,7 +32,8 @@ where:
 
 my $syntax =
 '
-  Prog -> Lib LetRules
+  Prog -> Use* Lib LetRules
+  Use -> "use" id ("[" int "]")? ("(" int ")")?
   Lib -> Def*
   Def -> "def" id ("[" id+(",") "]")? ("(" id*(",") ")")?
          "=" Context
@@ -318,10 +319,12 @@ my $line = "";
 # print "done\n";
 # exit;
 
+my %use = (); # symbol table for use's (global scope)
 my %def = (); # symbol table for def's (global scope)
 my %glb = (); # symbol table for global lets (global scope)
 my %var = (); # symbol table for variables (lexical scope)
 
+&parse_uses();
 my $l = &parse_lib();
 #&print_ast($l);
 #print "\n";
@@ -337,6 +340,44 @@ for my $d (@$l) {
 exit;
 
 # ----------------- parsing ---------------------
+
+sub parse_uses() {
+  my ($typ, $tok) = &token(0); # look ahead
+  while ($typ eq "key" && $tok eq "use") {
+    &token(1); # consume "use`"
+    my ($typ2, $tok2) = &token(1);
+    die "id expected in use, found $tok2 at $line"
+      if $typ2 ne "id";
+    my $name = $tok2;
+    my $npars = 0;
+    my $nargs = 0;
+    die "duplicated use: $name" if defined($uses{$name});
+    my ($typ3, $tok3) = &token(0); # lookahead
+    if ($typ3 eq "key" && $tok3 eq "[") {
+      &token(1); # consume '['
+      my ($typ4, $tok4) = &token(1);
+      die "int expected in def, found $tok4 at $line"
+        if $typ4 ne "int";
+      $npars = $tok4;
+      ($typ3, $tok3) = &token(1);
+      die "expected closing par, found: $tok3"
+        if $typ3 ne "key" || $tok3 ne "]";
+    }
+    ($typ3, $tok3) = &token(0); # lookahead
+    if ($typ3 eq "key" && $tok3 eq "(") {
+      &token(1); # consume '('
+      my ($typ5, $tok5) = &token(1);
+      die "int expected in def, found $tok5 at $line"
+        if $typ5 ne "int";
+      $nargs = $tok5;
+      ($typ3, $tok3) = &token(1);
+      die "expected closing par, found: $tok3 at $line"
+        if $typ3 ne "key" || $tok3 ne ")";
+    }
+    $use{$name} = [$npars, $nargs];
+    ($typ, $tok) = &token(0); # look ahead
+  }
+}
 
 sub parse_lib() {
   my @defs = ();
@@ -616,10 +657,11 @@ sub parse_expr1() {
     if ($#pars >= 0 || $arglst == 1) { # it's a call
       # TODO: allow forward references (delay check to code generation phase)
       my $op = $tok;
-      if (!exists($predef{$op}) && !exists($def{$op})) {
+      if (!exists($predef{$op}) && !exists($def{$op}) && !exists($use{$op})) {
         die "undefined macro $op";
       } else { # check nb of pars & args
-        my $type = exists($predef{$op})? $predef{$op}: $def{$op};
+        my $type = exists($predef{$op})? $predef{$op}:
+                    exists($def{$op})? $def{$op} : $use{$op};
         my $npars0 = $type->[0]; # expected
         my $nargs0 = $type->[1]; # expected
         my $npars = @pars; # provided
@@ -667,7 +709,7 @@ sub token() {
   my $tok;
   if ($line =~ /^(\d+)/) {
     ($typ, $tok) = ("int", $1);
-  } elsif ($line =~ /^([][&|~(),;:=+-]|>=!|<=|>=|>!!|>!|<|>|(day|hr|min|sec|let|in|def|true|false)\b)/) {
+  } elsif ($line =~ /^([][&|~(),;:=+-]|>=!|<=|>=|>!!|>!|<|>|(day|hr|min|sec|let|in|def|use|true|false)\b)/) {
     ($typ, $tok) = ("key", $1);
   } elsif ($line =~ /^([a-zA-Z_]\w*)/) {
     ($typ, $tok) = ("id", $1);
