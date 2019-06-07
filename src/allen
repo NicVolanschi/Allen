@@ -41,7 +41,6 @@ where:
   -b: \'/regex/=val1/val0\': define symbolic binary values for matching sensors
   -s log: detect contexts in sequence on file log, not in parallel on stdin
   -r nm: execute only context named nm
-  -p: execute any_up(@contexts), i.e. signal the up fronts of all contexts
   -l lib: load operator library lib
   -f N: forget obsolete events every N seconds (0=never, default=24hr)
   -i: print input events before processing them
@@ -57,7 +56,7 @@ our %opts = ();
 my $forgot; # counter of forgot events
 my $tforgot; # memorize the time up to which we forgot the events
 
-getopts('d:Eq:b:s:r:pl:f:iTZtDSg', \%opts) or die $usage;
+getopts('d:Eq:b:s:r:l:f:iTZtDSg', \%opts) or die $usage;
 
 my $delim = defined($opts{'d'})? $opts{'d'}: '\s*;\s*';
 
