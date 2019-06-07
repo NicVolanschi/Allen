@@ -32,7 +32,7 @@ where:
 
 my $syntax =
 '
-  Prog -> Use* Lib LetRules
+  Prog -> Use* Lib LetRules?
   Use -> "use" id ("[" int "]")? ("(" int ")")?
   Lib -> Def*
   Def -> "def" id ("[" id+(",") "]")? ("(" id*(",") ")")? str*
@@ -138,7 +138,10 @@ my %var = (); # symbol table for variables (lexical scope)
 my $l = &parse_lib();
 #&print_ast($l);
 #print "\n";
-my $p = &parse_let_rules();
+my ($typ, $tok) = &token(0); # look ahead
+my $p = ($typ eq "eof")?
+  [] # no contexts => library
+  : &parse_let_rules();
 #&print_ast($p);
 #print "\n";
 

@@ -156,5 +156,3 @@ def occ_before(p,q,slot) = occ(p,slot) & ~occ(q,slot) & possible(q,slot)
 
 # select states of p that are further (> T) away from any state in q
 def far[T](p,q) = p & during(recent[T](p), ~recent[T](q))
-
-ctx: true # dummy context, required by the syntax
