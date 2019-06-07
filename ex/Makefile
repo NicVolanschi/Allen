@@ -17,6 +17,9 @@ ALLENRV=$(SRC)/allen -l rvlib.pm
 %.pm: %.aln
 	$(SRC)/allenc $<
 
+out/%.diff: out/%
+	diff $< ref/$(<:out/%=%) >$@
+
 default: ex
 
 out/:
@@ -35,6 +38,10 @@ $(ORANGE)/annotations.log: $(ORANGE)/annotations.csv
 
 ex: ex.pm
 	$(SRC)/allen -s $(TST)/log0.csv $<
+
+tstrv: out/tstrv.diff
+out/tstrv: rvlib.pm tstrv.pm
+	cat logrv.csv | $(SRC)/allen -l $^ >out/tstrv
 
 out/suite: $(TST)/suite.pm
 	$(SRC)/allen -s $(TST)/log0.csv $< >$@

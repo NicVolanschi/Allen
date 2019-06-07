@@ -1,0 +1,6 @@
+# select bix states of x during any y
+def big_during[T](x,y) =
+  during(x >= T, y)
+small_p: "p" < 2sec;
+big_pause_p_in_q:
+  big_during[2sec](~"p","q")
