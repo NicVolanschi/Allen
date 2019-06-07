@@ -1,0 +1,5 @@
+# Sample user library
+
+def included(x,y)
+  "included(x,y) selects states of x that either start, end, or happen during y"
+  = starts(x,y) | during(x,y) | ends(x,y)

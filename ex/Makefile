@@ -43,6 +43,9 @@ tstrv: out/tstrv.diff
 out/tstrv: rvlib.pm tstrv.pm
 	cat logrv.csv | $(SRC)/allen -l $^ >out/tstrv
 
+tstuserlib: userlib.pm tstuserlib.pm
+	cat logrv.csv | $(SRC)/allen -l $^
+
 out/suite: $(TST)/suite.pm
 	$(SRC)/allen -s $(TST)/log0.csv $< >$@
 out/holdslib: holdslib.pm $(TST)/suite.pm
