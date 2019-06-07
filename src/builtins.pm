@@ -575,5 +575,55 @@ sub gtRTa_T() {
 }
 
 # ------------------------------------------------------
-# Result
-1
+# Result structure
+(
+# Requires
+{},
+# Provides
+{
+"&" => [0,2, "p & q is the binary 'and' boolean operator,
+(p&q)(t) <-> p(t) & q(t)"],
+"|" => [0,2, "p | q is the binary 'or' boolean operator,
+(p|q)(t) <-> p(t) or q(t)"],
+"~" => [0,1, "~p is the unary 'not' boolean operator,
+(~p)(t) <-> not p(t)"],
+"<" => [1,1, "p < T selects the states of p shorter than T,
+{[t,t') in p | t'-t < T}"],
+">" => [1,1, "p > T selects the states of p longer than T,
+{[t,t') in p | t'-t > T}"],
+"<=" => [1,1, "p <= T selects the states of p lasting at most T,
+{[t,t') in p | t'-t <= T}"],
+">=" => [1,1, "p >= T selects the states of p lasting at least T,
+{[t,t') in p | t'-t >= T}"],
+">=!" => [1,1, "p >=! T selects the beginnings of states in p >= T, shortened to T,
+{[t,t+T) | [t,t') in p & t'-t >= T}"],
+">!" => [1,1, "p >! T selects the beginnings of states in p > T, shortened to T,
+{[t,t+T) | [t,t') in p & t'-t > T}"],
+">!!" => [1,1, "p >!! T selects the ends of states in p > T, after dropping p >! T,
+{[t+T,t') | [t,t') in p & t'-t > T}"],
+"true" => [0,0, "true is the constant signal always 1,
+{[0,inf)}"],
+"false" => [0,0, "false is the constant signal always 0,
+{}"],
+"id" => [0,1, "id(p) is the identity function for signals"],
+"since" => [0,2,
+"since(p,q) is the strong Since operator in LTL,
+since(p,q)(t) <-> exists t'<=t . q(t') & p is 1 on (t',t]"],
+"until" => [0,2,
+"until(p,q) is the strong Until operator in LTL,
+until(p,q)(t) <-> exists t'>=t . q(t') & p is 1 on [t,t')"],
+"wsince" => [0,2, "wsince(p,q) is the weak Since operator in LTL,
+wsince(p,q)(t) <-> since(p,q)(t) or forall t'<=t . p(t')"],
+"wuntil" => [0,2, "wuntil(p,q) is the weak Until operator in LTL,
+wuntil(p,q)(t) <-> until(p,q)(t) or forall t'>=t . p(t')"],
+"delay" => [1,1,
+"delay[T](p) produces the signal p delayed by T>0, padded with 0 at the origin,
+{[t+T,t'+T) | [t,t') in p}"],
+"wave" => [4,0,
+"wave[T0,T1,Ts,Te] generates a periodic wave signal which is 0 during T0, then
+1 during T1, starting at Ts and ending at Te,
+{[Ts+(T0+T1)*n+T1,Ts+(T0+T1)*(n+1)) | n>=0 & Ts+(T0+T1)*n+T1 < Te }"],
+},
+# Contexts
+[]
+)

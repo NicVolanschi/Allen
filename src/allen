@@ -87,26 +87,14 @@ if (defined($opts{'b'})) {
 }
 
 use FindBin;
-use lib $FindBin::Bin;
+#use lib $FindBin::Bin;
 use Time::Local;
-#use stdlib;
 use Time::HiRes qw(time);
 use POSIX qw(strftime);
 my $npacks = 0; # number of processed event packs
 my $totaltime = 0; # record the starting time
 my $maxtime = 0; # maximum time for handling an event
 my $mintime;  # minimum time for handling an event
-
-sub load() {
-  my ($name) = @_;
-  print STDERR "loading module $name...\n";
-  if ($name !~ /^[.\/]/) { $name = "./$name"; } # default to current directory
-  my $res = do "$name";
-  die "error: $!\nwhen trying to load module \"$name\"\n$@" if !defined($res);
-  print STDERR "load result = $res\n" if defined($opts{'g'});
-  #print STDERR "loaded $#$rules rules.\n";
-  return $res;
-}
 
 my %in = ();
 
@@ -120,13 +108,15 @@ if (defined($opts{'s'})) {
 } else {
   open(IN, "<-");
 }
+do "$FindBin::Bin/shared.pm"
+  or die "error: could not load shared lib: $FindBin::Bin/shared.pm";
 &load("$FindBin::Bin/builtins.pm");
 &load("$FindBin::Bin/stdlib.pm");
 if(defined($opts{'l'})) {
   &load($opts{'l'});
 }
-my $rules = &load($fname); # get list of name/form pairs
-my %rules = (@$rules); # put the list of pairs in a hash
+my ($uses, $defs, $rules) = &load($fname); # get list of name/form pairs
+my %rules = (%rules);
 my %names = (); # name of each form (inverse of %rules)
 my @rules = (); # rule names in order
 my @forms = (); # forms in order

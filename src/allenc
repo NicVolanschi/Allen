@@ -53,199 +53,13 @@ Notes:
 
 # NB: removed str case from Int
 
-# Infix and prefix operators
-my %fix = (
-"&" => "p & q is the binary 'and' boolean operator,
-(p&q)(t) <-> p(t) & q(t)",
-"|" => "p | q is the binary 'or' boolean operator,
-(p|q)(t) <-> p(t) or q(t)",
-"~" => "~p is the unary 'not' boolean operator,
-(~p)(t) <-> not p(t)",
-"<" => "p < T selects the states of p shorter than T,
-{[t,t') in p | t'-t < T}",
-">" => "p > T selects the states of p longer than T,
-{[t,t') in p | t'-t > T}",
-"<=" => "p <= T selects the states of p lasting at most T,
-{[t,t') in p | t'-t <= T}",
-">=" => "p >= T selects the states of p lasting at least T,
-{[t,t') in p | t'-t >= T}",
-">=!" => "p >=! T selects the beginnings of states in p >= T, shortened to T,
-{[t,t+T) | [t,t') in p & t'-t >= T}",
-">!" => "p >! T selects the beginnings of states in p > T, shortened to T,
-{[t,t+T) | [t,t') in p & t'-t > T}",
-">!!" => "p >!! T selects the ends of states in p > T, after dropping p >! T,
-{[t+T,t') | [t,t') in p & t'-t > T}",
-);
-
-my %predef = (
-"id" => [0,1, "id(p) is the identity function for signals"],
-"LT" => [1,1, "LT[T](p) is the prefix notation for p < T"],
-"LE" => [1,1, "LE[T](p) is the prefix notation for p <= T"],
-"GT" => [1,1, "GT[T](p) is the prefix notation for p > T"],
-"GE" => [1,1, "GE[T](p) is the prefix notation for p >= T"],
-"GTrt" => [1,1, "GTrt[T](p) is the prefix notation for p >! T"],
-"GErt" => [1,1, "GErt[T](p) is the prefix notation for p >=! T"],
-"since" => [0,2,
-"since(p,q) is the strong Since operator in LTL,
-since(p,q)(t) <-> exists t'<=t . q(t') & p is 1 on (t',t]"],
-"until" => [0,2,
-"until(p,q) is the strong Until operator in LTL,
-until(p,q)(t) <-> exists t'>=t . q(t') & p is 1 on [t,t')"],
-"wsince" => [0,2, "wsince(p,q) is the weak Since operator in LTL,
-wsince(p,q)(t) <-> since(p,q)(t) or forall t'<=t . p(t')"],
-"wuntil" => [0,2, "wuntil(p,q) is the weak Until operator in LTL,
-wuntil(p,q)(t) <-> until(p,q)(t) or forall t'>=t . p(t')"],
-"O" => [0,1, "O(p) is the Once operator in LTL,
-O(p)(t) <-> exists t'<=t . p(t')"],
-"H" => [0,1, "H(p) is the Historically operator in LTL,
-H(p)(t) <-> forall t'<=t . p(t')"],
-"F" => [0,1, "F(p) is the Finally operator in LTL,
-F(p)(t) <-> exists t'>=t . p(t')"],
-"G" => [0,1, "G(p) is the Globally operator in LTL,
-G(p)(t) <-> forall t'>=t . p(t')"],
-"init" => [0,1,
-"init(p) selects the initial state of p (starting at t=0), if there is one,
-{[0,t') | [0,t') in p}"],
-"O_le" => [1,1, "O_le[T](p) is the bounded Once[0,T] operator in MTL,
-O_le[T](p)(t) <-> exists t'. t-t' in [0,T] and p(t')"],
-"H_le" => [1,1, "H_le[T](p) is the bounded Historically[0,T] operator in MTL,
-H_le[T](p)(t) <-> forall t'. t-t' in [0,T] -> p(t')"],
-"during" => [0,2,
-"during(p,q) selects the states of p strictly contained in some state of q,
-{[t,t') in p | [t'',t''') in q & t''<t<t'<t'''}"],
-"contains" => [0,2,
-"contains(p,q) selects the states of p strictly containing some state of q,
-{[t,t') in p | [t'',t''') in q & t<t''<t'''<t'}"],
-"over" => [0,2,
-"over(p,q) selects the intersections between states of p overlapping some state
-of q,
-{[t'',t') | [t,t') in p & [t'',t''') in q & t<t''<t'<t'''}"],
-"overlaps" => [0,2,
-"overlaps(p,q) selects the states of p overlapping some state of q,
-{[t,t') in p | [t'',t''') in q & t<t''<t'<t'''}"],
-"overlapped" => [0,2,
-"overlapped(p,q) selects the states of p overlapped by some state of q,
-{[t,t') in p | [t'',t''') in q & t''<t<t'''<t'}"],
-"starts" => [0,2,
-"starts(p,q) selects the states of p starting some state of q,
-{[t,t') in p | [t,t'') in q & t'<t''}"],
-"started" => [0,2,
-"started(p,q) selects the states of p started by some state of q,
-{[t,t') in p | [t,t'') in q & t''<t'}"],
-"ends" => [0,2,
-"ends(p,q) selects the states of p ending some state of q,
-{[t,t') in p | [t'',t') in q & t''<t}"],
-"ended" => [0,2,
-"ended(p,q) selects the states of p ended by some state of q,
-{[t,t') in p | [t'',t') in q & t<t''}"],
-"eq" => [0,2,
-"eq(p,q) selects the states of p equal to some state of q,
-{[t,t') in p | [t,t') in q}"],
-"meets" => [0,2,
-"meets(p,q) selects the states of p meeting some state of q,
-{[t,t') in p | [t',t'') in q}"],
-"met" => [0,2,
-"met(p,q) selects the states of p met by some state of q,
-{[t,t') in p | [t'',t) in q}"],
-"between" => [0,2,
-"between(p,q) selects the intervals between a state in p and the next state in q,
-{[t',t'') | [t,t') in p & [t'',t''') in q & t'<t'' &
-            any later state of p ends strictly after t'' &
-            any earlier state of q starts strictly before t'}"],
-"before" => [0,2,
-"before(p,q) selects the states of p immediately before some state of q,
-{[t,t') in p | [t',t'') in between(p,q)}"],
-"after" => [0,2,
-"after(p,q) selects the states of p immediately after some state of q,
-{[t,t') in p | [t'',t') in between(p,q)}"],
-"btwin" => [0,2,
-"btwin(p,q) selects the quiet intervals between a state in p and the next state
-in q,
-{[t',t'') | [t,t') in p & [t'',t''') in q & t'<t'' &
-            p is 0 on [t',t'') & q is 0 on (t',t'')"],
-"btw" => [0,2,
-"btw(p,q) selects the fully quiet intervals between a state in p and the next
-state in q,
-{[t',t'') | [t,t') in p & [t'',t''') in q & t'<t'' &
-            p is 0 on [t',t''] & q is 0 on [t',t'')"],
-"holds" => [0,2,
-"holds(p,q) selects the states of q where p always holds,
-{[t,t') in q | forall t'' in [t,t') . p(t'')}"],
-"ex" => [0,2,
-"ex(p,q) selects the states of q where p occurs at least once,
-{[t,t') in q | exists t'' in [t,t') . p(t'')}"],
-"occ" => [0,2,
-"occ(p,q) selects the ends of states of q where p has already occurred,
-{[t'',t') | [t,t') in q & exists t'' in [t,t') . p(t'') & p is 0 on [t,t'')}"],
-"true" => [0,0, "true is the constant signal always 1,
-{[0,inf)}"],
-"false" => [0,0, "false is the constant signal always 0,
-{}"],
-"delay" => [1,1,
-"delay[T](p) produces the signal p delayed by T>0, padded with 0 at the origin,
-{[t+T,t'+T) | [t,t') in p}"],
-"cut" => [1,1,
-"cut[T](p) selects all the states of p, shortened to T if longer,
-{[t,min(t',t+T)) | [t,t') in p}"],
-"recent" => [1,1,
-"recent[T](p) is true whenever p has occurred in the last T,
-recent[T](p)(t) <-> exists t'>0 in [t-T,t] . p(t')"],
-"step" => [1,0,
-"step[T] is the step function, 0 until T and 1 starting at T,
-{[T,inf)}"],
-"orig" => [0,0,
-"orig() is true only at the origin (at t=0),
-{[0,1)}"],
-"wave" => [4,0,
-"wave[T0,T1,Ts,Te] generates a periodic wave signal which is 0 during T0, then
-1 during T1, starting at Ts and ending at Te,
-{[Ts+(T0+T1)*n+T1,Ts+(T0+T1)*(n+1)) | n>=0 & Ts+(T0+T1)*n+T1 < Te }"],
-"slot" => [6,0,
-"slot[Tf,Tt,Ts,Te,S,W] generates a daily slot lasting each day from Tf to Tt,
-starting at Ts, ending at Te, and switching to summer time as S and back at W"],
-"slot_dst_2017" => [2,0,
-"slot_dst_2017[Tf,Tt] generates a daily slot for the whole year 2017, lasting
-each day from Tf to Tt"],
-"slot_dst_2018" => [2,0,
-"slot_dst_2017[Tf,Tt] generates a daily slot for the whole year 2018, lasting
-each day from Tf to Tt"],
-"up" => [0,1,
-"up(p) is true whenever p starts being 1, excluding t=0,
-{[t,t+1) | [t,t') in p & t>0}"],
-"dn" => [0,1,
-"dn(p) is true whenever p starts being 0, excluding t=0,
-{[t,t+1) | [t',t) in p}"],
-"up0" => [0,1,
-"up0(p) is true whenever p starts being 1, possibly including t=0,
-{[t,t+1) | [t,t') in p}"],
-"dn0" => [0,1,
-"dn0(p) is true whenever p starts being 0, possibly including t=0,
-{[t,t+1) | [t',t) in p or (t=0 & not p(t))}"],
-"sw" => [0,1,
-"sw(p) is true whenever p switches value,
-sw(p)(t) <-> up(t) or dn(t)"],
-"all" => [0, undef, "all(s1,...sN) is an N-ary boolean and"],
-"any" => [0, undef, "any(s1,...sN) is an N-ary boolean or"],
-"any_up" => [0, undef,
-"any_up(s1,...sN) is true whenever some of the signals becomes 1"],
-"any_dn" => [0, undef,
-"any_dn(s1,...sN) is true whenever some of the signals becomes 0"],
-"any_sw" => [0, undef,
-"any_sw(s1,...sN) is true whenever some of the signals switches its value"],
-"first" => [0,2,
-"first(p,q) selects the first state of p starting or during some state of q"],
-"fill" => [0,2, "fill(p,q) fills holes between p's within q"],
-"flat" => [0,2, "flat(p,q) collapses all p's during q"],
-"flat_right" => [0,2,
-"flat_right(p,q) extends flat rightwards to end of slot q if p reaches the
-end of slot"],
-"occ_before" => [0,3,
-"occ_before(p,q,slot) is true between the moments when p, then q occur for the
-1st time in the slot"]
-);
-
+use FindBin;
+#use lib $FindBin::Bin;
 use Getopt::Std;
 our %opts = ();
+
+do "$FindBin::Bin/shared.pm"
+  or die "error: could not load shared lib: $FindBin::Bin/shared.pm";
 
 getopts('o:slLh:', \%opts) or die "$usage\n";
 
@@ -255,11 +69,12 @@ if (defined($opts{'s'})) {
   exit;
 }
 
+my (undef, $builtins, undef) = &load("$FindBin::Bin/builtins.pm");
+my (undef, $predefs, undef) = &load("$FindBin::Bin/stdlib.pm");
+my %predef = (%$builtins, %$predefs);
+
 if (defined($opts{'l'})) {
   print "The predefined operators are:\n";
-  for my $k (sort keys %fix) {
-    print "$k ";
-  }
   for my $k (sort keys %predef) {
     print "$k ";
   }
@@ -269,9 +84,6 @@ if (defined($opts{'l'})) {
 
 if (defined($opts{'L'})) {
   print "Native Allen operators and their semantics:\n\n";
-  for my $k (sort keys %fix) {
-    print "$fix{$k}\n\n";
-  }
   for my $k (sort keys %predef) {
     print "$predef{$k}->[2]\n\n";
   }
@@ -282,8 +94,6 @@ if (defined($opts{'h'})) {
   my $op = $opts{'h'};
   if (exists($predef{$op})) {
     print "$predef{$op}->[2]\n";
-  } elsif (exists($fix{$op})) {
-    print "$fix{$op}\n";
   } else {
     die "$op is not a predefined operator"
   }
@@ -389,7 +199,7 @@ sub parse_lib() {
     die "duplicated def: $nm" if defined($def{$nm});
     my $npar = @{$d->[2]};
     my $narg = @{$d->[3]};
-    my $strs = @{$d->[4]};
+    my $strs = $d->[4];
     $def{$nm} = [$npar, $narg, $strs]; # put name in def symbol table
     ($typ, $tok) = &token(0); # look ahead
   }
@@ -871,7 +681,7 @@ sub gen_let() {
   }
 }
 
-sub gen_rules() {
+sub gen_contexts() {
   my ($p) = @_;
   print OUT "\n# User-defined contexts\n[\n";
   for (my $i = 0; $i < $#$p; $i += 2) { # iterate over key/val pairs
@@ -906,6 +716,36 @@ sub gen_let_rules() {
   } else {
     &gen_rules($t);
   }
+}
+
+sub gen_rules() {
+  my ($p) = @_;
+  print OUT "\n# Result structure\n(\n";
+  &gen_requires();
+  print OUT ",\n";
+  &gen_provides();
+  print OUT ",\n";
+  &gen_contexts($p);
+  print OUT ")\n";
+}
+
+sub gen_requires() {
+  print OUT "\n# Requires (uses)\n{\n";
+  for my $k (sort keys %use) {
+    my ($npars, $nargs) = @{$use{$k}};
+    print OUT "$k => [$npars, $nargs],\n";
+  }
+  print OUT "}";
+}
+
+sub gen_provides() {
+  print OUT "\n# Provides (defs)\n{\n";
+  for my $k (sort keys %def) {
+    my ($npars, $nargs, $strs) = @{$def{$k}};
+    my $doc = join("\n", @{$strs});
+    print OUT "$k => [$npars, $nargs, \"$doc\"],\n";
+  }
+  print OUT "}";
 }
 
 sub gen_def() {

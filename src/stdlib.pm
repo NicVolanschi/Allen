@@ -1846,6 +1846,13 @@ sub fill() {
   return [&or, [&and, $p, $q], &during( [&not, $p], $q)];
 }
 
+# collapse all p's during q
+sub flat() {
+  my ($p, $q) = @_;
+  my $d;
+  return [&or, $d=&during( $p, $q), &during( [&not, $d], $q)];
+}
+
 # extends flat rightwards to end of slot q if p reaches the end of slot
 sub flat_right() {
   my ($p, $q) = @_;
@@ -1862,13 +1869,6 @@ sub step() {
 # true only initially, at the origin of time (t=0)
 sub orig() {
   return [&not, &step(1)];
-}
-
-# collapse all p's during q
-sub flat() {
-  my ($p, $q) = @_;
-  my $d;
-  return [&or, $d=&during( $p, $q), &during( [&not, $d], $q)];
 }
 
 # s1, then s2 occur (for the 1st time) in the slot
@@ -1979,4 +1979,164 @@ sub any_sw() {
 
 # ------------------------------------------------------
 # Result of the load
-1
+(
+# Requires
+{}, # nothing but builtins
+# Provides
+{
+# Allen logic operators
+"during" => [0,2,
+"during(p,q) selects the states of p strictly contained in some state of q,
+{[t,t') in p | [t'',t''') in q & t''<t<t'<t'''}"],
+"contains" => [0,2,
+"contains(p,q) selects the states of p strictly containing some state of q,
+{[t,t') in p | [t'',t''') in q & t<t''<t'''<t'}"],
+"over" => [0,2,
+"over(p,q) selects the intersections between states of p overlapping some state
+of q,
+{[t'',t') | [t,t') in p & [t'',t''') in q & t<t''<t'<t'''}"],
+"overlaps" => [0,2,
+"overlaps(p,q) selects the states of p overlapping some state of q,
+{[t,t') in p | [t'',t''') in q & t<t''<t'<t'''}"],
+"overlapped" => [0,2,
+"overlapped(p,q) selects the states of p overlapped by some state of q,
+{[t,t') in p | [t'',t''') in q & t''<t<t'''<t'}"],
+"starts" => [0,2,
+"starts(p,q) selects the states of p starting some state of q,
+{[t,t') in p | [t,t'') in q & t'<t''}"],
+"started" => [0,2,
+"started(p,q) selects the states of p started by some state of q,
+{[t,t') in p | [t,t'') in q & t''<t'}"],
+"ends" => [0,2,
+"ends(p,q) selects the states of p ending some state of q,
+{[t,t') in p | [t'',t') in q & t''<t}"],
+"ended" => [0,2,
+"ended(p,q) selects the states of p ended by some state of q,
+{[t,t') in p | [t'',t') in q & t<t''}"],
+"eq" => [0,2,
+"eq(p,q) selects the states of p equal to some state of q,
+{[t,t') in p | [t,t') in q}"],
+"meets" => [0,2,
+"meets(p,q) selects the states of p meeting some state of q,
+{[t,t') in p | [t',t'') in q}"],
+"met" => [0,2,
+"met(p,q) selects the states of p met by some state of q,
+{[t,t') in p | [t'',t) in q}"],
+"between" => [0,2,
+"between(p,q) selects the intervals between a state in p and the next state in q,
+{[t',t'') | [t,t') in p & [t'',t''') in q & t'<t'' &
+            any later state of p ends strictly after t'' &
+            any earlier state of q starts strictly before t'}"],
+"before" => [0,2,
+"before(p,q) selects the states of p immediately before some state of q,
+{[t,t') in p | [t',t'') in between(p,q)}"],
+"after" => [0,2,
+"after(p,q) selects the states of p immediately after some state of q,
+{[t,t') in p | [t'',t') in between(p,q)}"],
+"btwin" => [0,2,
+"btwin(p,q) selects the quiet intervals between a state in p and the next state
+in q,
+{[t',t'') | [t,t') in p & [t'',t''') in q & t'<t'' &
+            p is 0 on [t',t'') & q is 0 on (t',t'')"],
+"btw" => [0,2,
+"btw(p,q) selects the fully quiet intervals between a state in p and the next
+state in q,
+{[t',t'') | [t,t') in p & [t'',t''') in q & t'<t'' &
+            p is 0 on [t',t''] & q is 0 on [t',t'')"],
+"holds" => [0,2,
+"holds(p,q) selects the states of q where p always holds,
+{[t,t') in q | forall t'' in [t,t') . p(t'')}"],
+"ex" => [0,2,
+"ex(p,q) selects the states of q where p occurs at least once,
+{[t,t') in q | exists t'' in [t,t') . p(t'')}"],
+"occ" => [0,2,
+"occ(p,q) selects the ends of states of q where p has already occurred,
+{[t'',t') | [t,t') in q & exists t'' in [t,t') . p(t'') & p is 0 on [t,t'')}"],
+# Duration operators in functional notation
+"LT" => [1,1, "LT[T](p) is the prefix notation for p < T"],
+"LE" => [1,1, "LE[T](p) is the prefix notation for p <= T"],
+"GT" => [1,1, "GT[T](p) is the prefix notation for p > T"],
+"GE" => [1,1, "GE[T](p) is the prefix notation for p >= T"],
+"GTrt" => [1,1, "GTrt[T](p) is the prefix notation for p >! T"],
+"GErt" => [1,1, "GErt[T](p) is the prefix notation for p >=! T"],
+# LTL/MTL operators
+"O" => [0,1, "O(p) is the Once operator in LTL,
+O(p)(t) <-> exists t'<=t . p(t')"],
+"H" => [0,1, "H(p) is the Historically operator in LTL,
+H(p)(t) <-> forall t'<=t . p(t')"],
+"F" => [0,1, "F(p) is the Finally operator in LTL,
+F(p)(t) <-> exists t'>=t . p(t')"],
+"G" => [0,1, "G(p) is the Globally operator in LTL,
+G(p)(t) <-> forall t'>=t . p(t')"],
+"O_le" => [1,1, "O_le[T](p) is the bounded Once[0,T] operator in MTL,
+O_le[T](p)(t) <-> exists t'. t-t' in [0,T] and p(t')"],
+"H_le" => [1,1, "H_le[T](p) is the bounded Historically[0,T] operator in MTL,
+H_le[T](p)(t) <-> forall t'. t-t' in [0,T] -> p(t')"],
+# Event generators
+"up" => [0,1,
+"up(p) is true whenever p starts being 1, excluding t=0,
+{[t,t+1) | [t,t') in p & t>0}"],
+"dn" => [0,1,
+"dn(p) is true whenever p starts being 0, excluding t=0,
+{[t,t+1) | [t',t) in p}"],
+"up0" => [0,1,
+"up0(p) is true whenever p starts being 1, possibly including t=0,
+{[t,t+1) | [t,t') in p}"],
+"dn0" => [0,1,
+"dn0(p) is true whenever p starts being 0, possibly including t=0,
+{[t,t+1) | [t',t) in p or (t=0 & not p(t))}"],
+"sw" => [0,1,
+"sw(p) is true whenever p switches value,
+sw(p)(t) <-> up(t) or dn(t)"],
+# Slot operators
+"slot" => [6,0,
+"slot[Tf,Tt,Ts,Te,S,W] generates a daily slot lasting each day from Tf to Tt,
+starting at Ts, ending at Te, and switching to summer time as S and back at W"],
+"slot_dst_2017" => [2,0,
+"slot_dst_2017[Tf,Tt] generates a daily slot for the whole year 2017, lasting
+each day from Tf to Tt"],
+"slot_dst_2018" => [2,0,
+"slot_dst_2017[Tf,Tt] generates a daily slot for the whole year 2018, lasting
+each day from Tf to Tt"],
+# N-ary operators
+"all" => [0, undef, "all(s1,...sN) is an N-ary boolean and"],
+"any" => [0, undef, "any(s1,...sN) is an N-ary boolean or"],
+"any_up" => [0, undef,
+"any_up(s1,...sN) is true whenever some of the signals becomes 1"],
+"any_dn" => [0, undef,
+"any_dn(s1,...sN) is true whenever some of the signals becomes 0"],
+"any_sw" => [0, undef,
+"any_sw(s1,...sN) is true whenever some of the signals switches its value"],
+# Basic derived operators
+"init" => [0,1,
+"init(p) selects the initial state of p (starting at t=0), if there is one,
+{[0,t') | [0,t') in p}"],
+"step" => [1,0,
+"step[T] is the step function, 0 until T and 1 starting at T,
+{[T,inf)}"],
+"orig" => [0,0,
+"orig() is true only at the origin (at t=0),
+{[0,1)}"],
+# Other derived operators
+"cut" => [1,1,
+"cut[T](p) selects all the states of p, shortened to T if longer,
+{[t,min(t',t+T)) | [t,t') in p}"],
+"recent" => [1,1,
+"recent[T](p) is true whenever p has occurred in the last T,
+recent[T](p)(t) <-> exists t'>0 in [t-T,t] . p(t')"],
+"far" => [1,2,
+"far[T](p,q) select states of p that are further (> T) away from any state in q"],
+"first" => [0,2,
+"first(p,q) selects the first state of p starting or during some state of q"],
+"fill" => [0,2, "fill(p,q) fills holes between p's within q"],
+"flat" => [0,2, "flat(p,q) collapses all p's during q"],
+"flat_right" => [0,2,
+"flat_right(p,q) extends flat rightwards to end of slot q if p reaches the
+end of slot"],
+"occ_before" => [0,3,
+"occ_before(p,q,slot) is true between the moments when p, then q occur for the
+1st time in the slot"],
+},
+# Contexts
+[]
+)
