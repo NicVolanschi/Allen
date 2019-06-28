@@ -1553,13 +1553,12 @@ sub meets_lookahead() {
     return undef;
   }
   my $tsq = &tsval($ref_q, $tp0);
-  my $oldq = &lastval($ref_q, $tp0);
   # check q at tp0:
-  if($tsq->[0] == $tp0 && defined($tsq->[1]) && $tsq->[1] == 1 && defined($oldq) && $oldq == 0) {
+  if($tsq->[0] == $tp0 && defined($tsq->[1]) && $tsq->[1] == 1 && &lastval($ref_q, $tp0) == 0) {
     # q=>1
     return 1;
   }
-  if($tsq->[0] == $tp0 && !defined($tsq->[1]) && defined($oldq) && $oldq == 1) {
+  if($tsq->[0] == $tp0 && !defined($tsq->[1]) && &lastval($ref_q, $tp0) == 1) {
     # q=>? and was 1
     return 0;
   }
