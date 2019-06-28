@@ -116,7 +116,7 @@ if(defined($opts{'l'})) {
   &load($opts{'l'});
 }
 my ($uses, $defs, $rules) = &load($fname); # get list of name/form pairs
-my %rules = (%rules);
+my %rules = (@$rules);
 my %names = (); # name of each form (inverse of %rules)
 my @rules = (); # rule names in order
 my @forms = (); # forms in order
