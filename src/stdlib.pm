@@ -1881,48 +1881,40 @@ sub occ_before() {
 
 # wave signal which is 1 every day between daytimes from and to
 # NB: DST-safe! (daylight saving time)
-sub slot_dst_2017() {
-  my ($from, $to) = @_;
-  my $ts2 = 1490482800000; # 26/03/2017 00:00:00 (start summer time)
-  my $ts3 = 1509228000000; # 29/10/2017 00:00:00 (end summer time)
-  return &slot_2017($from, $to, $ts2, $ts3);
-}
-
-sub slot_dst_2018() {
-  my ($from, $to) = @_;
-  my $ts2 = 1521932400000; # 25/03/2018 00:00:00 (start summer time)
-  my $ts3 = 1540677600000; # 28/10/2018 00:00:00 (end summer time)
-  return &slot_2018($from, $to, $ts2, $ts3);
-}
-
 sub slot_2017() {
-  my ($from, $to, $tsummer, $twinter) = @_;
-  my $ts0 = 1483225200000; # 01/01/2017 00:00:00
-  my $ts1 = 1514761200000; # 01/01/2018 00:00:00
-  return &slot($from, $to, $ts0, $ts1, $tsummer, $twinter);
+  my ($from, $to) = @_;
+  # my $ts2 = 1490482800000; # 26/03/2017 00:00:00 (start summer time)
+  # my $ts3 = 1509228000000; # 29/10/2017 00:00:00 (end summer time)
+  # return &slot_2017($from, $to, $ts2, $ts3);
+  return &slot_year($from, $to, 2017);
 }
 
 sub slot_2018() {
-  my ($from, $to, $tsummer, $twinter) = @_;
-  my $ts0 = 1514761200000; # 01/01/2018 00:00:00
-  my $ts1 = 1546297200000; # 01/01/2019 00:00:00
-  return &slot($from, $to, $ts0, $ts1, $tsummer, $twinter);
+  my ($from, $to) = @_;
+  # my $ts2 = 1521932400000; # 25/03/2018 00:00:00 (start summer time)
+  # my $ts3 = 1540677600000; # 28/10/2018 00:00:00 (end summer time)
+  # return &slot_2018($from, $to, $ts2, $ts3);
+  return &slot_year($from, $to, 2018);
 }
 
-# NB: optionnally DST-safe (daylight saving time)
-sub slot() {
-  my ($from, $to, $ts0, $ts1, $tsummer, $twinter) = @_;
+sub slot_year() {
+  my ($from, $to, $year) = @_;
+  # my ($secS, $minS, $hrS) = gmtime($from / 1000);
+  # my ($secE, $minE, $hrE) = gmtime($to / 1000);
+  # my $DsTs = timelocal($secS, $minS, $hrS, 1, 0, $year) * 1000;
+  # my $DeTe = timelocal($secE, $minE, $hrE, 31, 11, $year) * 1000;
+  my $Ds = timelocal(0, 0, 0, 1, 0, $year) * 1000;
+  my $De = timelocal(0, 0, 0, 31, 11, $year) * 1000;
+  return [&slot($from, $to, $Ds, $De)];
+}
+
+sub slot_cet_2017() {
+  my ($from, $to) = @_;
+  my $ts0 = 1483225200000; # 01/01/2017 00:00:00
+  my $ts1 = 1514761200000; # 01/01/2018 00:00:00
   my $t1 = $from < $to? $to - $from: 24*60*60*1000 + $to - $from;
   my $t0 = 24*60*60*1000 - $t1;
-  #return [&delay($ts0 + $to), [&wave($t0, $t1, 0, $ts1 - $ts0)]];
-  if(!defined($tsummer)) {
     return [&wave($t0, $t1, $ts0 + $to, $ts1)];
-  } else {
-    return
-      [&or, [&or, [&wave($t0, $t1, $ts0 + $to, $tsummer)],
-                  [&wave($t0, $t1, $tsummer - (24+1)*60*60*1000 + $to, $twinter)]],
-            [&wave($t0, $t1, $twinter - (24-1)*60*60*1000 + $to, $ts1)]];
-  }
 }
 
 # ------------------------------------------------------
@@ -2088,15 +2080,18 @@ H_le[T](p)(t) <-> forall t'. t-t' in [0,T] -> p(t')"],
 "sw(p) is true whenever p switches value,
 sw(p)(t) <-> up(t) or dn(t)"],
 # Slot operators
-"slot" => [6,0,
-"slot[Tf,Tt,Ts,Te,S,W] generates a daily slot lasting each day from Tf to Tt,
-starting at Ts, ending at Te, and switching to summer time as S and back at W"],
-"slot_dst_2017" => [2,0,
-"slot_dst_2017[Tf,Tt] generates a daily slot for the whole year 2017, lasting
-each day from Tf to Tt"],
-"slot_dst_2018" => [2,0,
-"slot_dst_2017[Tf,Tt] generates a daily slot for the whole year 2018, lasting
-each day from Tf to Tt"],
+"slot_year" => [3,0,
+"slot_year[Tf,Tt,Year] generates a daily slot for the whole year Year, lasting
+each day from Tf to Tt, and observing daylight saving time (DST)"],
+"slot_2017" => [2,0,
+"slot_2017[Tf,Tt] generates a daily slot for the whole year 2017, lasting
+each day from Tf to Tt, and observing daylight saving time (DST)"],
+"slot_2018" => [2,0,
+"slot_2018[Tf,Tt] generates a daily slot for the whole year 2018, lasting
+each day from Tf to Tt, and observing daylight saving time (DST)"],
+"slot_cet_2017" => [2,0,
+"slot_cet_2017[Tf,Tt] generates a daily slot for the whole year 2017, lasting
+each day from Tf to Tt, in the CET timezone, not observing DST"],
 # N-ary operators
 "all" => [0, undef, "all(s1,...sN) is an N-ary boolean and"],
 "any" => [0, undef, "any(s1,...sN) is an N-ary boolean or"],

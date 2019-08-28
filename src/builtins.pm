@@ -325,6 +325,101 @@ sub wave_T0_T1() {
   return $resval? 0: 1;
 }
 
+# generate a slot signal: every day between Ds and De, 1 from Ts until Te
+# NB: always ends with 0, so may go shortly beyond De.
+sub slot() {
+  my ($Ts, $Te, $Ds, $De) = @_;
+  die "slot: Ts=$Ts not in [0, 24hr)" if $Ts < 0 || $Ts >= 24*60*60*1000;
+  die "slot: Te=$Te not in [0, 24hr)" if $Te < 0 || $Te >= 24*60*60*1000;
+  die "slot: Te=Te=$Te, they must be different" if $Ts == $Te;
+  my ($secDs, $minDs, $hrDs, $dayDs, $monDs, $yrDs) = localtime($Ds / 1000);
+  $yrDs += 1900;
+  if ($secDs != 0 || $minDs != 0 || $hrDs != 0) {
+    my $err = "slot: Ds=$yrDs-$monDs-$day{Ds}T$hrDs:$minDs:$secDs is not a date, i.e. a timestamp at midnight";
+    if (1970 - 12 - 31 <= $Ds || $Ds <= 2100 - 1 - 1) {
+      $err = "$err\n(did you forget the final 'T' in the timestamp?)";
+    }
+    die $err;
+  }
+  if (defined($De)) {
+    my ($secDe, $minDe, $hrDe, $dayDe, $monDe, $yrDe) = localtime($De / 1000);
+    $yrDe += 1900;
+    if ($secDe != 0 || $minDe != 0 || $hrDe != 0) {
+      my $err = "slot: De=$yrDe-$monDe-$day{De}T$hrDe:$minDe:$secDe is not a date, i.e. a timestamp at midnight";
+      if (1970 - 12 - 31 <= $De || $De <= 2100 - 1 - 1) {
+        $err = "$err\n(did you forget the final 'T' in the timestamp?)";
+      }
+      die $err;
+    }
+  }
+  return &slot0($Ts, $Te, $Ds, $De);
+}
+
+sub slot0() {
+  my ($Ts, $Te, $Ds, $De) = @_;
+  return sub(){ return &slot_Ts_Te(@_, $Ts, $Te, $Ds, $De); }
+}
+
+sub slot_Ts_Te() {
+  my ($t, $ref_res, $resval, $Ts, $Te, $Ds, $De) = @_;
+  if ($t == 0) { #initially
+    my (undef, undef, undef, $day, $mon, $yr) = localtime($Ds / 1000);
+    my ($secS, $minS, $hrS) = gmtime($Ts / 1000);
+    my $D = timelocal($secS, $minS, $hrS, $day, $mon, $yr) * 1000;
+    if ($D < 0) { # timeouts on negative times won't work, so start next day
+      ($day, $mon, $yr) = &inc_date($day, $mon, $yr);
+      $D = timelocal($secS, $minS, $hrS, $day, $mon, $yr) * 1000;
+    }
+    if (!defined($De) || $D < $De) {
+      &set_timeout($D, $ref_res);
+    }
+    return 0;
+  }
+  # timeout
+  &cancel_timeout($t, $ref_res);
+  my (undef, undef, undef, $day, $mon, $yr) = localtime($t / 1000);
+  if ($resval == 0) { # the resval returned will be 1
+    if ($Ts > $Te) {
+      ($day, $mon, $yr) = &inc_date($day, $mon, $yr);
+    }
+    my ($secE, $minE, $hrE) = gmtime($Te / 1000);
+    my $D = timelocal($secE, $minE, $hrE, $day, $mon, $yr) * 1000;
+    &set_timeout($D, $ref_res);
+    return 1;
+  }
+  # the resval returned will be 0
+  if ($Ts < $Te) {
+    ($day, $mon, $yr) = &inc_date($day, $mon, $yr);
+  }
+  my $D = timelocal(0, 0, 0, $day, $mon, $yr) * 1000;
+  if(!defined($De) || $D <= $De) {
+    my ($secS, $minS, $hrS) = gmtime($Ts / 1000);
+    $D = timelocal($secS, $minS, $hrS, $day, $mon, $yr) * 1000;
+    &set_timeout($D, $ref_res);
+  }
+  return 0;
+}
+
+sub inc_date() {
+  my ($d, $m, $y) = @_;
+  my @ndays = (31, 29, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31);
+  #print "y=$y,m=$m,d=$d,ndays[m]=$ndays[$m]\n";
+  if ($d == $ndays[$m] ||
+      $d == 28 && $m == 1 && !&leap($y)) {
+    $d = 1;
+    $m++;
+    if ($m > 11) { $m = 0; $y++; }
+  } else {
+    $d++;
+  }
+  return ($d, $m, $y);
+}
+
+sub leap() {
+  my ($y) = @_;
+  return $y % 4 == 0 && $y % 100 != 0  || $y % 400 == 0;
+}
+
 # ------------------------------------------------------
 # Duration operators, built into the language with infix syntax
 
@@ -623,6 +718,10 @@ wuntil(p,q)(t) <-> until(p,q)(t) or forall t'>=t . p(t')"],
 "wave[T0,T1,Ts,Te] generates a periodic wave signal which is 0 during T0, then
 1 during T1, starting at Ts and ending at Te,
 {[Ts+(T0+T1)*n+T1,Ts+(T0+T1)*(n+1)) | n>=0 & Ts+(T0+T1)*n+T1 < Te }"],
+"slot" => [undef,0, # really 3..4,0
+"slot[Ts,Te,Ds(,De)?] generates a periodic slot signal which is 1 from Ts to Te
+every day between Ds and De, and observing daylight saving time (DST)
+NB: If De is omitted, the slot signal never ends (don't use it on finite logs)."]
 },
 # Contexts
 []

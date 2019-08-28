@@ -46,7 +46,7 @@ my $syntax =
   Expr1 -> true | false | "~" Expr1 | "(" Expr ")" | str
         | id ("[" Int+(",") "]")? ("(" Expr*(",") ")")?
   Int -> Int1 ("+"|"-") Int | Int1
-  Int1 -> id | int ("hr" | "min" | "sec")?
+  Int1 -> id | ts | int ("hr" | "min" | "sec")?
 
 Notes:
 * Comments in the program start with a "#" and span to the end of line.';
@@ -55,6 +55,7 @@ Notes:
 
 use FindBin;
 #use lib $FindBin::Bin;
+use Time::Local;
 use Getopt::Std;
 our %opts = ();
 
@@ -412,6 +413,19 @@ sub parse_int1() {
       elsif ($tok2 eq "day") { $i *= 24 * 60 * 60; }
     }
     return $i;
+  } elsif ($typ eq "ts") {
+    if ($tok =~ /^(\d\d\d\d)-(\d\d)-(\d\d)T(?:(\d\d):(\d\d):(\d\d)(?:.(\d\d\d))?)?/ ) {
+      my ($yr, $mon, $day, $hr, $min, $sec, $msec) = ($1, $2, $3, $4, $5, $6, $7);
+      my $t = timelocal($sec, $min, $hr, $day, $mon - 1, $yr) * 1000 + $msec;
+      die "negative timestamp $tok = $t" if $t < 0;
+      return $t;
+    } elsif ($tok =~ /^(\d\d):(\d\d):(\d\d)(?:.(\d\d\d))?/ ) {
+        my ($hr, $min, $sec, $msec) = ($1, $2, $3, $4);
+        my $t = ($sec + 60 * ($min + 60 * $hr)) * 1000 + $msec;
+        return $t;
+    } else {
+      die "illegal timestamp token $tok";
+    }
   } elsif ($typ eq "id") {
     die "unbound parameter $tok"
       if !defined($var{$tok}) || $var{$tok} ne "par";
@@ -487,7 +501,7 @@ sub parse_expr1() {
         my $nargs0 = $type->[1]; # expected
         my $npars = @pars; # provided
         my $nargs = @args; # provided
-        if ($npars != $npars0 || defined($nargs0) && $nargs != $nargs0) {
+        if (defined($npars0) && $npars != $npars0 || defined($nargs0) && $nargs != $nargs0) {
           die "pars/args mismatch for $op\[$npars0\]($nargs0):\n" .
               "called: $op\[$npars\]($nargs)";
         }
@@ -528,7 +542,11 @@ sub token() {
   }
   my $typ;
   my $tok;
-  if ($line =~ /^(\d+)/) {
+  if ($line =~ /^(\d\d\d\d-\d\d-\d\dT(?:\d\d:\d\d:\d\d(?:[.]\d\d\d)?)?)/ ) {
+    ($typ, $tok) = ("ts", $1);
+  } elsif ($line =~ /^(\d\d:\d\d:\d\d(?:[.]\d\d\d)?)/ ) {
+    ($typ, $tok) = ("ts", $1);
+  } elsif ($line =~ /^(\d+)/) {
     ($typ, $tok) = ("int", $1);
   } elsif ($line =~ /^([][&|~(),;:=+-]|>=!|<=|>=|>!!|>!|<|>|(day|hr|min|sec|let|in|def|use|true|false)\b)/) {
     ($typ, $tok) = ("key", $1);
@@ -622,6 +640,20 @@ sub gen_expr() {
         &gen_expr($pars->[2]);
         print OUT ",";
         &gen_expr($pars->[3]);
+        print OUT ")]";
+      } elsif ($op eq "slot") { # nullary op
+        die "slot must take 3 to 4 parameters"
+          if $#$pars < 2 || $#$pars > 3;
+        print OUT "[&$op(";
+        &gen_expr($pars->[0]);
+        print OUT ",";
+        &gen_expr($pars->[1]);
+        print OUT ",";
+        &gen_expr($pars->[2]);
+        if ($#$pars == 3) { # optional 4th arg
+          print OUT ",";
+          &gen_expr($pars->[3]);
+        }
         print OUT ")]";
       } else { # user-defined macros:
         print OUT "&$op(";

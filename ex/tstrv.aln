@@ -1,4 +1,4 @@
-# select bix states of x during any y
+# select big states of x during any y
 def big_during[T](x,y) =
   during(x >= T, y)
 small_p: "p" < 2sec;
