@@ -1,0 +1,60 @@
+# Library of recognizers for Activities of Daily Living (ADLs) for the
+# HomeAssist project.
+# Contains the recognizers used in ubicomp2.aln, and a few others.
+
+# Detect cupboard and coffeemaker opening (any order) during breakfast period.
+def breakfast[Ts,Te] =
+  let x = slot_2017[Ts, Te] in
+  occ("ContactS_Cupboard", x) & occ(up("EMeter_Coffeemaker"), x)
+
+# Detect fridge opening and then stove use within 10 minutes, or fridge opening
+# during stove use; all during lunch period.
+def lunch[Ts,Te,T] =
+  # Changed Microwave to Coffeemaker (no Microwave in Home1):
+  # occ(recent[T](up("ContactS_Fridge")) & "EMeter_Microwave",
+  occ(recent[T](up("ContactS_Fridge")) & "EMeter_Coffeemaker",
+      slot_2017[Ts, Te])
+
+# Detect fridge opening and microwave use (any order) during dinner period.
+def dinner[Ts,Te] =
+  let x = slot_2017[Ts, Te] in
+  # Changed Microwave to EMeter_L (no Microwave in Home1):
+  # occ(up("ContactS_Fridge"), x) & occ(up("EMeter_Coffeemaker"), x)
+  occ(up("ContactS_Fridge"), x) & occ(up("EMeter_L"), x)
+
+# Detect end of presence in bathroom and then begin of presence in bedroom
+# within 10 minutes, during go-to-bed period.
+def gotobed[T](m1, m2) =
+  occ(recent[T](dn(m1)) & up(m2), slot_2017[21hr, 0hr])
+
+# Detect end of presence in bedroom and then begin of presence in kitchen within
+# 10 minutes during wakeup period.
+def wakeup[T](m1, m2) =
+  occ(recent[T](dn(m1)) & up(m2), slot_2017[6hr, 10hr])
+
+# bath: Detect shower activity by grouping shower presence fragments.
+def any_emeter_up =
+  any_up("EMeter_Coffeemaker", "EMeter_L")
+def any_contact_sw =
+  any_sw("ContactS_Cupboard", "ContactS_E", "ContactS_Fridge")
+def any_motion_but_shower_up =
+  any_up("MotionD_B", "MotionD_Ba", "MotionD_E", "MotionD_K", "MotionD_L", "MotionD_T")
+def any_but_shower2 =
+  any_motion_but_shower_up() | any_contact_sw() | any_emeter_up()
+def bath[T] =
+  flat_right("MotionD_S", ~any_but_shower2()) > T
+
+# Detect if entrance door is opened for at least 5 minutes during night time.
+def departurealert[T,Hs,He] =
+  during("ContactS_E" > T, slot_2017[Hs, He])
+
+# Detect if entrance door is opened for at least 5 minutes while no presence in entrance.
+def dooralert[T] =
+  ("ContactS_E" & ~"MotionD_E") > T
+
+# outdoor_post: detects the person being out in a retrospective way:
+def any_motion_up =
+  any_up("MotionD_B", "MotionD_Ba", "MotionD_E", "MotionD_K", "MotionD_L", "MotionD_S", "MotionD_T")
+def outdoor_post =
+  holds(~(any_motion_up() | any_emeter_up() | any_contact_sw()),
+        between(dn("ContactS_E"), up("ContactS_E")) > 10min)

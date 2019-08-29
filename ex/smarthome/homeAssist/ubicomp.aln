@@ -1,0 +1,100 @@
+# Allen rules used in the HomeAssist project, and presented in the UbiComp paper [1].
+
+# [1] Nic Volanschi, Bernard Serpette, Adrien Carteron, and Charles Consel.
+# "A Language for Online State Processing of Binary Sensors, Applied to Ambient Assisted Living".
+# In Proceedings of the ACM on Interactive, Mobile, Wearable and Ubiquitous Technologies, 2:4, 2018.
+
+
+# ---- Definitions ----
+
+def breakfast[Ts,Te] =
+  let x = slot_2017[Ts, Te] in
+  occ("ContactS_Cupboard", x) & occ(up("EMeter_Coffeemaker"), x)
+
+def lunch[Ts,Te,T] =
+  # Changed Microwave to Coffeemaker (no Microwave in Home1):
+  # occ(recent[T](up("ContactS_Fridge")) & "EMeter_Microwave",
+  occ(recent[T](up("ContactS_Fridge")) & "EMeter_Coffeemaker",
+      slot_2017[Ts, Te])
+
+def dinner[Ts,Te] =
+  let x = slot_2017[Ts, Te] in
+  # Changed Microwave to EMeter_L (no Microwave in Home1):
+  # occ(up("ContactS_Fridge"), x) & occ(up("EMeter_Coffeemaker"), x)
+  occ(up("ContactS_Fridge"), x) & occ(up("EMeter_L"), x)
+
+def gotobed[T](m1, m2) =
+  occ(recent[T](dn(m1)) & up(m2), slot_2017[21hr, 0hr])
+
+def wakeup[T](m1, m2) =
+  occ(recent[T](dn(m1)) & up(m2), slot_2017[6hr, 10hr])
+
+
+# ---- Contexts ----
+
+Presence_dependency:
+# Detect if cupboard status changes while no presence in the kitchen.
+occ(sw("ContactS_Cupboard"), ~"MotionD_K");
+
+Departure_alert:
+# Detect if entrance door is opened for at least 5 minutes during night time.
+occ(dn("ContactS_E" >=! 5min), slot_2017[20hr, 8hr]);
+
+Door_alert:
+# Detect if entrance door is opened for at least 5 minutes while no presence in entrance.
+occ(("ContactS_E" & ~"MotionD_E") >=! 5min, "ContactS_E");
+
+Long_inactivity:
+# Detect no movement in Bedroom since 24 hours.
+# Changed ~"MotionD_B" to met(~"MotionD_B", "MotionD_B"), to avoid a wrong initial state:
+# ~"MotionD_B" >=! 24hr;
+met(~"MotionD_B", "MotionD_B") >=! 24hr;
+
+Fridge_opened:
+# Detect if fridge remains open at least 5 minutes.
+"ContactS_Fridge" >=! 5min;
+
+breakfast:
+# Detect cupboard and coffeemaker opening (any order) during breakfast period.
+breakfast[7hr, 9hr];
+
+lunch:
+# Detect fridge opening and then stove use within 10 minutes, or fridge opening
+# during stove use; all during lunch period.
+# Changed delay to 30min:
+lunch[11hr, 14hr, 30min];
+
+dinner:
+# Detect fridge opening and microwave use (any order) during dinner period.
+dinner[18hr, 22hr];
+
+gotobed:
+# Detect end of presence in bathroom and then begin of presence in bedroom
+# within 10 minutes, during go-to-bed period.
+gotobed[10min]("MotionD_Ba", "MotionD_B");
+
+wakeup:
+# Detect end of presence in bedroom and then begin of presence in kitchen within
+# 10 minutes during wakeup period.
+wakeup[10min]("MotionD_B", "MotionD_K");
+
+Commfailure_warning:
+# Detect any sensor that fails to communicate.
+# either_up(@Any_Commfailure)
+# Too many results: any_up("ContactS_Cupboard.CommFailure", "ContactS_E.CommFailure", "ContactS_Fridge.CommFailure"),
+any_up("ContactS_E.CommFailure");
+
+Commfailure_alert:
+# Detect any sensor that has failed to communicate since 24 hours.
+# any_dn(map(sub(p) geRT<24h>(p), @Any_Commfailure))
+any_dn("ContactS_Cupboard.CommFailure" >=! 24hr, "ContactS_E.CommFailure" >=! 24hr,
+  "ContactS_Fridge.CommFailure" >=! 24hr);
+
+Battery_alert:
+# Detect battery level of any sensor that become less than 20%.
+# any_dn(@Any_Batterylevel)
+any_dn("ContactS_Cupboard.BatteryLevel", "ContactS_E.BatteryLevel",
+  "ContactS_Fridge.BatteryLevel",
+  "MotionD_B.BatteryLevel", "MotionD_Ba.BatteryLevel", "MotionD_E.BatteryLevel",
+  "MotionD_K.BatteryLevel", "MotionD_L.BatteryLevel", "MotionD_S.BatteryLevel",
+  "MotionD_T.BatteryLevel")

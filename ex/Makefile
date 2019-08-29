@@ -1,5 +1,7 @@
 SRC=../src
 TST=../test
+HOMEASSIST=smarthome/homeAssist
+OPTQ_HA=-q '/^EMeter_/>=20,/\.BatteryLevel$$/>=20'
 AMIQOPTS=-b '/^tv_salon_real_status$$/=ON/OFF,/^C\d+$$/=OPEN/CLOSED' \
 	-q '/^Eau_.*_Instantanee$$/>=0.01,/^Intensite_/>=1,/^bed_pressure$$/>=300'
 TAREAALOPTS=-q '/^week_activity$$/>=80,/^day_steps$$/>=5000,/^breath$$/>=10,/^heart$$/>=50'
@@ -62,6 +64,12 @@ monkey: planning/monkey.pm
 packages: video/packages.pm
 	cat video/packages.log | $(SRC)/allen $<
 
+homeassist: $(HOMEASSIST)/ubicomp.pm
+	$(SRC)/allen -s $(HOMEASSIST)/Home1_2017.csv $(OPTQ_HA) $< >out/$@
+
+homeassist2: $(HOMEASSIST)/homeAssist.pm $(HOMEASSIST)/ubicomp2.pm
+	$(SRC)/allen -s $(HOMEASSIST)/Home1_2017.csv $(OPTQ_HA) -l $^ >out/$@
+
 amiqual: smarthome/amiqual.pm
 	cat smarthome/July_All_Change.log | $(SRC)/allen $(AMIQOPTS) $<
 
@@ -117,4 +125,4 @@ tltl3: verification/tltl3.pm
 
 clean:
 	rm -f *.pm out/* planning/*.pm video/*.pm smarthome/*.pm verification/*.pm \
-		$(ORANGE)/*.pm $(ORANGE)/2017-*-*.log $(ORANGE)/annotations.log
+		$(HOMEASSIST)/*.pm $(ORANGE)/*.pm $(ORANGE)/2017-*-*.log $(ORANGE)/annotations.log
