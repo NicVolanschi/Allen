@@ -150,6 +150,7 @@ print OUT "# User-defined operators\n\n";
 for my $d (@$l) {
   &gen_def($d);
 }
+print OUT "# Global lets\n";
 &gen_let_rules($p);
 exit;
 
@@ -729,25 +730,14 @@ sub gen_contexts() {
   print OUT "]\n";
 }
 
-sub gen_let_rules_rec() {
+sub gen_let_rules() {
   my ($t) = @_;
   my ($var, $val, $body) = &match_let($t);
   if (defined($var)) {
     print OUT "my \$$var=";
     &gen_expr($val);
-    print OUT "; ";
-    &gen_let_rules_rec($body);
-  } else {
-    &gen_rules($t);
-  }
-}
-
-sub gen_let_rules() {
-  my ($t) = @_;
-  my ($var, $val, $body) = &match_let($t);
-  if (defined($var)) {
-    print OUT "# Global lets\n";
-    &gen_let_rules_rec($t);
+    print OUT ";\n";
+    &gen_let_rules($body);
   } else {
     &gen_rules($t);
   }
