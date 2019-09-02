@@ -32,14 +32,15 @@ where:
 
 my $syntax =
 '
-  Prog -> Use* Lib LetRules?
+  Prog -> Use* Lib Rules?
   Use -> "use" id ("[" int "]")? ("(" int ")")?
-  Lib -> Def*
+  Lib -> (Def | Let)*
   Def -> "def" id ("[" id+(",") "]")? ("(" id*(",") ")")? str*
          "=" Context
-  LetRules -> "let" id "=" Expr "in" LetRules | Rules
+  Lets -> Let*
+  Let -> "let" id "=" Expr "in"
   Rules -> id ":" Context (";" Rules)?
-  Context -> "let" id "=" Expr "in" Context | Expr
+  Context -> Lets Expr
   Expr -> Prod "|" Expr | Prod
   Prod -> Comp "&" Prod | Comp
   Comp -> Expr1 (">=!"|"<="|">="|">!"|">!!"|"<"|">") Int | Expr1
@@ -139,19 +140,23 @@ my %var = (); # symbol table for variables (lexical scope)
 my $l = &parse_lib();
 #&print_ast($l);
 #print "\n";
+my $p = [];
 my ($typ, $tok) = &token(0); # look ahead
-my $p = ($typ eq "eof")?
-  [] # no contexts => library
-  : &parse_let_rules();
+if ($typ ne "eof") {
+  $p = &parse_rules();
+}
 #&print_ast($p);
 #print "\n";
 
-print OUT "# User-defined operators\n\n";
-for my $d (@$l) {
-  &gen_def($d);
+print OUT "# User-defined operators & Global lets\n\n";
+for my $x (@$l) {
+  if ($x->[0] eq "def") {
+    &gen_def($x);
+  } else {
+    &gen_let($x);
+  }
 }
-print OUT "# Global lets\n";
-&gen_let_rules($p);
+&gen_rules($p);
 exit;
 
 # ----------------- parsing ---------------------
@@ -195,20 +200,25 @@ sub parse_uses() {
 }
 
 sub parse_lib() {
-  my @defs = ();
+  my @lib = ();
   my ($typ, $tok) = &token(0); # look ahead
-  while ($typ eq "key" && $tok eq "def") {
-    my $d = &parse_def();
-    push @defs, $d;
-    my $nm = $d->[1];
-    die "duplicated def: $nm" if defined($def{$nm});
-    my $npar = @{$d->[2]};
-    my $narg = @{$d->[3]};
-    my $strs = $d->[4];
-    $def{$nm} = [$npar, $narg, $strs]; # put name in def symbol table
+  while ($typ eq "key" && ($tok eq "def" || $tok eq "let")) {
+    if ($tok eq "def") {
+      my $d = &parse_def();
+      push @lib, $d;
+      my $nm = $d->[1];
+      die "duplicated def: $nm" if defined($def{$nm});
+      my $npar = @{$d->[2]};
+      my $narg = @{$d->[3]};
+      my $strs = $d->[4];
+      $def{$nm} = [$npar, $narg, $strs]; # put name in def symbol table
+    } else {
+      my $l = &parse_let_global();
+      push @lib, $l;
+    }
     ($typ, $tok) = &token(0); # look ahead
   }
-  return \@defs;
+  return \@lib;
 }
 
 sub parse_def() {
@@ -271,29 +281,23 @@ sub parse_def() {
   return ["def", $tok2, \@pars, \@args, \@strs, $e];
 }
 
-sub parse_let_rules() {
-  my ($typ, $tok) = &token(0); # look ahead
-  if ($typ eq "key" && $tok eq "let") {
-    &token(1); # consume "let"
-    my ($typ2, $tok2) = &token(1);
-    die "id expected in let, found $tok2 at $line"
-      if $typ2 ne "id";
-    die "duplicated variable $tok2" if defined($glb{$tok2});
-    # don't register yet, recursive let is disallowed
-    my ($typ3, $tok3) = &token(1);
-    die "= expected in let, found $tok3 at $line"
-      if $typ3 ne "key" || $tok3 ne "=";
-    %var = (); # reset let symbol table
-    my $e1 = &parse_expr();
-    $glb{$tok2} = "let"; # register let variable now
-    my ($typ4, $tok4) = &token(1);
-    die "'in' expected in let, found $tok4 at $line"
-      if $typ4 ne "key" || $tok4 ne "in";
-    my $e2 = &parse_let_rules();
-    return ["let", $tok2, $e1, $e2];
-  } else {
-    return &parse_rules();
-  }
+sub parse_let_global() {
+  &token(1); # consume "let"
+  my ($typ2, $tok2) = &token(1);
+  die "id expected in let, found $tok2 at $line"
+    if $typ2 ne "id";
+  die "duplicated variable $tok2" if defined($glb{$tok2});
+  # don't register yet, recursive let is disallowed
+  my ($typ3, $tok3) = &token(1);
+  die "= expected in let, found $tok3 at $line"
+    if $typ3 ne "key" || $tok3 ne "=";
+  %var = (); # reset let symbol table
+  my $e1 = &parse_expr();
+  $glb{$tok2} = "let"; # register let variable now
+  my ($typ4, $tok4) = &token(1);
+  die "'in' expected in let, found $tok4 at $line"
+    if $typ4 ne "key" || $tok4 ne "in";
+  return ["let", $tok2, $e1];
 }
 
 sub parse_rules() {
@@ -329,8 +333,13 @@ sub parse_rules() {
 }
 
 sub parse_context() {
+  return ["context", &parse_lets_locals(), &parse_expr()];
+}
+
+sub parse_lets_locals() {
+  my @lets = ();
   my ($typ, $tok) = &token(0); # look ahead
-  if ($typ eq "key" && $tok eq "let") {
+  while ($typ eq "key" && $tok eq "let") {
     &token(1); # consume "let"
     my ($typ2, $tok2) = &token(1);
     die "id expected in let, found $tok2 at $line"
@@ -345,11 +354,10 @@ sub parse_context() {
     my ($typ4, $tok4) = &token(1);
     die "'in' expected in let, found $tok4 at $line"
       if $typ4 ne "key" || $tok4 ne "in";
-    my $e2 = &parse_context();
-    return ["let", $tok2, $e1, $e2];
-  } else {
-    return &parse_expr();
+    push @lets, ["let", $tok2, $e1];
+    ($typ, $tok) = &token(0); # look ahead
   }
+  return \@lets;
 }
 
 # left-recursive
@@ -681,24 +689,25 @@ sub gen_expr() {
   }
 }
 
+
 sub gen_context() {
   my ($t) = @_;
-  my ($var, $val, $body) = &match_let($t);
-  if (defined($var)) {
-    print OUT "sub{";
-    &gen_let($t);
-    print OUT "}->()";
-  } else {
-    &gen_expr($t);
+  die "invalid context" if $t->[0] ne "context" || $#$t != 2;
+  my (undef, $lets, $expr) = @$t;
+  print OUT "sub{";
+  for my $let (@$lets) {
+    &gen_let($let);
   }
+  &gen_expr($expr);
+  print OUT "}->()";
 }
 
 sub match_let() {
   my ($t) = @_;
   if (ref $t eq "ARRAY" && $#$t >=1 && $t->[0] eq "let") {
-    die "invalid let" if $#$t != 3;
-    my (undef, $var, $val, $body) = @$t;
-    return ($var, $val, $body);
+    die "invalid let" if $#$t != 2;
+    my (undef, $var, $val) = @$t;
+    return ($var, $val);
   } else {
     return undef;
   }
@@ -706,14 +715,11 @@ sub match_let() {
 
 sub gen_let() {
   my ($t) = @_;
-  my ($var, $val, $body) = &match_let($t);
+  my ($var, $val) = &match_let($t);
   if (defined($var)) {
     print OUT "my \$$var=";
     &gen_expr($val);
     print OUT "; ";
-    &gen_let($body);
-  } else {
-    &gen_expr($t);
   }
 }
 
@@ -730,16 +736,10 @@ sub gen_contexts() {
   print OUT "]\n";
 }
 
-sub gen_let_rules() {
-  my ($t) = @_;
-  my ($var, $val, $body) = &match_let($t);
-  if (defined($var)) {
-    print OUT "my \$$var=";
-    &gen_expr($val);
-    print OUT ";\n";
-    &gen_let_rules($body);
-  } else {
-    &gen_rules($t);
+sub gen_lets() {
+  my ($lets) = @_;
+  for my $let (@$lets) {
+    &gen_let($let);
   }
 }
 
@@ -793,7 +793,7 @@ sub gen_def() {
   # print OUT "  return ";
   # &gen_context($body);
   print OUT "  ";
-  &gen_let($body);
+  &gen_context($body);
   print OUT ";\n";
   print OUT "}\n";
 }
