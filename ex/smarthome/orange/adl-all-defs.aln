@@ -77,9 +77,9 @@ def acthouse = actfloor0() | actfloor1()
 
 def notwopeople = ~(actfloor0() & actfloor1())
 
-def restricttv_office = ~("office_tv" >= 10sec)
+def restricttv_office = ~("office_tv" >!! 10sec)
 
-def restricttv_living = ~("livingroom_tv" >= 10sec)
+def restricttv_living = ~("livingroom_tv" >!! 10sec)
 
 # -------------------------------- Contexts
 

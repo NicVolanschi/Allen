@@ -65,9 +65,9 @@ in let acthouse = actfloor0 | actfloor1
 
 in let notwopeople = ~(actfloor0 & actfloor1)
 
-in let restricttv_office = ~("office_tv" >= 10sec)
+in let restricttv_office = ~("office_tv" >!! 10sec)
 
-in let restricttv_living = ~("livingroom_tv" >= 10sec)
+in let restricttv_living = ~("livingroom_tv" >!! 10sec)
 
 in
 
