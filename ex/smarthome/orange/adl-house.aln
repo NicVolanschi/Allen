@@ -6,7 +6,7 @@
 
 def implies(p,q) = ~p | q
 
-def sc_light(switch, light) = G(implies(delay[1sec](switch), until(light, ~switch)))
+def sc_light(switch, light) = G(implies(H_le[1sec](switch), until(light, ~switch)))
 
 # -------------------------------- Switches
 
