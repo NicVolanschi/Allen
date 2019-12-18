@@ -171,7 +171,7 @@ sub parse_uses() {
     my $name = $tok2;
     my $npars = 0;
     my $nargs = 0;
-    die "duplicated use: $name" if defined($uses{$name});
+    die "duplicated use: $name" if defined($use{$name});
     my ($typ3, $tok3) = &token(0); # lookahead
     if ($typ3 eq "key" && $tok3 eq "[") {
       &token(1); # consume '['
